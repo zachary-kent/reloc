@@ -1,5 +1,6 @@
 -Q theories reloc
 -arg -w -arg -notation-overridden,-redundant-canonical-projection,-several-object-files
+theories/prelude/ctx_subst.v
 theories/logic/spec_ra.v
 theories/logic/spec_rules.v
-
+theories/logic/model.v
