@@ -7,8 +7,8 @@ From iris.proofmode Require Import tactics.
 From iris.heap_lang Require Import lang lifting.
 Import uPred.
 
-Definition logrelN := nroot .@ "logrel".
-Definition specN := logrelN .@ "spec".
+Definition relocN := nroot .@ "reloc".
+Definition specN := relocN .@ "spec".
 
 (** The CMRA for the heap of the specification. *)
 Definition tpoolUR : ucmraT := gmapUR nat (exclR exprC).
