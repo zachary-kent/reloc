@@ -51,23 +51,6 @@ Proof.
 Qed.
 
 (* TODO: move to metatheory.v *)
-
-Lemma subst_map_is_closed X e vs :
-  is_closed_expr X e →
-  (∀ x, x ∈ X → vs !! x = None) →
-  subst_map vs e = e.
-Proof.
-  revert X vs. assert (∀ x x1 x2 X (vs : gmap string val),
-    (∀ x, x ∈ X → vs !! x = None) →
-    x ∈ x2 :b: x1 :b: X →
-    binder_delete x1 (binder_delete x2 vs) !! x = None).
-  { intros x x1 x2 X vs ??. rewrite !lookup_binder_delete_None. set_solver. }
-  induction e=> X vs /= ? HX; destruct_and?; eauto with f_equal.
-  by rewrite HX.
-Qed.
-Lemma subst_map_is_closed_nil e vs : is_closed_expr [] e → subst_map vs e = e.
-Proof. intros. apply subst_map_is_closed with []; set_solver. Qed.
-
 Lemma subst_map_is_closed X e vs :
   is_closed_expr X e →
   (∀ x, x ∈ X → vs !! x = None) →
