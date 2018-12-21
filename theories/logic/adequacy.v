@@ -24,18 +24,21 @@ Lemma refines_adequate Σ `{relocPreG Σ}
   (∀ `{relocG Σ}, ∀ v v', A v v' -∗ pure_lty2 P v v') →
   (∀ `{relocG Σ}, {⊤;∅} ⊨ e << e' : A) →
   adequate NotStuck e σ
-    (λ v _, ∃ thp' h v', rtc erased_step ([e'], mkstate ∅ ∅) (of_val v' :: thp', h)
+    (λ v _, ∃ thp' h v', rtc erased_step ([e'], σ) (of_val v' :: thp', h)
             ∧ P v v').
 Proof.
   intros HA Hlog.
   eapply (heap_adequacy Σ _); iIntros (Hinv).
-  iMod (own_alloc (● (to_tpool [e'], ∅)
-    ⋅ ◯ ((to_tpool [e'] : tpoolUR, ∅ : gen_heapUR _ _) : cfgUR))) as (γc) "[Hcfg1 Hcfg2]".
-  { apply auth_valid_discrete_2. split=>//. split=>//. apply to_tpool_valid. }
+  iMod (own_alloc (● (to_tpool [e'], to_gen_heap (heap σ))
+    ⋅ ◯ ((to_tpool [e'] : tpoolUR, ∅) : cfgUR)))
+    as (γc) "[Hcfg1 Hcfg2]".
+  { apply auth_valid_discrete_2. split=>//.
+    - apply prod_included. split=>///=.
+      (* TODO: use gmap.empty_included *) eexists. by rewrite left_id.
+    - split=>//. apply to_tpool_valid. apply to_gen_heap_valid. }
   set (Hcfg := RelocG _ _ (CFGSG _ _ γc)).
-  iMod (inv_alloc specN _ (spec_inv ([e'], mkstate ∅ ∅)) with "[Hcfg1]") as "#Hcfg".
-  { iNext. iExists [e'], (mkstate ∅ ∅).
-    rewrite /= /to_gen_heap fin_maps.map_fmap_empty. eauto. }
+  iMod (inv_alloc specN _ (spec_inv ([e'], σ)) with "[Hcfg1]") as "#Hcfg".
+  { iNext. iExists [e'], σ. eauto. }
   iApply wp_fupd. iApply wp_wand_r.
   iSplitL.
   - iPoseProof (Hlog _) as "Hrel".
@@ -68,6 +71,6 @@ Theorem refines_typesafety Σ `{relocPreG Σ} e e' e1
   is_Some (to_val e1) ∨ reducible e1 σ'.
 Proof.
   intros Hlog ??.
-  cut (adequate NotStuck e σ (λ v _, ∃ thp' h v', rtc erased_step ([e'], mkstate ∅ ∅) (of_val v' :: thp', h) ∧ True)); first (intros [_ ?]; eauto).
+  cut (adequate NotStuck e σ (λ v _, ∃ thp' h v', rtc erased_step ([e'], σ) (of_val v' :: thp', h) ∧ True)); first (intros [_ ?]; eauto).
   eapply (refines_adequate _ A) ; eauto.
 Qed.
