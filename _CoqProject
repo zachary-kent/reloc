@@ -4,3 +4,4 @@ theories/prelude/ctx_subst.v
 theories/logic/spec_ra.v
 theories/logic/spec_rules.v
 theories/logic/model.v
+theories/logic/adequacy.v

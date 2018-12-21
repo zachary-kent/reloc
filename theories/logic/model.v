@@ -10,7 +10,7 @@ From iris.heap_lang Require Import notation proofmode.
 From reloc Require Import logic.spec_rules prelude.ctx_subst.
 
 (** Semantic intepretation of types *)
-Record lty2 `{relocG Σ} := Lty2 {
+Record lty2 `{invG Σ} := Lty2 {
   lty2_car :> val → val → iProp Σ;
   lty2_persistent v1 v2 : Persistent (lty2_car v1 v2)
 }.
