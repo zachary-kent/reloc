@@ -16,9 +16,9 @@ Definition cfgUR := prodUR tpoolUR (gen_heapUR loc val).
 
 (** The CMRA for the thread pool. *)
 Class cfgSG Σ := CFGSG { cfg_inG :> inG Σ (authR cfgUR); cfg_name : gname }.
-Class logrelG Σ := LogrelG {
-  logrelG_heapG :> heapG Σ;
-  logrelG_cfgG :> cfgSG Σ;
+Class relocG Σ := RelocG {
+  relocG_heapG :> heapG Σ;
+  relocG_cfgG :> cfgSG Σ;
 }.
 
 Fixpoint to_tpool_go (i : nat) (tp : list expr) : tpoolUR :=

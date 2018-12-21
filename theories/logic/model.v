@@ -10,7 +10,7 @@ From iris.heap_lang Require Import notation proofmode.
 From reloc Require Import logic.spec_rules prelude.ctx_subst.
 
 (** Semantic intepretation of types *)
-Record lty2 `{logrelG Σ} := Lty2 {
+Record lty2 `{relocG Σ} := Lty2 {
   lty2_car :> val → val → iProp Σ;
   lty2_persistent v1 v2 : Persistent (lty2_car v1 v2)
 }.
@@ -22,7 +22,7 @@ Existing Instance lty2_persistent.
 
 (* The COFE structure on semantic types *)
 Section lty2_ofe.
-  Context `{logrelG Σ}.
+  Context `{relocG Σ}.
 
   Instance lty2_equiv : Equiv lty2 := λ A B, ∀ w1 w2, A w1 w2 ≡ B w1 w2.
   Instance lty2_dist : Dist lty2 := λ n A B, ∀ w1 w2, A w1 w2 ≡{n}≡ B w1 w2.
@@ -47,7 +47,7 @@ Section lty2_ofe.
 End lty2_ofe.
 
 Section semtypes.
-  Context `{logrelG Σ}.
+  Context `{relocG Σ}.
 
   Implicit Types A B : lty2.
 
@@ -79,13 +79,13 @@ Infix "→" := lty2_arr : lty_scope.
 Notation "'ref' A" := (lty2_ref A) : lty_scope.
 
 (* The semantic typing judgment *)
-Definition env_ltyped2 `{logrelG Σ} (Γ : gmap string lty2)
+Definition env_ltyped2 `{relocG Σ} (Γ : gmap string lty2)
     (vs : gmap string (val*val)) : iProp Σ :=
   (⌜ ∀ x, is_Some (Γ !! x) ↔ is_Some (vs !! x) ⌝ ∧
   [∗ map] i ↦ Avv ∈ map_zip Γ vs, lty2_car Avv.1 Avv.2.1 Avv.2.2)%I.
 
 Section refinement.
-  Context `{logrelG Σ}.
+  Context `{relocG Σ}.
 
   Definition refines_def  (E : coPset)
            (Γ : gmap string lty2)
@@ -106,7 +106,7 @@ Notation "⟦ A ⟧ₑ" := (λ e e', interp_expr ⊤ e e' A).
 Notation "⟦ Γ ⟧*" := (env_ltyped2 Γ).
 
 Section semtypes_properties.
-  Context `{logrelG Σ}.
+  Context `{relocG Σ}.
 
   (* The reference type relation is functional and injective.
      Thanks to Amin. *)
@@ -154,7 +154,7 @@ Section semtypes_properties.
 End semtypes_properties.
 
 Section environment_properties.
-  Context `{logrelG Σ}.
+  Context `{relocG Σ}.
   Implicit Types A B : lty2.
   Implicit Types Γ : gmap string lty2.
 
@@ -168,6 +168,7 @@ Section environment_properties.
     iApply (big_sepM_lookup _ _ x (A,v) with "HΓ").
     by rewrite map_lookup_zip_with HΓx /= Hx.
   Qed.
+
   Lemma env_ltyped2_insert Γ vs x A v1 v2 :
     A v1 v2 -∗ ⟦ Γ ⟧* vs -∗
     ⟦ (binder_insert x A Γ) ⟧* (binder_insert x (v1,v2) vs).
@@ -178,27 +179,35 @@ Section environment_properties.
     - rewrite -map_insert_zip_with. by iApply big_sepM_insert_2.
   Qed.
 
+  Lemma env_ltyped2_empty :
+    ⟦ ∅ ⟧* ∅.
+  Proof.
+    iSplit.
+    - iPureIntro=> y. rewrite !lookup_empty -!not_eq_None_Some. by naive_solver.
+    - by rewrite map_zip_with_empty.
+ Qed.
+
 End environment_properties.
 
-Notation "'{' E ';' Γ '}' ⊨ e1 '≼' e2 : A" :=
+Notation "'{' E ';' Γ '}' ⊨ e1 '<<' e2 : A" :=
   (refines E Γ e1%E e2%E (A)%lty2)
-  (at level 68, E at level 50, Γ at next level, e1, e2 at level 69,
+  (at level 100, E at level 50, Γ at next level, e1, e2 at next level,
    A at level 200,
-   format "'[hv' '{' E ';' Γ '}'  ⊨  '/  ' e1  '/' '≼'  '/  ' e2  :  A ']'").
-Notation "Γ ⊨ e1 '≼' e2 : A" :=
+   format "'[hv' '{' E ';' Γ '}'  ⊨  '/  ' e1  '/' '<<'  '/  ' e2  :  A ']'").
+Notation "Γ ⊨ e1 '<<' e2 : A" :=
   (refines ⊤ Γ e1%E e2%E (A)%lty2)%I
-  (at level 68, e1, e2 at level 69,
+  (at level 100, e1, e2 at next level,
    A at level 200,
-   format "'[hv' Γ  ⊨  '/  ' e1  '/' '≼'  '/  ' e2  :  A ']'").
+   format "'[hv' Γ  ⊨  '/  ' e1  '/' '<<'  '/  ' e2  :  A ']'").
 
 (** Properties of the relational interpretation *)
 Section related_facts.
-  Context `{logrelG Σ}.
+  Context `{relocG Σ}.
 
   (* We need this to be able to open and closed invariants in front of logrels *)
   Lemma fupd_logrel E1 E2 Γ e e' A :
-    ((|={E1,E2}=> {E2;Γ} ⊨ e ≼ e' : A)
-     -∗ ({E1;Γ} ⊨ e ≼ e' : A))%I.
+    ((|={E1,E2}=> {E2;Γ} ⊨ e << e' : A)
+     -∗ ({E1;Γ} ⊨ e << e' : A))%I.
   Proof.
     rewrite refines_eq /refines_def.
     iIntros "H".
@@ -210,7 +219,7 @@ Section related_facts.
   Global Instance elim_fupd_logrel p E1 E2 Γ e e' P A :
    (* TODO: DF: look at the booleans here *)
    ElimModal True p false (|={E1,E2}=> P) P
-     ({E1;Γ} ⊨ e ≼ e' : A) ({E2;Γ} ⊨ e ≼ e' : A).
+     ({E1;Γ} ⊨ e << e' : A) ({E2;Γ} ⊨ e << e' : A).
   Proof.
     rewrite /ElimModal. intros _.
     iIntros "[HP HI]". iApply fupd_logrel.
@@ -220,7 +229,7 @@ Section related_facts.
 
   Global Instance elim_bupd_logrel p E Γ e e' P A :
    ElimModal True p false (|==> P) P
-     ({E;Γ} ⊨ e ≼ e' : A) ({E;Γ} ⊨ e ≼ e' : A).
+     ({E;Γ} ⊨ e << e' : A) ({E;Γ} ⊨ e << e' : A).
   Proof.
     rewrite /ElimModal (bupd_fupd E).
     apply: elim_fupd_logrel.
@@ -228,7 +237,7 @@ Section related_facts.
 
   (* This + elim_modal_timless_bupd' is useful for stripping off laters of timeless propositions. *)
   Global Instance is_except_0_logrel E Γ e e' A :
-    IsExcept0 ({E;Γ} ⊨ e ≼ e' : A).
+    IsExcept0 ({E;Γ} ⊨ e << e' : A).
   Proof.
     rewrite /IsExcept0.
     iIntros "HL".
@@ -239,12 +248,12 @@ Section related_facts.
 End related_facts.
 
 Section monadic.
-  Context `{logrelG Σ}.
+  Context `{relocG Σ}.
 
   Lemma refines_ret E Γ e1 e2 A :
     is_closed_expr [] e1 →
     is_closed_expr [] e2 →
-    interp_expr E e1 e2 A -∗ {E;Γ} ⊨ e1 ≼ e2 : A.
+    interp_expr E e1 e2 A -∗ {E;Γ} ⊨ e1 << e2 : A.
   Proof.
     iIntros (??) "HA".
     rewrite refines_eq /refines_def.
@@ -253,10 +262,10 @@ Section monadic.
   Qed.
 
   Lemma refines_bind A E Γ A' e e' K K' :
-    ({E;Γ} ⊨ e ≼ e' : A) -∗
+    ({E;Γ} ⊨ e << e' : A) -∗
     (∀ v v', A v v' -∗
-             ({⊤;Γ} ⊨ fill K (of_val v) ≼ fill K' (of_val v') : A')) -∗
-    ({E;Γ} ⊨ fill K e ≼ fill K' e' : A').
+             ({⊤;Γ} ⊨ fill K (of_val v) << fill K' (of_val v') : A')) -∗
+    ({E;Γ} ⊨ fill K e << fill K' e' : A').
   Proof.
     iIntros "Hm Hf".
     rewrite refines_eq /refines_def.

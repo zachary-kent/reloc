@@ -6,7 +6,7 @@ From iris.heap_lang Require Export lang notation.
 From reloc.logic Require Export spec_ra.
 Import uPred.
 Section rules.
-  Context `{logrelG Σ}.
+  Context `{relocG Σ}.
   Implicit Types P Q : iProp Σ.
   Implicit Types Φ : val → iProp Σ.
   Implicit Types σ : state.
