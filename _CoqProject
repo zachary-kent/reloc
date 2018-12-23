@@ -5,3 +5,6 @@ theories/logic/spec_ra.v
 theories/logic/spec_rules.v
 theories/logic/model.v
 theories/logic/adequacy.v
+theories/logic/proofmode/spec_tactics.v
+
+theories/tests/tp_tests.v
