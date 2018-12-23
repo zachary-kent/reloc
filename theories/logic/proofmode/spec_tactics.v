@@ -1,6 +1,9 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Tactics for updating the specification program. *)
-From iris.proofmode Require Import coq_tactics ltac_tactics sel_patterns environments.
+From iris.proofmode Require Import
+     coq_tactics ltac_tactics
+     sel_patterns environments
+     reduction.
 From reloc.logic Require Export spec_rules.
 Set Default Proof Using "Type".
 
@@ -80,7 +83,6 @@ Proof.
   rewrite -(idemp bi_and (of_envs Δ1)).
   rewrite {1}(envs_lookup_sound' Δ1 false). 2: apply HΔ1.
   rewrite bi.sep_elim_l.
-  (* TODO: I have to repeat this every time *)
   enough (<pers> spec_ctx ρ ∧ of_envs Δ1 -∗ Q) as <-.
   { rewrite -bi.intuitionistically_into_persistently_1.
     destruct p; simpl;
@@ -109,7 +111,7 @@ Tactic Notation "tp_pure" constr(j) open_constr(ef) :=
     |iSolveTC               (* PureExec ϕ n e1 e2 *)
     |try (exact I || reflexivity) (* ψ *)
     |try (exact I || reflexivity) (* ϕ *)
-    |reflexivity || fail "tp_pure: this should not happen"
+    |pm_reflexivity || fail "tp_pure: this should not happen"
     |(* new goal *)].
 
 Tactic Notation "tp_rec" constr(j) := tp_pure j (App _ _).
@@ -175,11 +177,11 @@ Tactic Notation "tp_store" constr(j) :=
     |tp_bind_helper
     |iAssumptionCore || fail "tp_store: cannot find '? ↦ₛ ?'"
     |iSolveTC || fail "tp_store: cannot convert the argument to a value"
-    |reflexivity || fail "tp_store: this should not happen"
+    |pm_reflexivity || fail "tp_store: this should not happen"
     |(* new goal *)].
 
 (*
-TODO:
+DF:
 If [envs_lookup i1 Δ1 = Some (p, spec_ctx ρ)] and
    [envs_lookup i2 Δ1 = Some (false, j ⤇ fill K e)],
 how can we prove that [i1 <> i2]? If we can do that then we can utilize
@@ -230,24 +232,25 @@ Tactic Notation "tp_load" constr(j) :=
     |iAssumptionCore || fail "tp_load: cannot find '" j " ⤇ ?'"
     |tp_bind_helper
     |iAssumptionCore || fail "tp_load: cannot find '? ↦ₛ ?'"
-    |reflexivity || fail "tp_load: this should not happen"
+    |pm_reflexivity || fail "tp_load: this should not happen"
     |(* new goal *)].
 
-(*Lemma tac_tp_cas_fail `{logrelG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e l e1 e2 v' v1 v2 Q q :
+Lemma tac_tp_cas_fail `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l : loc) e1 e2 v' v1 v2 Q q :
   nclose specN ⊆ E1 →
   envs_lookup i1 Δ1 = Some (p, spec_ctx ρ) →
   envs_lookup_delete false i2 Δ1 = Some (false, j ⤇ e, Δ2)%I →
-  e = fill K' (CAS (Lit (Loc l)) e1 e2) →
-  to_val e1 = Some v1 →
-  to_val e2 = Some v2 →
+  e = fill K' (CAS #l e1 e2) →
+  IntoVal e1 v1 →
+  IntoVal e2 v2 →
   envs_lookup i3 Δ2 = Some (false, l ↦ₛ{q} v')%I →
   v' ≠ v1 →
-  envs_simple_replace i3 false 
+  vals_cas_compare_safe v' v1 →
+  envs_simple_replace i3 false
     (Esnoc (Esnoc Enil i2 (j ⤇ fill K' #false)) i3 (l ↦ₛ{q} v')%I) Δ2 = Some Δ3 →
   envs_entails Δ3 (|={E1,E2}=> Q) →
   envs_entails Δ1 (|={E1,E2}=> Q).
 Proof.
-  rewrite envs_entails_eq. intros ??? Hfill ??? Hcas ? HQ.
+  rewrite envs_entails_eq. intros ??? Hfill <-<-? Hcas ?? HQ.
   rewrite -(idemp bi_and (of_envs Δ1)).
   rewrite {1}(envs_lookup_sound' Δ1 false). 2: eassumption.
   rewrite bi.sep_elim_l.
@@ -257,19 +260,19 @@ Proof.
     by rewrite ?(bi.intuitionistic_intuitionistically (spec_ctx ρ)). }
   rewrite bi.persistently_and_intuitionistically_sep_l.
   rewrite bi.intuitionistic_intuitionistically.
-  rewrite envs_lookup_delete_sound //; simpl.
-  rewrite (envs_simple_replace_sound Δ2 Δ3 i3) //; simpl. 
+  rewrite envs_lookup_delete_sound // /=.
+  rewrite (envs_simple_replace_sound Δ2 Δ3 i3) // /=.
   rewrite Hfill.
   (* (S (spec_ctx ρ) (S (j => fill _ _) (S (l ↦ v) ..))) *)
   rewrite (assoc _ (spec_ctx ρ) (j ⤇ fill K' _)%I).
   (* (S (S (spec_ctx ρ) (j => fill _ _)) (S (l ↦ v) ..)) *)
   rewrite assoc.
-  rewrite -(assoc _ (spec_ctx ρ) (j ⤇ fill K' _)%I).  
-  rewrite step_cas_fail //. 
+  rewrite -(assoc _ (spec_ctx ρ) (j ⤇ fill K' _)%I).
+  rewrite step_cas_fail //.
   rewrite -(fupd_trans E1 E1 E2).
   rewrite fupd_frame_r.
   apply fupd_mono.
-  by rewrite (comm _ (j ⤇ _)%I) right_id bi.wand_elim_r.
+  by rewrite (comm _ (j ⤇ _)%I) /= right_id bi.wand_elim_r.
 Qed.
 
 Tactic Notation "tp_cas_fail" constr(j) :=
@@ -277,30 +280,32 @@ Tactic Notation "tp_cas_fail" constr(j) :=
   eapply (tac_tp_cas_fail j);
     [solve_ndisj || fail "tp_cas_fail: cannot prove 'nclose specN ⊆ ?'"
     |iAssumptionCore || fail "tp_cas_fail: cannot find spec_ctx" (* spec_ctx *)
-    |iAssumptionCore || fail "tp_cas_fail: cannot find '" j " ⤇ ?'" 
-    |tp_bind_helper
-    |try fast_done
-    |try fast_done
-    |iAssumptionCore || fail "tp_cas_fail: cannot find '? ↦ ?'" 
-    |(* v' ≠ v1 *)
-    |reflexivity || fail "tp_cas_fail: this should not happen"
+    |iAssumptionCore || fail "tp_cas_fail: cannot find '" j " ⤇ ?'"
+    |tp_bind_helper (* e = K'[CAS _ _ _] *)
+    |iSolveTC
+    |iSolveTC
+    |iAssumptionCore || fail "tp_cas_fail: cannot find '? ↦ ?'"
+    |try congruence (* v' ≠ v1 *)
+    |try (fast_done || (left; fast_done) || (right; fast_done)) (* vals_cas_compare_safe *)
+    |pm_reflexivity || fail "tp_cas_fail: this should not happen"
     |(* new goal *)].
 
-Lemma tac_tp_cas_suc `{logrelG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e l e1 e2 v' v1 v2 Q :
+Lemma tac_tp_cas_suc `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l : loc) e1 e2 v' v1 v2 Q :
   nclose specN ⊆ E1 →
   envs_lookup i1 Δ1 = Some (p, spec_ctx ρ) →
   envs_lookup_delete false i2 Δ1 = Some (false, j ⤇ e, Δ2)%I →
-  e = fill K' (CAS (Lit (Loc l)) e1 e2) →
-  to_val e1 = Some v1 →
-  to_val e2 = Some v2 →
+  e = fill K' (CAS #l e1 e2) →
+  IntoVal e1 v1 →
+  IntoVal e2 v2 →
   envs_lookup i3 Δ2 = Some (false, l ↦ₛ v')%I →
   v' = v1 →
-  envs_simple_replace i3 false 
+  val_is_unboxed v1 →
+  envs_simple_replace i3 false
     (Esnoc (Esnoc Enil i2 (j ⤇ fill K' #true)) i3 (l ↦ₛ v2)%I) Δ2 = Some Δ3 →
   envs_entails Δ3 (|={E1,E2}=> Q) →
   envs_entails Δ1 (|={E1,E2}=> Q).
 Proof.
-  rewrite envs_entails_eq. intros ??? Hfill ??? Hcas ? HQ.
+  rewrite envs_entails_eq. intros ??? Hfill <-<-? Hcas Hsafe ? HQ.
   rewrite -(idemp bi_and (of_envs Δ1)).
   rewrite {1}(envs_lookup_sound' Δ1 false). 2: eassumption.
   rewrite bi.sep_elim_l.
@@ -310,15 +315,15 @@ Proof.
     by rewrite ?(bi.intuitionistic_intuitionistically (spec_ctx ρ)). }
   rewrite bi.persistently_and_intuitionistically_sep_l.
   rewrite bi.intuitionistic_intuitionistically.
-  rewrite envs_lookup_delete_sound //; simpl.
-  rewrite (envs_simple_replace_sound Δ2 Δ3 i3) //; simpl. 
-  rewrite right_id Hfill.
+  rewrite envs_lookup_delete_sound // /=.
+  rewrite (envs_simple_replace_sound Δ2 Δ3 i3) //.
+  simpl. rewrite right_id Hfill.
   (* (S (spec_ctx ρ) (S (j => fill _ _) (S (l ↦ v) ..))) *)
   rewrite (assoc _ (spec_ctx ρ) (j ⤇ fill K' _)%I).
   (* (S (S (spec_ctx ρ) (j => fill _ _)) (S (l ↦ v) ..)) *)
   rewrite assoc.
-  rewrite -(assoc _ (spec_ctx ρ) (j ⤇ fill K' _)%I).  
-  rewrite step_cas_suc //. 
+  rewrite -(assoc _ (spec_ctx ρ) (j ⤇ fill K' _)%I).
+  rewrite step_cas_suc //.
   rewrite -(fupd_trans E1 E1 E2).
   rewrite fupd_frame_r.
   apply fupd_mono.
@@ -330,43 +335,23 @@ Tactic Notation "tp_cas_suc" constr(j) :=
   eapply (tac_tp_cas_suc j);
     [solve_ndisj || fail "tp_cas_suc: cannot prove 'nclose specN ⊆ ?'"
     |iAssumptionCore || fail "tp_cas_suc: cannot find spec_ctx" (* spec_ctx *)
-    |iAssumptionCore || fail "tp_cas_suc: cannot find '" j " ⤇ ?'" 
-    |tp_bind_helper
-    |try fast_done
-    |try fast_done
+    |iAssumptionCore || fail "tp_cas_suc: cannot find '" j " ⤇ ?'"
+    |tp_bind_helper (* e = K'[CAS _ _ _] *)
+    |iSolveTC
+    |iSolveTC
     |iAssumptionCore || fail "tp_cas_suc: cannot find '? ↦ ?'"
-    |try reflexivity (* v' = v1 *)
-    |reflexivity || fail "tp_cas_suc: this should not happen"
+    |try congruence     (* v' = v1 *)
+    |try fast_done      (* val_is_unboxed v1 *)
+    |pm_reflexivity || fail "tp_cas_suc: this should not happen"
     |(* new goal *)].
 
-Tactic Notation "tp_pure" constr(j) := tp_pure j _.
-Tactic Notation "tp_rec" constr(j) := tp_pure j (App (Rec _ _ _) _).
-Tactic Notation "tp_seq" constr(j) := tp_rec j.
-Tactic Notation "tp_let" constr(j) := tp_rec j.
-Tactic Notation "tp_fst" constr(j) := tp_pure j (Fst (Pair _ _)).
-Tactic Notation "tp_snd" constr(j) := tp_pure j (Snd (Pair _ _)).
-Tactic Notation "tp_proj" constr(j) := tp_pure j (_ (Pair _ _)).
-Tactic Notation "tp_case_inl" constr(j) := tp_pure j (Case (InjL _) _ _).
-Tactic Notation "tp_case_inr" constr(j) := tp_pure j (Case (InjR _) _ _).
-Tactic Notation "tp_case" constr(j) := tp_pure j (Case _ _ _).
-Tactic Notation "tp_binop" constr(j) := tp_pure j (BinOp _ _ _).
-Tactic Notation "tp_op" constr(j) := tp_binop j.
-Tactic Notation "tp_if_true" constr(j) := tp_pure j (If #true _ _).
-Tactic Notation "tp_if_false" constr(j) := tp_pure j (If #false _ _).
-Tactic Notation "tp_if" constr(j) := tp_pure j (If _ _ _).
-Tactic Notation "tp_unfold" constr(j) := tp_pure j (Unfold (Fold _)).
-Tactic Notation "tp_fold" constr(j) := tp_unfold j.
-Tactic Notation "tp_tlam" constr(j) := tp_pure j (TApp (TLam _)).
-Tactic Notation "tp_unpack" constr(j) := tp_pure j (Unpack (Pack _) _).
-Tactic Notation "tp_pack" constr(j) := tp_unpack j.
-
-Lemma tac_tp_fork `{logrelG Σ} j Δ1 Δ2 E1 E2 ρ i1 i2 p K' e e' Q :
+Lemma tac_tp_fork `{relocG Σ} j Δ1 Δ2 E1 E2 ρ i1 i2 p K' e e' Q :
   nclose specN ⊆ E1 →
   envs_lookup i1 Δ1 = Some (p, spec_ctx ρ) →
   envs_lookup i2 Δ1 = Some (false, j ⤇ e)%I →
   e = fill K' (Fork e') →
-  envs_simple_replace i2 false 
-    (Esnoc Enil i2 (j ⤇ fill K' Unit)) Δ1 = Some Δ2 →
+  envs_simple_replace i2 false
+    (Esnoc Enil i2 (j ⤇ fill K' #())) Δ1 = Some Δ2 →
   envs_entails Δ2 (∀ (j' : nat), j' ⤇ e' -∗ |={E1,E2}=> Q)%I →
   envs_entails Δ1 (|={E1,E2}=> Q).
 Proof.
@@ -386,8 +371,8 @@ Proof.
   rewrite (assoc _ (spec_ctx ρ) (j ⤇ _)%I).
   rewrite step_fork //.
   rewrite -(fupd_trans E1 E1 E2).
-  rewrite fupd_frame_r. 
-  apply fupd_mono. 
+  rewrite fupd_frame_r.
+  apply fupd_mono.
   rewrite bi.sep_exist_r.
   apply bi.exist_elim. intros j'.
   rewrite (comm _ (j ⤇ _)%I (j' ⤇ _)%I).
@@ -403,9 +388,9 @@ Tactic Notation "tp_fork" constr(j) :=
   eapply (tac_tp_fork j);
     [solve_ndisj || fail "tp_fork: cannot prove 'nclose specN ⊆ ?'"
     |iAssumptionCore || fail "tp_fork: cannot find spec_ctx" (* spec_ctx *)
-    |iAssumptionCore || fail "tp_fork: cannot find '" j " ⤇ ?'" 
+    |iAssumptionCore || fail "tp_fork: cannot find '" j " ⤇ ?'"
     |tp_bind_helper
-    |reflexivity || fail "tp_fork: this should not happen"
+    |pm_reflexivity || fail "tp_fork: this should not happen"
     |(* new goal *)].
 
 Tactic Notation "tp_fork" constr(j) "as" ident(j') constr(H) :=
@@ -413,9 +398,9 @@ Tactic Notation "tp_fork" constr(j) "as" ident(j') constr(H) :=
   eapply (tac_tp_fork j);
     [solve_ndisj || fail "tp_fork: cannot prove 'nclose specN ⊆ ?'"
     |iAssumptionCore || fail "tp_fork: cannot find spec_ctx" (* spec_ctx *)
-    |iAssumptionCore || fail "tp_fork: cannot find '" j " ⤇ ?'" 
+    |iAssumptionCore || fail "tp_fork: cannot find '" j " ⤇ ?'"
     |tp_bind_helper
-    |reflexivity || fail "tp_fork: this should not happen"
+    |pm_reflexivity || fail "tp_fork: this should not happen"
     |(iIntros (j') || fail 1 "tp_fork: " j' " not fresh ");
      (iIntros H || fail 1 "tp_fork: " H " not fresh")
     (* new goal *)].
@@ -423,19 +408,19 @@ Tactic Notation "tp_fork" constr(j) "as" ident(j') constr(H) :=
 Tactic Notation "tp_fork" constr(j) "as" ident(j') :=
   let H := iFresh in tp_fork j as j' H.
 
-Lemma tac_tp_alloc `{logrelG Σ} j Δ1 E1 E2 ρ i1 i2 p K' e e' v Q :
+Lemma tac_tp_alloc `{relocG Σ} j Δ1 E1 E2 ρ i1 i2 p K' e e' v Q :
   nclose specN ⊆ E1 →
   envs_lookup i1 Δ1 = Some (p, spec_ctx ρ) →
   envs_lookup i2 Δ1 = Some (false, j ⤇ e)%I →
-  e = fill K' (Alloc e') →
-  to_val e' = Some v →
-  (∀ l, ∃ Δ2,
+  e = fill K' (ref e') →
+  IntoVal e' v →
+  (∀ l : loc, ∃ Δ2,
     envs_simple_replace i2 false
-       (Esnoc Enil i2 (j ⤇ fill K' (Lit (Loc l)))) Δ1 = Some Δ2 ∧
+       (Esnoc Enil i2 (j ⤇ fill K' #l)) Δ1 = Some Δ2 ∧
     (envs_entails Δ2 ((l ↦ₛ v) -∗ |={E1,E2}=> Q)%I)) →
   envs_entails Δ1 (|={E1,E2}=> Q).
 Proof.
-  rewrite envs_entails_eq. intros ??? Hfill ? HQ.
+  rewrite envs_entails_eq. intros ??? Hfill <- HQ.
   rewrite -(idemp bi_and (of_envs Δ1)).
   rewrite {1}(envs_lookup_sound' Δ1 false i1). 2: eassumption.
   rewrite bi.sep_elim_l /=.
@@ -446,14 +431,14 @@ Proof.
   rewrite bi.persistently_and_intuitionistically_sep_l.
   rewrite bi.intuitionistic_intuitionistically.
   rewrite (envs_lookup_sound' Δ1 false i2). 2: eassumption.
-  rewrite Hfill assoc /=. 
+  rewrite Hfill assoc /=.
   rewrite step_alloc //.
   rewrite -(fupd_trans E1 E1 E2).
   rewrite fupd_frame_r.
   apply fupd_mono.
   rewrite bi.sep_exist_r.
   apply bi.exist_elim=> l.
-  destruct (HQ l) as (Δ2 & HΔ2 & HQ').  
+  destruct (HQ l) as (Δ2 & HΔ2 & HQ').
   rewrite (envs_simple_replace_sound' _ _ i2 _ _ HΔ2).
   rewrite (comm _ (j ⤇ _)%I (l ↦ₛ _)%I).
   rewrite -assoc /= right_id.
@@ -463,14 +448,19 @@ Proof.
 Qed.
 
 Tactic Notation "tp_alloc" constr(j) "as" ident(j') constr(H) :=
+  let finish _ :=
+      first [ intros j' | fail 1 "tp_alloc:" j' "not fresh"];
+        eexists; split;
+        [ pm_reflexivity
+        | iIntros H || fail 1 "tp_alloc:" H "not correct intro pattern" ] in
   iStartProof;
   eapply (tac_tp_alloc j);
     [solve_ndisj || fail "tp_alloc: cannot prove 'nclose specN ⊆ ?'"
     |iAssumptionCore || fail "tp_alloc: cannot find spec_ctx" (* spec_ctx *)
     |iAssumptionCore || fail "tp_alloc: cannot find '" j " ⤇ ?'"
     |tp_bind_helper
-    |try fast_done
-    |intros j'; eexists; split; [by reflexivity| iIntros H]
+    |iSolveTC || fail "tp_alloc: expressions is not a value"
+    |finish ()
     (* new goal *)].
 
 Tactic Notation "tp_alloc" constr(j) "as" ident(j') :=
@@ -555,5 +545,4 @@ Tactic Notation "tp_apply" constr(j) open_constr(lem) "with" constr(Hs) := tp_ap
 Tactic Notation "tp_apply" constr(j) open_constr(lem) "as" constr(Hr) := tp_apply j lem with "" as Hr.
 
 Tactic Notation "tp_apply" constr(j) open_constr(lem) := tp_apply j lem with "" as "".
-*)
 *)
