@@ -185,7 +185,10 @@ Section environment_properties.
     iSplit.
     - iPureIntro=> y. rewrite !lookup_empty -!not_eq_None_Some. by naive_solver.
     - by rewrite map_zip_with_empty.
- Qed.
+  Qed.
+
+  Global Instance env_ltyped2_persistent Γ vs : Persistent (⟦ Γ ⟧* vs).
+  Proof. apply _. Qed.
 
 End environment_properties.
 
@@ -250,7 +253,7 @@ End related_facts.
 Section monadic.
   Context `{relocG Σ}.
 
-  Lemma refines_ret E Γ e1 e2 A :
+  Lemma refines_ret' E Γ e1 e2 A :
     is_closed_expr [] e1 →
     is_closed_expr [] e2 →
     interp_expr E e1 e2 A -∗ {E;Γ} ⊨ e1 << e2 : A.
@@ -261,7 +264,7 @@ Section monadic.
     rewrite !subst_map_is_closed_nil//.
   Qed.
 
-  Lemma refines_bind A E Γ A' e e' K K' :
+  Lemma refines_bind K K' E Γ A A' e e' :
     ({E;Γ} ⊨ e << e' : A) -∗
     (∀ v v', A v v' -∗
              ({⊤;Γ} ⊨ fill K (of_val v) << fill K' (of_val v') : A')) -∗
@@ -281,6 +284,19 @@ Section monadic.
     rewrite fill_app -!subst_map_fill.
     iMod ("Hf" with "HA Hs HΓ Hj") as "Hf/=".
     by rewrite !subst_map_fill /=.
+  Qed.
+
+  Lemma refines_ret E Γ e1 e2 v1 v2 (A : lty2) :
+    IntoVal e1 v1 →
+    IntoVal e2 v2 →
+    (|={E,⊤}=> A v1 v2) -∗ {E;Γ} ⊨ e1 << e2 : A.
+  Proof.
+    iIntros (<-<-) "HA".
+    rewrite refines_eq /refines_def.
+    iIntros (vvs ρ) "#Hs #HΓ". simpl.
+    iIntros (j K) "Hj /=".
+    iMod "HA" as "HA". iModIntro.
+    iApply wp_value. iExists _. by iFrame.
   Qed.
 
 End monadic.
