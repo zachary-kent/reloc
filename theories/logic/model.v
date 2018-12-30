@@ -8,6 +8,7 @@ From iris.base_logic.lib Require Import invariants.
 From iris.algebra Require Import list.
 From iris.heap_lang Require Import notation proofmode.
 From reloc Require Import logic.spec_rules prelude.ctx_subst.
+From reloc Require Export logic.spec_ra.
 
 (** Semantic intepretation of types *)
 Record lty2 `{invG Σ} := Lty2 {
