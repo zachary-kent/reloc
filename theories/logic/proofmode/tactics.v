@@ -49,17 +49,31 @@ Tactic Notation "tac_bind_helper" open_constr(efoc) :=
        replace e with (fill K' e') by (by rewrite ?fill_app))
   end; reflexivity.
 
+(** Reshape the expression on the RHS untill you can apply `tac` to it *)
+Ltac rel_reshape_cont_r tac :=
+  lazymatch goal with
+  | |- envs_entails _ (refines _ _ _ (fill ?K ?e) _) =>
+    reshape_expr e ltac:(fun K' e' =>
+      tac (K' ++ K) e')
+  | |- envs_entails _ (refines _ _ _ ?e _) =>
+    reshape_expr e ltac:(fun K' e' => tac K' e')
+  end.
+
+
 (* prettify ▷s caused by [MaybeIntoLaterNEnvs] *)
 Ltac rel_finish := pm_prettify.
 
-(** TODO: rel_vals, rel_finish, rel_apply_(l/r) *)
+Ltac rel_values :=
+  iStartProof;
+  iApply refines_ret;
+  eauto with iFrame;
+  rel_finish.
+
+(** TODO: rel_apply_(l/r) *)
 
 (** * Symbolic execution *)
 
 (** Pure reductions *)
-
-Definition if_laterN `{relocG Σ} (b : bool) (n : nat) (P : iProp Σ) :=
-  if b then (▷^n P)%I else P.
 
 Lemma tac_rel_pure_l `{relocG Σ} K e1 ℶ ℶ' E Γ e e2 eres ϕ n m t A :
   e = fill K e1 →
@@ -78,6 +92,19 @@ Proof.
   - rewrite -refines_masked_l //.
 Qed.
 
+Lemma tac_rel_pure_r `{relocG Σ} K e1 ℶ E Γ e e2 eres ϕ n t A :
+  e = fill K e1 →
+  PureExec ϕ n e1 e2 →
+  ϕ →
+  nclose specN ⊆ E →
+  eres = fill K e2 →
+  envs_entails ℶ ({E;Γ} ⊨ t << eres : A) →
+  envs_entails ℶ ({E;Γ} ⊨ t << e : A).
+Proof.
+  intros Hfill Hpure Hϕ ?? Hp. subst.
+  rewrite -refines_pure_r //.
+Qed.
+
 Tactic Notation "rel_pure_l" open_constr(ef) :=
   iStartProof;
   (eapply tac_rel_pure_l;
@@ -90,3 +117,31 @@ Tactic Notation "rel_pure_l" open_constr(ef) :=
    |simpl; reflexivity                           (** eres = fill K e2 *)
    |rel_finish                                   (** new goal *)])
   || fail "rel_pure_l: cannot find the reduct".
+
+Tactic Notation "rel_pure_l" := rel_pure_l _.
+
+(* Tactic Notation "rel_pure_r" open_constr(ef) := *)
+(*   iStartProof; *)
+(*   (eapply tac_rel_pure_r; *)
+(*    [tac_bind_helper ef                           (** e = fill K e1' *) *)
+(*    |iSolveTC                                     (** PureExec ϕ n e1 e2 *) *)
+(*    |try fast_done                                (** The pure condition for PureExec *) *)
+(*    |solve_ndisj || fail "rel_pure_r: cannot solve ↑specN ⊆ ?" *)
+(*    |simpl; reflexivity                           (** eres = fill K e2 *) *)
+(*    |rel_finish                                   (** new goal *)]) *)
+(*   || fail "rel_pure_r: cannot find the reduct". *)
+
+Tactic Notation "rel_pure_r" open_constr(ef) :=
+  iStartProof;
+  rel_reshape_cont_r ltac:(fun K e' =>
+      unify e' ef;
+      eapply (tac_rel_pure_r K e');
+      [reflexivity                  (** e = fill K e1 *)
+      |iSolveTC                     (** PureExec ϕ e1 e2 *)
+      |try fast_done                (** φ *)
+      |solve_ndisj        || fail 1 "rel_pure_r: cannot solve ↑specN ⊆ ?"
+      |simpl; reflexivity           (** eres = fill K e2 *)
+      |rel_finish                   (** new goal *)])
+  || fail "rel_pure_r: cannot find the reduct".
+
+Tactic Notation "rel_pure_r" := rel_pure_r _.
