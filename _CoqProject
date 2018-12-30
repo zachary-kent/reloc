@@ -8,4 +8,6 @@ theories/logic/adequacy.v
 theories/logic/proofmode/spec_tactics.v
 theories/logic/rules.v
 
+theories/typing/types.v
+
 theories/tests/tp_tests.v
