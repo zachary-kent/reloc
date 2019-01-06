@@ -35,21 +35,38 @@ Qed.
 
 (* testing rel_apply_l/r and rel_load_l/r *)
 Lemma test3 l r Γ :
-  l ↦ #3 -∗
+  ▷ l ↦ #3 -∗
   r ↦ₛ #4 -∗
   Γ ⊨ (!#l;;!#l+#1) << (!#r;;#0+!#r) : EqI.
 Proof.
   iIntros "Hl Hr".
   rel_apply_r (refines_load_r with "Hr").
   iIntros "Hr".
-  rel_apply_l refines_load_l. iModIntro. iExists _; iFrame.
-  iNext. iIntros "Hl". simpl.
+  rel_load_l.
   do 2 rel_pure_r.
   do 2 rel_pure_l.
-  rel_load_l.
+  rel_apply_l refines_load_l. iModIntro. iExists _; iFrame.
+  iNext. iIntros "Hl". simpl.
   rel_pure_l.
   rel_load_r.
   rel_pure_r.
+  rel_values.
+Qed.
+
+(* testing (atomic) load with invariants *)
+Lemma test4 l r Γ N :
+  inv N (l ↦ #3) -∗
+  r ↦ₛ #4 -∗
+  Γ ⊨ (!#l;;!#l+#1) << (!#r;;#0+!#r) : EqI.
+Proof.
+  iIntros "#IN Hr".
+  repeat (rel_load_r || rel_pure_r).
+  rel_load_l. iInv N as "?" "Hcl". iModIntro. iExists _; iFrame.
+  iNext. iIntros "Hl". iMod ("Hcl" with "Hl") as "_".
+  repeat (rel_pure_l || rel_load_l).
+  iInv N as "?" "Hcl". iModIntro. iExists _; iFrame.
+  iNext. iIntros "Hl". iMod ("Hcl" with "Hl") as "_".
+  rel_pure_l.
   rel_values.
 Qed.
 

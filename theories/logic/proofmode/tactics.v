@@ -239,8 +239,9 @@ Tactic Notation "rel_load_l" :=
          |iSolveTC          (** IntoLaters *)
          |iAssumptionCore   (** find l ↦ - *)
          |reflexivity       (** eres = fill K v *)
-         |rel_finish        (** new goal *)]
-        |eapply (refines_load_l K)])
+         |                  (** new goal *)]
+        |iApply (refines_load_l K)];
+        rel_finish)
   || fail "rel_load_l: cannot find 'Load'".
 
 (* The structure for the tacticals on the right hand side is a bit
