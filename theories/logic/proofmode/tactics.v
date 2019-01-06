@@ -49,7 +49,16 @@ Tactic Notation "tac_bind_helper" open_constr(efoc) :=
        replace e with (fill K' e') by (by rewrite ?fill_app))
   end; reflexivity.
 
-(** Reshape the expression on the RHS untill you can apply `tac` to it *)
+(** Reshape the expression on the LHS/RHS untill you can apply `tac` to it *)
+Ltac rel_reshape_cont_l tac :=
+  lazymatch goal with
+  | |- envs_entails _ (refines _ _ (fill ?K ?e) _ _) =>
+    reshape_expr e ltac:(fun K' e' =>
+      tac (K' ++ K) e')
+  | |- envs_entails _ (refines _ _ ?e _ _) =>
+    reshape_expr e ltac:(fun K' e' => tac K' e')
+  end.
+
 Ltac rel_reshape_cont_r tac :=
   lazymatch goal with
   | |- envs_entails _ (refines _ _ _ (fill ?K ?e) _) =>
@@ -118,18 +127,21 @@ Tactic Notation "rel_pure_l" open_constr(ef) :=
    |rel_finish                                   (** new goal *)])
   || fail "rel_pure_l: cannot find the reduct".
 
-Tactic Notation "rel_pure_l" := rel_pure_l _.
+(* Tactic Notation "rel_pure_l" := rel_pure_l _. *)
 
-(* Tactic Notation "rel_pure_r" open_constr(ef) := *)
-(*   iStartProof; *)
-(*   (eapply tac_rel_pure_r; *)
-(*    [tac_bind_helper ef                           (** e = fill K e1' *) *)
-(*    |iSolveTC                                     (** PureExec ϕ n e1 e2 *) *)
-(*    |try fast_done                                (** The pure condition for PureExec *) *)
-(*    |solve_ndisj || fail "rel_pure_r: cannot solve ↑specN ⊆ ?" *)
-(*    |simpl; reflexivity                           (** eres = fill K e2 *) *)
-(*    |rel_finish                                   (** new goal *)]) *)
-(*   || fail "rel_pure_r: cannot find the reduct". *)
+Tactic Notation "rel_pure_l" :=
+  iStartProof;
+  rel_reshape_cont_l ltac:(fun K e' =>
+      eapply (tac_rel_pure_l K e');
+      [reflexivity                  (** e = fill K e1 *)
+      |iSolveTC                     (** PureExec ϕ e1 e2 *)
+      |try fast_done                (** φ *)
+      |first [left; split; reflexivity              (** Here we decide if the mask E is ⊤ *)
+             | right; reflexivity]                  (**    (m = n ∧ E = ⊤) ∨ (m = 0) *)
+      |iSolveTC                                     (** IntoLaters *)
+      |simpl; reflexivity           (** eres = fill K e2 *)
+      |rel_finish                   (** new goal *)])
+  || fail "rel_pure_l: cannot find the reduct".
 
 Tactic Notation "rel_pure_r" open_constr(ef) :=
   iStartProof;
