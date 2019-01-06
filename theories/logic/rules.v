@@ -268,6 +268,23 @@ Section rules.
   Qed.
 
   (** ** Primitive structural rules *)
+  Lemma refines_spec_ctx Γ E e e' A :
+    ((∃ ρ, spec_ctx ρ) -∗ {E;Γ} ⊨ e << e' : A) -∗
+    ({E;Γ} ⊨ e << e' : A).
+  Proof.
+    rewrite refines_eq /refines_def.
+    iIntros "Hctx". iIntros (vvs ρ') "#Hspec".
+    rewrite -(bi.intuitionistic_intuitionistically (spec_ctx _)).
+    rewrite (bi.intuitionistically_sep_dup (spec_ctx _)).
+    iDestruct "Hspec" as "[#Hspec #Hspec']".
+    iRevert "Hspec'".
+    rewrite (bi.intuitionistic_intuitionistically (spec_ctx _)).
+    iAssert (∃ ρ, spec_ctx ρ)%I as "Hρ".
+    { eauto. }
+    iClear "Hspec".
+    iRevert (vvs ρ').
+    by iApply "Hctx".
+  Qed.
 
   Lemma refines_var Γ x A :
     Γ !! x = Some A →
@@ -279,6 +296,39 @@ Section rules.
     iDestruct "H" as %Hvvs.
     simpl. rewrite !lookup_fmap !Hvvs /=.
     iModIntro. iApply wp_value. iExists _; by iFrame.
+  Qed.
+
+  Lemma refines_rec Γ (f x : binder) e e' A A' :
+    □(binder_insert f (A → A')%lty2 (binder_insert x A Γ) ⊨ e << e' : A') -∗
+    Γ ⊨ (rec: f x := e) << (rec: f x := e') : (A → A')%lty2.
+  Proof.
+    iIntros "#H".
+    rewrite refines_eq /refines_def.
+    iIntros (vvs ρ) "#Hρ #HΓ /=".
+    iIntros (j K) "Hj". iModIntro.
+    tp_pure j _. wp_pure _.
+    iExists _. iFrame. iLöb as "IH".
+    iAlways. iIntros (v1 v2) "#HA". clear j K.
+    iIntros (j K) "Hj". iModIntro. wp_pures. tp_rec j.
+
+    set (r := (RecV f x (subst_map (binder_delete x (binder_delete f (fst <$> vvs))) e), RecV f x (subst_map (binder_delete x (binder_delete f (snd <$> vvs))) e'))).
+    set (vvs' := binder_insert f r (binder_insert x (v1,v2) vvs)).
+    iSpecialize ("H" $! vvs' with "Hρ [#]").
+    { iApply (env_ltyped2_insert with "IH").
+      iApply (env_ltyped2_insert with "HA").
+      by iFrame. }
+
+    iSpecialize ("H" $! j K). iApply fupd_wp.
+    unfold vvs'.
+    destruct x as [|x], f as [|f];
+      rewrite /= ?fmap_insert ?subst_map_insert //;
+      try by iApply "H".
+    destruct (decide (x = f)) as [->|]; iSimpl in "H".
+    - rewrite !delete_insert_delete !subst_subst !delete_idemp.
+      by iApply "H".
+    - rewrite !delete_insert_ne // subst_map_insert.
+      rewrite !(subst_subst_ne _ x f) // subst_map_insert.
+      by iApply "H".
   Qed.
 
   (** This rule is useful for proving that functions refine each other *)
@@ -307,24 +357,6 @@ Section rules.
   (*   (□ (∀ (w w' : val), A w w' *)
   (*     -∗ ∅ ⊨ v w << v' w' : A'))%I. *)
   (* Proof. Abort. *)
-
-  Lemma refines_spec_ctx Γ E e e' A :
-    ((∃ ρ, spec_ctx ρ) -∗ {E;Γ} ⊨ e << e' : A) -∗
-    ({E;Γ} ⊨ e << e' : A).
-  Proof.
-    rewrite refines_eq /refines_def.
-    iIntros "Hctx". iIntros (vvs ρ') "#Hspec".
-    rewrite -(bi.intuitionistic_intuitionistically (spec_ctx _)).
-    rewrite (bi.intuitionistically_sep_dup (spec_ctx _)).
-    iDestruct "Hspec" as "[#Hspec #Hspec']".
-    iRevert "Hspec'".
-    rewrite (bi.intuitionistic_intuitionistically (spec_ctx _)).
-    iAssert (∃ ρ, spec_ctx ρ)%I as "Hρ".
-    { eauto. }
-    iClear "Hspec".
-    iRevert (vvs ρ').
-    by iApply "Hctx".
-  Qed.
 
   (** * Some derived (symbolic execution) rules *)
 
