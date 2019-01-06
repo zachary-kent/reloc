@@ -269,6 +269,18 @@ Section rules.
 
   (** ** Primitive structural rules *)
 
+  Lemma refines_var Γ x A :
+    Γ !! x = Some A →
+    Γ ⊨ Var x << Var x : A.
+  Proof.
+    rewrite refines_eq /refines_def.
+    iIntros (? vvs ρ) "#Hs #HΓ"; iIntros (j K) "Hj".
+    iDestruct (env_ltyped2_lookup with "HΓ") as (v1 v2) "[H Hvv]"; first eassumption.
+    iDestruct "H" as %Hvvs.
+    simpl. rewrite !lookup_fmap !Hvvs /=.
+    iModIntro. iApply wp_value. iExists _; by iFrame.
+  Qed.
+
   (** This rule is useful for proving that functions refine each other *)
   Lemma refines_arrow_val Γ (f x f' x' : binder) e e' eb eb' A A' :
     e = (RecV f x eb)%E →
@@ -287,6 +299,7 @@ Section rules.
     iApply ("H" $! v1 v2 with "Hvv Hs HΓ").
   Qed.
 
+  (* TODO *)
   (* Lemma interp_val_arrow (A A' : lty2) (v v' : val) ρ : *)
   (*   spec_ctx ρ -∗ *)
   (*   (A → A')%lty2 v v' *)
@@ -314,20 +327,6 @@ Section rules.
   Qed.
 
   (** * Some derived (symbolic execution) rules *)
-
-  Lemma refines_arrow Γ (f x f' x' : binder) e e' eb eb' A A' :
-    e = (RecV f x eb)%E →
-    e' = (RecV f' x' eb')%E →
-    □(∀ v1 v2, □(Γ ⊨ v1 << v2 : A) -∗
-      Γ ⊨ App e (of_val v1) << App e' (of_val v2) : A') -∗
-    Γ ⊨ e << e' : (A → A')%lty2.
-  Proof.
-    iIntros (??) "#H".
-    iApply refines_arrow_val; eauto.
-    iAlways. iIntros (v1 v2) "#HA".
-    iApply "H". iAlways.
-    by iApply refines_ret.
-  Qed.
 
   (** ** Stateful reductions on the LHS *)
 
