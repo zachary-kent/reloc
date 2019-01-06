@@ -7,6 +7,7 @@ theories/logic/model.v
 theories/logic/adequacy.v
 theories/logic/proofmode/spec_tactics.v
 theories/logic/rules.v
+theories/logic/derived.v
 theories/logic/proofmode/tactics.v
 
 theories/typing/types.v
