@@ -74,6 +74,27 @@ Section semtypes.
     ∃ l1 l2: loc, ⌜w1 = #l1⌝ ∧ ⌜w2 = #l2⌝ ∧
       inv (relocN .@ (l1,l2)) (∃ v1 v2, l1 ↦ v1 ∗ l2 ↦ₛ v2 ∗ A v1 v2))%I.
 
+  Definition lty2_prod (A B : lty2) : lty2 := Lty2 (λ w1 w2,
+    ∃ v1 v2 v1' v2', ⌜w1 = (v1,v1')%V⌝ ∧ ⌜w2 = (v2,v2')%V⌝ ∧
+        A v1 v2 ∗ B v1' v2')%I.
+
+  Definition lty2_sum (A B : lty2) : lty2 := Lty2 (λ w1 w2,
+    ∃ v1 v2, (⌜w1 = InjLV v1⌝ ∧ ⌜w2 = InjLV v2⌝ ∧ A v1 v2)
+          ∨  (⌜w1 = InjRV v1⌝ ∧ ⌜w2 = InjRV v2⌝ ∧ B v1 v2))%I.
+
+  Definition lty2_rec1 (C : lty2C -n> lty2C) (rec : lty2) : lty2 :=
+    Lty2 (λ w1 w2, ▷ C rec w1 w2)%I.
+  Instance lty2_rec1_contractive C : Contractive (lty2_rec1 C).
+  Proof.
+    intros n. intros P Q HPQ.
+    unfold lty2_rec1. intros w1 w2.
+    apply bi.later_contractive.
+    destruct n; try done.
+    simpl in HPQ; simpl. f_equiv. by apply C.
+  Qed.
+
+  Definition lty2_rec (C : lty2C -n> lty2C) : lty2 := fixpoint (lty2_rec1 C).
+
 End semtypes.
 
 (* Nice notations *)
