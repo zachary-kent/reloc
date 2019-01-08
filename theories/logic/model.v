@@ -30,14 +30,16 @@ Section lty2_ofe.
   Lemma lty2_ofe_mixin : OfeMixin lty2.
   Proof. by apply (iso_ofe_mixin (lty2_car : lty2 → (val -c> val -c> iProp Σ))). Qed.
   Canonical Structure lty2C := OfeT lty2 lty2_ofe_mixin.
-  Global Instance lty2_cofe : Cofe ltyC2.
+
+  Global Instance lty2_cofe : Cofe lty2C.
   Proof.
-    (* apply (iso_cofe_subtype' (λ A : val -c> val -c> iProp Σ, ∀ w1 w2, Persistent (A w1 w2)) *)
-    (*   (@Lty2 _ _ _) lty2_car)=> //. *)
-    (* - apply _. *)
-    (* - apply limit_preserving_forall=> w. *)
-    (*   by apply bi.limit_preserving_Persistent=> n ??. *)
-  Admitted.
+    apply (iso_cofe_subtype' (λ A : val -c> val -c> iProp Σ, ∀ w1 w2, Persistent (A w1 w2)) (@Lty2 _ _) lty2_car)=>//.
+    - apply _.
+    - apply limit_preserving_forall=> w1.
+      apply limit_preserving_forall=> w2.
+      apply bi.limit_preserving_Persistent.
+      intros n P Q HPQ. apply (HPQ w1 w2).
+  Qed.
 
   Global Instance lty2_inhabited : Inhabited lty2 := populate (Lty2 inhabitant).
 
