@@ -68,7 +68,7 @@ Reserved Notation "Γ ⊢ₜ e : τ" (at level 74, e, τ at next level).
 
 (** We model type-level lambdas and applications as thunks *)
 Notation "Λ: e" := (λ: <>, e)%E (at level 200).
-Notation "'TApp' e" := (e #())%E (at level 200).
+Notation "'TApp' e" := (App e%E #()%E) (at level 200).
 
 (* To unfold a recursive type, we need to take a step. We thus define the
 unfold operator to be the identity function. *)
