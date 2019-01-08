@@ -331,6 +331,21 @@ Section rules.
       by iApply "H".
   Qed.
 
+  Lemma refines_fork Γ e e' :
+    (Γ ⊨ e << e' : ()%lty2) -∗
+    Γ ⊨ Fork e << Fork e' : ().
+  Proof.
+    rewrite refines_eq /refines_def.
+    iIntros "H".
+    iIntros (vvs ρ) "#Hs HΓ"; iIntros (j K) "Hj /=".
+    tp_fork j as i "Hi". iModIntro.
+    iSpecialize ("H" with "Hs HΓ").
+    iSpecialize ("H" $! i [] with "Hi"). simpl.
+    iApply (wp_fork with "[H]").
+    - iNext. iMod "H". iApply (wp_wand with "H"). eauto.
+    - iNext. iExists _. by iFrame.
+  Qed.
+
   (** This rule is useful for proving that functions refine each other *)
   Lemma refines_arrow_val Γ (f x f' x' : binder) e e' eb eb' A A' :
     e = (RecV f x eb)%E →
