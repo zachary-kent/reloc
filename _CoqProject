@@ -11,6 +11,7 @@ theories/logic/derived.v
 theories/logic/proofmode/tactics.v
 
 theories/typing/types.v
+theories/typing/interp.v
 
 theories/tests/tp_tests.v
 theories/tests/proofmode_tests.v

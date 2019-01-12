@@ -25,8 +25,8 @@ Existing Instance lty2_persistent.
 Section lty2_ofe.
   Context `{relocG Σ}.
 
-  Instance lty2_equiv : Equiv lty2 := λ A B, ∀ w1 w2, A w1 w2 ≡ B w1 w2.
-  Instance lty2_dist : Dist lty2 := λ n A B, ∀ w1 w2, A w1 w2 ≡{n}≡ B w1 w2.
+  Global Instance lty2_equiv : Equiv lty2 := λ A B, ∀ w1 w2, A w1 w2 ≡ B w1 w2.
+  Global Instance lty2_dist : Dist lty2 := λ n A B, ∀ w1 w2, A w1 w2 ≡{n}≡ B w1 w2.
   Lemma lty2_ofe_mixin : OfeMixin lty2.
   Proof. by apply (iso_ofe_mixin (lty2_car : lty2 → (val -c> val -c> iProp Σ))). Qed.
   Canonical Structure lty2C := OfeT lty2 lty2_ofe_mixin.
@@ -60,7 +60,7 @@ Section semtypes.
     ={E,⊤}=∗ WP e {{ v, ∃ v', j ⤇ fill K (of_val v') ∗ A v v' }})%I.
 
   Global Instance interp_expr_ne E n :
-    Proper ((=) ==> (=) ==> (=) ==> dist n) (interp_expr E).
+    Proper ((=) ==> (=) ==> (dist n) ==> dist n) (interp_expr E).
   Proof. solve_proper. Qed.
 
   Definition lty2_unit : lty2 := Lty2 (λ w1 w2, ⌜ w1 = #() ∧ w2 = #() ⌝%I).

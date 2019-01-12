@@ -1,7 +1,7 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Typing for System F_mu_ref with existential types and concurrency *)
 From stdpp Require Export stringmap.
-From iris.heap_lang Require Import lang notation.
+From iris.heap_lang Require Export lang notation.
 From Autosubst Require Import Autosubst.
 
 (** * Types *)
