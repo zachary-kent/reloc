@@ -91,4 +91,52 @@ Section semtypes.
     apply I. by f_equiv.
   Defined.
 
+  Definition bin_log_related_def (E : coPset)
+             (Δ : list lty2) (Γ : stringmap type)
+             (e e' : expr) (τ : type) : iProp Σ :=
+    fmap (λ τ, interp τ Δ) Γ ⊨ e << e' : (interp τ Δ).
+
+  Definition bin_log_related_aux : seal bin_log_related_def. Proof. by eexists. Qed.
+  Definition bin_log_related := unseal bin_log_related_aux.
+  Definition bin_log_related_eq : bin_log_related = bin_log_related_def :=
+    seal_eq bin_log_related_aux.
+
 End semtypes.
+
+Notation "'{' E ';' Δ ';' Γ '}' ⊨ e '≤log≤' e' : τ" :=
+  (bin_log_related E Δ Γ e%E e'%E (τ)%F)
+  (at level 74, E at level 50, Δ at next level, Γ at next level, e, e' at next level,
+   τ at level 98,
+   format "'[hv' '{' E ';'  Δ ';'  Γ '}'  ⊨  '/  ' e  '/' '≤log≤'  '/  ' e'  :  τ ']'").
+Notation "'{' Δ ';' Γ '}' ⊨ e '≤log≤' e' : τ" :=
+  (bin_log_related ⊤ Δ Γ e%E e'%E (τ)%F)
+  (at level 74, Δ at level 50, Γ at next level, e, e' at next level,
+   τ at level 98,
+   format "'[hv' '{' Δ ';'  Γ '}'  ⊨  '/  ' e  '/' '≤log≤'  '/  ' e'  :  τ ']'").
+Notation "Γ ⊨ e '≤log≤' e' : τ" :=
+  (∀ Δ, bin_log_related ⊤ Δ Γ e%E e'%E (τ)%F)%I
+  (at level 74, e, e' at next level,
+   τ at level 98,
+   format "'[hv' Γ  ⊨  '/  ' e  '/' '≤log≤'  '/  ' e'  :  τ ']'").
+(* TODO: 
+If I set the level for τ at 98 then the 
+following wouldn't pass:
+
+Lemma refinement1 `{logrelG Σ} Γ :
+    Γ ⊨ #() ≤log≤ #() : (Unit → Unit) → TNat.
+
+If the level is 99 then the following is not parsed.
+
+
+   Lemma refinement1 `{logrelG Σ} Γ :
+    Γ ⊨ #() ≤log≤ #() : (Unit → Unit) → TNat -∗ True.
+*)
+
+Section props.
+  Context `{relocG Σ}.
+
+  (* Lemma fupd_logrel E1 E2 Δ Γ e e' τ : *)
+  (*   ((|={E1,E2}=> ({E2;Δ;Γ} ⊨ e ≤log≤ e' : τ)) *)
+  (*    -∗ {E1;Δ;Γ} ⊨ e ≤log≤ e' : τ)%I. *)
+
+End props.
