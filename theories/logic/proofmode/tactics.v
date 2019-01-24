@@ -265,6 +265,80 @@ Tactic Notation "rel_load_r" :=
   |reflexivity
   |rel_finish  (** new goal *)].
 
+(** Store *)
+Lemma tac_rel_store_l_simpl `{relocG Σ} K ℶ1 ℶ2 ℶ3 i1 Γ (l : loc) v e' v' e t eres A :
+  e = fill K (Store (# l) e') →
+  IntoVal e' v' →
+  MaybeIntoLaterNEnvs 1 ℶ1 ℶ2 →
+  envs_lookup i1 ℶ2 = Some (false, l ↦ v)%I →
+  envs_simple_replace i1 false (Esnoc Enil i1 (l ↦ v')) ℶ2 = Some ℶ3 →
+  eres = fill K #() →
+  envs_entails ℶ3 (refines ⊤ Γ eres t A) →
+  envs_entails ℶ1 (refines ⊤ Γ e t A).
+Proof.
+  rewrite envs_entails_eq. intros ?????? Hg.
+  subst e eres.
+  rewrite into_laterN_env_sound envs_simple_replace_sound //; simpl.
+  rewrite bi.later_sep.
+  rewrite right_id.
+  rewrite -(refines_store_l K Γ ⊤ l).
+  rewrite -fupd_intro.
+  rewrite -(bi.exist_intro v).
+  by rewrite Hg.
+Qed.
+
+Lemma tac_rel_store_r `{relocG Σ} K ℶ1 ℶ2 i1 Γ E (l : loc) v e' v' e t eres A :
+  e = fill K (Store (# l) e') →
+  IntoVal e' v' →
+  nclose specN ⊆ E →
+  envs_lookup i1 ℶ1 = Some (false, l ↦ₛ v)%I →
+  envs_simple_replace i1 false (Esnoc Enil i1 (l ↦ₛ v')) ℶ1 = Some ℶ2 →
+  eres = fill K #() →
+  envs_entails ℶ2 (refines E Γ t eres A) →
+  envs_entails ℶ1 (refines E Γ t e A).
+Proof.
+  rewrite envs_entails_eq. intros ?????? Hg.
+  subst e eres.
+  rewrite envs_simple_replace_sound //; simpl.
+  rewrite right_id.
+  rewrite (refines_store_r Γ E K) //.
+  rewrite Hg.
+  apply bi.wand_elim_l.
+Qed.
+
+Tactic Notation "rel_store_l" :=
+  iStartProof;
+  rel_reshape_cont_l ltac:(fun K e' =>
+      (* Try to apply the simple store tactic first. If it doesn't work then apply the atomic store rule *)
+      first
+        [eapply (tac_rel_store_l_simpl K);
+         [reflexivity       (** e = fill K !#l *)
+         |iSolveTC          (** IntoLaters *)
+         |iAssumptionCore   (** find l ↦ - *)
+         |pm_reflexivity   || fail "rel_store_l: this shouldn't happen"
+         |reflexivity       (** eres = fill K v *)
+         |                  (** new goal *)]
+        |iApply (refines_store_l K)];
+        rel_finish)
+  || fail "rel_store_l: cannot find 'Store'".
+
+Tactic Notation "rel_store_r" :=
+  let solve_mapsto _ :=
+    let l := match goal with |- _ = Some (_, (?l ↦ₛ _)%I) => l end in
+    iAssumptionCore || fail "rel_store_r: cannot find" l "↦ₛ ?" in
+  iStartProof;
+  first
+    [rel_reshape_cont_r ltac:(fun K e' =>
+       eapply (tac_rel_store_r K);
+       [reflexivity|iSolveTC|idtac..])
+    |fail 1 "rel_store_r: cannot find 'Store'"];
+  (* the remaining goals are from tac_rel_store_r (except for the first one, which has already been solved by this point) *)
+  [solve_ndisj || fail "rel_store_r: cannot prove 'nclose specN ⊆ ?'"
+  |solve_mapsto ()
+  |pm_reflexivity || fail "rel_store_r: this should not happen O-:"
+  |reflexivity
+  |rel_finish  (** new goal *)].
+
 (** Fork *)
 Lemma tac_rel_fork_l `{relocG Σ} K ℶ E e' eres Γ e t A :
   e = fill K (Fork e') →
