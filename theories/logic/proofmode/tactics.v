@@ -265,3 +265,49 @@ Tactic Notation "rel_load_r" :=
   |reflexivity
   |rel_finish  (** new goal *)].
 
+(** Fork *)
+Lemma tac_rel_fork_l `{relocG Σ} K ℶ E e' eres Γ e t A :
+  e = fill K (Fork e') →
+  is_closed_expr [] e' →
+  eres = fill K #() →
+  envs_entails ℶ (|={⊤,E}=> ▷ (WP e' {{ _ , True%I }} ∗ refines E Γ eres t A))%I →
+  envs_entails ℶ (refines ⊤ Γ e t A).
+Proof.
+  intros ????. subst e eres.
+  rewrite -refines_fork_l //.
+Qed.
+
+Tactic Notation "rel_fork_l" :=
+  iStartProof;
+  first
+    [rel_reshape_cont_l ltac:(fun K e' =>
+       eapply (tac_rel_fork_l K); first reflexivity)
+    |fail 1 "rel_fork_l: cannot find 'Fork'"];
+  (* the remaining goals are from tac_rel_load_r (except for the first one, which has already been solved by this point) *)
+  [try fast_done    (** is_closed_expr [] e' *)
+  |reflexivity    || fail "rel_fork_l: this should not happen O-:"
+  |rel_finish  (** new goal *)].
+
+Lemma tac_rel_fork_r `{relocG Σ} K ℶ E e' Γ e t eres A :
+  e = fill K (Fork e') →
+  nclose specN ⊆ E →
+  is_closed_expr [] e' →
+  eres = fill K #() →
+  envs_entails ℶ (∀ i, i ⤇ e' -∗ refines E Γ t eres A) →
+  envs_entails ℶ (refines E Γ t e A).
+Proof.
+  intros ?????. subst e eres.
+  rewrite -refines_fork_r //.
+Qed.
+
+Tactic Notation "rel_fork_r" "as" ident(i) constr(H) :=
+  iStartProof;
+  first
+    [rel_reshape_cont_r ltac:(fun K e' =>
+       eapply (tac_rel_fork_r K); first reflexivity)
+    |fail 1 "rel_fork_r: cannot find 'Fork'"];
+  (* the remaining goals are from tac_rel_load_r (except for the first one, which has already been solved by this point) *)
+  [solve_ndisj || fail "rel_fork_r: cannot prove 'nclose specN ⊆ ?'"
+  |try fast_done    (** is_closed_expr [] e' *)
+  |reflexivity    || fail "rel_fork_r: this should not happen O-:"
+  |iIntros (i) H; rel_finish  (** new goal *)].

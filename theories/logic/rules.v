@@ -379,8 +379,8 @@ Section rules.
 
   Lemma refines_fork_l K Γ E e t A :
     is_closed_expr [] e →
-   (|={⊤,E}=> ▷ (WP e {{ _, True }}) ∗
-    ({E;Γ} ⊨ fill K (of_val #()) << t : A)) -∗
+   (|={⊤,E}=> ▷ (WP e {{ _, True }} ∗
+    ({E;Γ} ⊨ fill K (of_val #()) << t : A))) -∗
    Γ ⊨ fill K (Fork e) << t : A.
   Proof.
     iIntros (?) "Hlog".

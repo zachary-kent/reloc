@@ -70,4 +70,27 @@ Proof.
   rel_values.
 Qed.
 
+(* testing fork *)
+Lemma test5 l r Γ N :
+  inv N (l ↦ #3) -∗
+  r ↦ₛ #4 -∗
+  Γ ⊨ (let: "x" := #1 + (Fork !#l;; !#l) in "x")
+  << (Fork (#r <- #0);; !#r) : EqI.
+Proof.
+  iIntros "#IN Hr".
+  rel_fork_l. iModIntro. iSplitR.
+  { iNext. iInv N as "Hl" "Hcl".
+    iApply (wp_load with "Hl"). iNext. iIntros "Hl".
+    by iApply "Hcl". }
+  iNext. rel_pure_l. rel_pure_l.
+  rel_load_l. iInv N as "?" "Hcl". iModIntro. iExists _; iFrame.
+  iNext. iIntros "Hl". iMod ("Hcl" with "Hl") as "_".
+  repeat rel_pure_l.
+  rel_fork_r as i "Hi".
+  repeat rel_pure_r.
+  rel_load_r.
+  rel_values.
+Qed.
+
 End test.
+
