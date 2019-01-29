@@ -1,6 +1,6 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Interpretations for System F_mu_ref types *)
-From iris.algebra Require Import list.
+From iris.algebra Require Export list.
 From reloc.typing Require Export types.
 From reloc.logic Require Import model.
 From Autosubst Require Import Autosubst.
@@ -31,7 +31,7 @@ Section semtypes.
   Qed.
 
   Program Fixpoint interp (τ : type) : listC lty2C -n> lty2C :=
-    match τ as _ return _ with
+    match τ as _ return listC lty2C -n> lty2C with
     | TUnit => λne _, lty2_unit
     | TNat => λne _, lty2_int
     | TBool => λne _, lty2_bool
@@ -51,52 +51,32 @@ Section semtypes.
     apply I. by f_equiv.
   Defined.
 
-  Definition bin_log_related_def (E : coPset)
+  Definition bin_log_related (E : coPset)
              (Δ : list lty2) (Γ : stringmap type)
              (e e' : expr) (τ : type) : iProp Σ :=
-    fmap (λ τ, interp τ Δ) Γ ⊨ e << e' : (interp τ Δ).
-
-  Definition bin_log_related_aux : seal bin_log_related_def. Proof. by eexists. Qed.
-  Definition bin_log_related := unseal bin_log_related_aux.
-  Definition bin_log_related_eq : bin_log_related = bin_log_related_def :=
-    seal_eq bin_log_related_aux.
+    {E;fmap (λ τ, interp τ Δ) Γ} ⊨ e << e' : (interp τ Δ).
 
 End semtypes.
 
 Notation "'{' E ';' Δ ';' Γ '}' ⊨ e '≤log≤' e' : τ" :=
   (bin_log_related E Δ Γ e%E e'%E (τ)%F)
-  (at level 74, E at level 50, Δ at next level, Γ at next level, e, e' at next level,
-   τ at level 98,
+  (at level 100, E at next level, Δ at next level, Γ at next level, e, e' at next level,
+   τ at level 200,
    format "'[hv' '{' E ';'  Δ ';'  Γ '}'  ⊨  '/  ' e  '/' '≤log≤'  '/  ' e'  :  τ ']'").
 Notation "'{' Δ ';' Γ '}' ⊨ e '≤log≤' e' : τ" :=
   (bin_log_related ⊤ Δ Γ e%E e'%E (τ)%F)
-  (at level 74, Δ at level 50, Γ at next level, e, e' at next level,
-   τ at level 98,
+  (at level 100, Δ at next level, Γ at next level, e, e' at next level,
+   τ at level 200,
    format "'[hv' '{' Δ ';'  Γ '}'  ⊨  '/  ' e  '/' '≤log≤'  '/  ' e'  :  τ ']'").
-Notation "Γ ⊨ e '≤log≤' e' : τ" :=
-  (∀ Δ, bin_log_related ⊤ Δ Γ e%E e'%E (τ)%F)%I
-  (at level 74, e, e' at next level,
-   τ at level 98,
-   format "'[hv' Γ  ⊨  '/  ' e  '/' '≤log≤'  '/  ' e'  :  τ ']'").
-(* TODO: 
-If I set the level for τ at 98 then the 
-following wouldn't pass:
-
-Lemma refinement1 `{logrelG Σ} Γ :
-    Γ ⊨ #() ≤log≤ #() : (Unit → Unit) → TNat.
-
-If the level is 99 then the following is not parsed.
-
-
-   Lemma refinement1 `{logrelG Σ} Γ :
-    Γ ⊨ #() ≤log≤ #() : (Unit → Unit) → TNat -∗ True.
-*)
 
 Section props.
   Context `{relocG Σ}.
 
-  (* Lemma fupd_logrel E1 E2 Δ Γ e e' τ : *)
-  (*   ((|={E1,E2}=> ({E2;Δ;Γ} ⊨ e ≤log≤ e' : τ)) *)
-  (*    -∗ {E1;Δ;Γ} ⊨ e ≤log≤ e' : τ)%I. *)
+  Lemma fupd_logrel E1 E2 Δ Γ e e' τ :
+    ((|={E1,E2}=> {E2;Δ;Γ} ⊨ e ≤log≤ e' : τ)
+     -∗ {E1;Δ;Γ} ⊨ e ≤log≤ e' : τ)%I.
+  Proof. apply fupd_logrel. Qed.
 
 End props.
+
+Notation "⤉ Γ" := (Autosubst_Classes.subst (ren (+1)%nat) <$> Γ) (at level 10, format "⤉ Γ").

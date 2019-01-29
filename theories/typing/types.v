@@ -1,7 +1,7 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Typing for System F_mu_ref with existential types and concurrency *)
 From stdpp Require Export stringmap.
-From iris.heap_lang Require Export lang notation.
+From iris.heap_lang Require Export lang notation metatheory.
 From Autosubst Require Import Autosubst.
 
 (** * Types *)
@@ -77,11 +77,7 @@ Definition unpack : val := λ: "x" "y", "y" "x".
 
 (** Operation lifts *)
 Instance insert_binder (A : Type): Insert binder A (stringmap A) :=
-  fun k τ Γ =>
-    match k with
-    | BAnon => Γ
-    | BNamed x => <[x:=τ]>Γ
-    end.
+  binder_insert.
 
 (** Typing itself *)
 Inductive typed (Γ : stringmap type) : expr → type → Prop :=
