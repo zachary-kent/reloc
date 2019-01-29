@@ -135,7 +135,7 @@ Section rules.
   Qed.
 
   Lemma refines_step_r Φ Γ E K' e1 e2 A :
-    (forall vs, subst_map vs e2 = e2) →
+    is_closed_expr' e2 →
     (∀ ρ j K, spec_ctx ρ -∗ (j ⤇ fill K e2 ={E}=∗ ∃ v, j ⤇ fill K (of_val v)
                   ∗ Φ v)) -∗
     (∀ v, Φ v -∗ {E;Γ} ⊨ e1 << fill K' (of_val v) : A) -∗

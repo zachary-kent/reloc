@@ -6,6 +6,7 @@ From iris.proofmode Require Import
      reduction.
 From reloc.logic Require Import proofmode.spec_tactics.
 From reloc.logic Require Export model rules.
+From iris.proofmode Require Export tactics.
 (* Set Default Proof Using "Type". *)
 
 (** * General-purpose tactics *)
@@ -386,3 +387,35 @@ Tactic Notation "rel_fork_r" "as" ident(i) constr(H) :=
   |try fast_done    (** is_closed_expr [] e' *)
   |reflexivity    || fail "rel_fork_r: this should not happen O-:"
   |iIntros (i) H; rel_finish  (** new goal *)].
+
+
+(** For backwards compatibility *)
+Tactic Notation "rel_rec_l" := rel_pure_l (App _ _).
+Tactic Notation "rel_seq_l" := rel_rec_l.
+Tactic Notation "rel_let_l" := rel_rec_l.
+Tactic Notation "rel_fst_l" := rel_pure_l (Fst _).
+Tactic Notation "rel_snd_l" := rel_pure_l (Snd _).
+Tactic Notation "rel_proj_l" := rel_pure_l (_ (Val (PairV _ _))).
+Tactic Notation "rel_case_inl_l" := rel_pure_l (Case _ _ _).
+Tactic Notation "rel_case_inr_l" := rel_pure_l (Case _ _ _).
+Tactic Notation "rel_case_l" := rel_pure_l (Case _ _ _).
+Tactic Notation "rel_binop_l" := rel_pure_l (BinOp _ _ _).
+Tactic Notation "rel_op_l" := rel_binop_l.
+Tactic Notation "rel_if_true_l" := rel_pure_l (If #true _ _).
+Tactic Notation "rel_if_false_l" := rel_pure_l (If #false _ _).
+Tactic Notation "rel_if_l" := rel_pure_l (If _ _ _).
+
+Tactic Notation "rel_rec_r" := rel_pure_r (App _ _).
+Tactic Notation "rel_seq_r" := rel_rec_r.
+Tactic Notation "rel_let_r" := rel_rec_r.
+Tactic Notation "rel_fst_r" := rel_pure_r (Fst _).
+Tactic Notation "rel_snd_r" := rel_pure_r (Snd _).
+Tactic Notation "rel_proj_r" := rel_pure_r (_ (Val (PairV _ _))).
+Tactic Notation "rel_case_inl_r" := rel_pure_r (Case _ _ _).
+Tactic Notation "rel_case_inr_r" := rel_pure_r (Case _ _ _).
+Tactic Notation "rel_case_r" := rel_pure_r (Case _ _ _).
+Tactic Notation "rel_binop_r" := rel_pure_r (BinOp _ _ _).
+Tactic Notation "rel_op_r" := rel_binop_r.
+Tactic Notation "rel_if_true_r" := rel_pure_r (If #true _ _).
+Tactic Notation "rel_if_false_r" := rel_pure_r (If #false _ _).
+Tactic Notation "rel_if_r" := rel_pure_r (If _ _ _).
