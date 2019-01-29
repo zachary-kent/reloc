@@ -132,14 +132,36 @@ Definition env_ltyped2 `{relocG Σ} (Γ : gmap string lty2)
   (⌜ ∀ x, is_Some (Γ !! x) ↔ is_Some (vs !! x) ⌝ ∧
   [∗ map] i ↦ Avv ∈ map_zip Γ vs, lty2_car Avv.1 Avv.2.1 Avv.2.2)%I.
 
-(* Instance env_ltyped2_ne `{relocG Σ} n : *)
-(*   Proper (dist n ==> (=) ==> dist n) env_ltyped2. *)
-(* Proof. *)
-(*   intros Δ Δ' HΔ ? vvs ->. *)
-(*   rewrite /env_ltyped2. *)
-(*   f_equiv. *)
-(*   - repeat f_equiv. admit. *)
-(*   - apply big_opM_ne. *)
+Instance env_ltyped2_ne `{relocG Σ} n :
+  Proper (dist n ==> (=) ==> dist n) env_ltyped2.
+Proof.
+  intros Γ Γ' HΓ ? vvs ->.
+  rewrite /env_ltyped2.
+  f_equiv.
+  - repeat f_equiv. split.
+    { intros Hvvs x. split; intros HH.
+      - apply Hvvs. destruct (Γ !! x) as [?|] eqn:lawl; eauto.
+        specialize (HΓ x). revert HΓ.
+        destruct HH as [? HH].
+        rewrite HH lawl. inversion 1.
+      - destruct (Γ' !! x) as [?|] eqn:lawl; eauto.
+        specialize (HΓ x). revert HΓ.
+        apply (Hvvs x) in HH.
+        destruct HH as [? HH].
+        rewrite HH lawl. inversion 1. }
+    (* MM TASTY COPYPASTA WITH CARBONARYA SAUCE *)
+    { intros Hvvs x. split; intros HH.
+      - apply Hvvs. destruct (Γ' !! x) as [?|] eqn:lawl; eauto.
+        specialize (HΓ x). revert HΓ.
+        destruct HH as [? HH].
+        rewrite HH lawl. inversion 1.
+      - destruct (Γ !! x) as [?|] eqn:lawl; eauto.
+        specialize (HΓ x). revert HΓ.
+        apply (Hvvs x) in HH.
+        destruct HH as [? HH].
+        rewrite HH lawl. inversion 1. }
+  - admit.
+Admitted.
 
 Section refinement.
   Context `{relocG Σ}.
@@ -157,12 +179,12 @@ Section refinement.
   Definition refines_eq : refines = refines_def :=
     seal_eq refines_aux.
 
-  (* Global Instance refines_ne E n : *)
-  (*   Proper ((dist n) ==> (=) ==> (=) ==> (dist n) ==> (dist n)) (refines E). *)
-  (* Proof. *)
-  (*   rewrite refines_eq /refines_def. *)
-  (*   intros Γ Γ' HΓ ? e -> ? e' -> A A' HA. *)
-  (*   repeat f_equiv. *)
+  Global Instance refines_ne E n :
+    Proper ((dist n) ==> (=) ==> (=) ==> (dist n) ==> (dist n)) (refines E).
+  Proof.
+    rewrite refines_eq /refines_def.
+    solve_proper.
+  Qed.
 
 End refinement.
 
