@@ -214,6 +214,7 @@ Lemma tac_rel_load_r `{relocG Σ} K ℶ1 ℶ2 E Γ i1 (l : loc) q e t tres A v :
   t = fill K (Load (# l)) →
   nclose specN ⊆ E →
   envs_lookup i1 ℶ1 = Some (false, l ↦ₛ{q} v)%I →
+  (* TODO: the line below is a detour! *)
   envs_simple_replace i1 false
     (Esnoc Enil i1 (l ↦ₛ{q} v)%I) ℶ1 = Some ℶ2 →
   tres = fill K (of_val v) →
@@ -247,7 +248,7 @@ Tactic Notation "rel_load_l" :=
 (* The structure for the tacticals on the right hand side is a bit
 different. Because there is only one type of rules, we can report
 errors in a more precise way. E.g. if we are executing !#l and l ↦ₛ is
-not found in the environmen, then we can immediately fail with an
+not found in the environment, then we can immediately fail with an
 error *)
 Tactic Notation "rel_load_r" :=
   let solve_mapsto _ :=

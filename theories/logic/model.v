@@ -5,7 +5,7 @@
     - Basic monadic rules *)
 From iris.heap_lang Require Export lifting metatheory.
 From iris.base_logic.lib Require Import invariants.
-From iris.algebra Require Import list.
+From iris.algebra Require Import list gmap.
 From iris.heap_lang Require Import notation proofmode.
 From reloc Require Import logic.spec_rules prelude.ctx_subst.
 From reloc Require Export logic.spec_ra.
@@ -60,7 +60,7 @@ Section semtypes.
     ={E,⊤}=∗ WP e {{ v, ∃ v', j ⤇ fill K (of_val v') ∗ A v v' }})%I.
 
   Global Instance interp_expr_ne E n :
-    Proper ((=) ==> (=) ==> (dist n) ==> dist n) (interp_expr E).
+    Proper ((=) ==> (=) ==> dist n ==> dist n) (interp_expr E).
   Proof. solve_proper. Qed.
 
   Definition lty2_unit : lty2 := Lty2 (λ w1 w2, ⌜ w1 = #() ∧ w2 = #() ⌝%I).
@@ -95,6 +95,30 @@ Section semtypes.
 
   Definition lty2_rec (C : lty2C -n> lty2C) : lty2 := fixpoint (lty2_rec1 C).
 
+  Definition lty2_exists (C : lty2 → lty2) : lty2 := Lty2 (λ w1 w2,
+    ∃ A : lty2, C A w1 w2)%I.
+
+  (** The lty2 constructors are non-expansive *)
+  Instance lty2_prod_ne n : Proper (dist n ==> (dist n ==> dist n)) lty2_prod.
+  Proof. solve_proper. Qed.
+
+  Instance lty2_sum_ne n : Proper (dist n ==> (dist n ==> dist n)) lty2_sum.
+  Proof. solve_proper. Qed.
+
+  Instance lty2_arr_ne n : Proper (dist n ==> dist n ==> dist n) lty2_arr.
+  Proof. solve_proper. Qed.
+
+  Instance lty2_rec_ne n : Proper (dist n ==> dist n)
+                                   (lty2_rec : (lty2C -n> lty2C) -> lty2C).
+  Proof.
+    intros F F' HF.
+    unfold lty2_rec, lty2_car.
+    apply fixpoint_ne=> X w1 w2.
+    unfold lty2_rec1, lty2_car. cbn.
+    f_equiv.
+    apply lty2_car_ne; eauto.
+  Qed.
+
 End semtypes.
 
 (* Nice notations *)
@@ -107,6 +131,15 @@ Definition env_ltyped2 `{relocG Σ} (Γ : gmap string lty2)
     (vs : gmap string (val*val)) : iProp Σ :=
   (⌜ ∀ x, is_Some (Γ !! x) ↔ is_Some (vs !! x) ⌝ ∧
   [∗ map] i ↦ Avv ∈ map_zip Γ vs, lty2_car Avv.1 Avv.2.1 Avv.2.2)%I.
+
+(* Instance env_ltyped2_ne `{relocG Σ} n : *)
+(*   Proper (dist n ==> (=) ==> dist n) env_ltyped2. *)
+(* Proof. *)
+(*   intros Δ Δ' HΔ ? vvs ->. *)
+(*   rewrite /env_ltyped2. *)
+(*   f_equiv. *)
+(*   - repeat f_equiv. admit. *)
+(*   - apply big_opM_ne. *)
 
 Section refinement.
   Context `{relocG Σ}.
@@ -123,6 +156,13 @@ Section refinement.
   Definition refines := unseal refines_aux.
   Definition refines_eq : refines = refines_def :=
     seal_eq refines_aux.
+
+  (* Global Instance refines_ne E n : *)
+  (*   Proper ((dist n) ==> (=) ==> (=) ==> (dist n) ==> (dist n)) (refines E). *)
+  (* Proof. *)
+  (*   rewrite refines_eq /refines_def. *)
+  (*   intros Γ Γ' HΓ ? e -> ? e' -> A A' HA. *)
+  (*   repeat f_equiv. *)
 
 End refinement.
 
@@ -218,7 +258,7 @@ End environment_properties.
 
 Notation "'{' E ';' Γ '}' ⊨ e1 '<<' e2 : A" :=
   (refines E Γ e1%E e2%E (A)%lty2)
-  (at level 100, E at level 50, Γ at next level, e1, e2 at next level,
+  (at level 100, E at next level, Γ at next level, e1, e2 at next level,
    A at level 200,
    format "'[hv' '{' E ';' Γ '}'  ⊨  '/  ' e1  '/' '<<'  '/  ' e2  :  A ']'").
 Notation "Γ ⊨ e1 '<<' e2 : A" :=

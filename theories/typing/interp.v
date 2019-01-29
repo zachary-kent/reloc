@@ -10,11 +10,9 @@ Section semtypes.
 
   (** Type-level lambdas are interpreted as closures *)
 
+  (** DF: lty2_forall is defined here because it depends on TApp *)
   Definition lty2_forall (C : lty2 → lty2) : lty2 := Lty2 (λ w1 w2,
     □ ∀ A : lty2, interp_expr ⊤ (TApp w1) (TApp w2) (C A))%I.
-
-  Definition lty2_exists (C : lty2 → lty2) : lty2 := Lty2 (λ w1 w2,
-    ∃ A : lty2, C A w1 w2)%I.
 
   Definition lty2_true : lty2 := Lty2 (λ w1 w2, True)%I.
 
@@ -30,44 +28,6 @@ Section semtypes.
       eapply (Forall2_lookup_r _ _ _ x Q) in HΔ; last done.
       destruct HΔ as (P & HP' & HΔ). exfalso.
       rewrite HP in HP'. inversion HP'.
-  Qed.
-
-  Instance lty2_prod_ne n : Proper (dist n ==> (dist n ==> dist n)) lty2_prod.
-  Proof.
-    intros A A' HA B B' HB.
-    intros w1 w2. cbn.
-    unfold lty2_prod, lty2_car. cbn.
-    (* TODO: why do we have to unfold lty2_car here? *)
-    repeat f_equiv; eauto.
-  Qed.
-
-  Instance lty2_sum_ne n : Proper (dist n ==> (dist n ==> dist n)) lty2_sum.
-  Proof.
-    intros A A' HA B B' HB.
-    intros w1 w2. cbn.
-    unfold lty2_sum, lty2_car. cbn.
-    (* TODO: why do we have to unfold lty2_car here? *)
-    repeat f_equiv; eauto.
-  Qed.
-
-  Instance lty2_arr_ne n : Proper (dist n ==> (dist n ==> dist n)) lty2_arr.
-  Proof.
-    intros A A' HA B B' HB.
-    intros w1 w2. cbn.
-    unfold lty2_sum, lty2_car. cbn.
-    (* TODO: why do we have to unfold lty2_car here? *)
-    repeat f_equiv; eauto.
-  Qed.
-
-  Instance lty2_rec_ne n : Proper (dist n ==> dist n)
-                                   (lty2_rec : (lty2C -n> lty2C) -> lty2C).
-  Proof.
-    intros F F' HF.
-    unfold lty2_rec, lty2_car.
-    apply fixpoint_ne=> X w1 w2.
-    unfold lty2_rec1, lty2_car. cbn.
-    f_equiv.
-    apply lty2_car_ne; eauto.
   Qed.
 
   Program Fixpoint interp (τ : type) : listC lty2C -n> lty2C :=
