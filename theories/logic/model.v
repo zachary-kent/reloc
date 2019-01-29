@@ -72,7 +72,7 @@ Section semtypes.
 
   Definition lty2_ref (A : lty2) : lty2 := Lty2 (λ w1 w2,
     ∃ l1 l2: loc, ⌜w1 = #l1⌝ ∧ ⌜w2 = #l2⌝ ∧
-      inv (relocN .@ (l1,l2)) (∃ v1 v2, l1 ↦ v1 ∗ l2 ↦ₛ v2 ∗ A v1 v2))%I.
+      inv (relocN .@ "ref" .@ (l1,l2)) (∃ v1 v2, l1 ↦ v1 ∗ l2 ↦ₛ v2 ∗ A v1 v2))%I.
 
   Definition lty2_prod (A B : lty2) : lty2 := Lty2 (λ w1 w2,
     ∃ v1 v2 v1' v2', ⌜w1 = (v1,v1')%V⌝ ∧ ⌜w2 = (v2,v2')%V⌝ ∧
@@ -205,8 +205,8 @@ Section semtypes_properties.
     iDestruct "Hl1" as (l' l1') "[% [% #Hl1]]". simplify_eq.
     iDestruct "Hl2" as (l l2') "[% [% #Hl2]]". simplify_eq.
     destruct (decide (l1' = l2')) as [->|?]; eauto.
-    iInv (relocN.@(l, l1')) as (? ?) "[>Hl ?]" "Hcl".
-    iInv (relocN.@(l, l2')) as (? ?) "[>Hl' ?]" "Hcl'".
+    iInv (relocN.@"ref".@(l, l1')) as (? ?) "[>Hl ?]" "Hcl".
+    iInv (relocN.@"ref".@(l, l2')) as (? ?) "[>Hl' ?]" "Hcl'".
     simpl. iExFalso.
     iDestruct (gen_heap.mapsto_valid_2 with "Hl Hl'") as %Hfoo.
     compute in Hfoo. eauto.
@@ -221,8 +221,8 @@ Section semtypes_properties.
     iDestruct "Hl1" as (l1' l') "[% [% #Hl1]]". simplify_eq.
     iDestruct "Hl2" as (l2' l) "[% [% #Hl2]]". simplify_eq.
     destruct (decide (l1' = l2')) as [->|?]; eauto.
-    iInv (relocN.@(l1', l)) as (? ?) "(? & >Hl & ?)" "Hcl".
-    iInv (relocN.@(l2', l)) as (? ?) "(? & >Hl' & ?)" "Hcl'".
+    iInv (relocN.@"ref".@(l1', l)) as (? ?) "(? & >Hl & ?)" "Hcl".
+    iInv (relocN.@"ref".@(l2', l)) as (? ?) "(? & >Hl' & ?)" "Hcl'".
     simpl. iExFalso.
     iDestruct (mapsto_valid_2 with "Hl Hl'") as %Hfoo.
     compute in Hfoo. eauto.
