@@ -169,7 +169,7 @@ Section rules.
     eapply rtc_r, step_insert_no_fork; eauto. econstructor; eauto.
   Qed.
 
-  (** CAS & FAI *)
+  (** CAS & FAA *)
   Lemma step_cas_fail E ρ j K l q v' e1 v1 e2 v2 :
     IntoVal e1 v1 →
     IntoVal e2 v2 →
@@ -225,31 +225,7 @@ Section rules.
     left; eauto.
   Qed.
 
-  Lemma step_fork E ρ j K e :
-    nclose specN ⊆ E →
-    spec_ctx ρ ∗ j ⤇ fill K (Fork e) ={E}=∗ ∃ j', j ⤇ fill K #() ∗ j' ⤇ e.
-  Proof.
-    iIntros (?) "[#Hspec Hj]".
-    rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def.
-    iInv specN as (tp σ) ">[Hown %]" "Hclose".
-    iDestruct (own_valid_2 with "Hown Hj")
-      as %[[?%tpool_singleton_included' _]%prod_included ?]%auth_valid_discrete_2.
-    assert (j < length tp)%nat by eauto using lookup_lt_Some.
-    iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
-    { by eapply auth_update, prod_local_update_1,
-        singleton_local_update, (exclusive_local_update _ (Excl (fill K #()))). }
-    iMod (own_update with "Hown") as "[Hown Hfork]".
-    { eapply auth_update_alloc, prod_local_update_1,
-        (alloc_singleton_local_update _ (length tp) (Excl e)); last done.
-      rewrite lookup_insert_ne ?tpool_lookup; last lia.
-      by rewrite lookup_ge_None_2. }
-    iExists (length tp). iFrame "Hj Hfork". iApply "Hclose". iNext.
-    iExists (<[j:=fill K #()]> tp ++ [e]), σ.
-    rewrite to_tpool_snoc insert_length to_tpool_insert //. iFrame. iPureIntro.
-    eapply rtc_r, step_insert; eauto. econstructor; eauto.
-  Qed.
-
-  Lemma step_fai E ρ j K l e1 e2 (i1 i2 : Z) :
+  Lemma step_faa E ρ j K l e1 e2 (i1 i2 : Z) :
     IntoVal e1 #i2 →
     nclose specN ⊆ E →
     spec_ctx ρ ∗ j ⤇ fill K (FAA #l e1) ∗ l ↦ₛ #i1
@@ -273,6 +249,31 @@ Section rules.
     iExists (<[j:=fill K (# i1)]> tp), (state_upd_heap <[l:=#(i1+i2)]> σ).
     rewrite to_gen_heap_insert to_tpool_insert'; last eauto. iFrame. iPureIntro.
     eapply rtc_r, step_insert_no_fork; eauto. simpl. econstructor; eauto.
+  Qed.
+
+  (** Fork *)
+  Lemma step_fork E ρ j K e :
+    nclose specN ⊆ E →
+    spec_ctx ρ ∗ j ⤇ fill K (Fork e) ={E}=∗ ∃ j', j ⤇ fill K #() ∗ j' ⤇ e.
+  Proof.
+    iIntros (?) "[#Hspec Hj]".
+    rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def.
+    iInv specN as (tp σ) ">[Hown %]" "Hclose".
+    iDestruct (own_valid_2 with "Hown Hj")
+      as %[[?%tpool_singleton_included' _]%prod_included ?]%auth_valid_discrete_2.
+    assert (j < length tp)%nat by eauto using lookup_lt_Some.
+    iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
+    { by eapply auth_update, prod_local_update_1,
+        singleton_local_update, (exclusive_local_update _ (Excl (fill K #()))). }
+    iMod (own_update with "Hown") as "[Hown Hfork]".
+    { eapply auth_update_alloc, prod_local_update_1,
+        (alloc_singleton_local_update _ (length tp) (Excl e)); last done.
+      rewrite lookup_insert_ne ?tpool_lookup; last lia.
+      by rewrite lookup_ge_None_2. }
+    iExists (length tp). iFrame "Hj Hfork". iApply "Hclose". iNext.
+    iExists (<[j:=fill K #()]> tp ++ [e]), σ.
+    rewrite to_tpool_snoc insert_length to_tpool_insert //. iFrame. iPureIntro.
+    eapply rtc_r, step_insert; eauto. econstructor; eauto.
   Qed.
 
 End rules.

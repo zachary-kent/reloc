@@ -345,6 +345,55 @@ Tactic Notation "tp_cas_suc" constr(j) :=
     |pm_reflexivity || fail "tp_cas_suc: this should not happen"
     |(* new goal *)].
 
+Lemma tac_tp_faa `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l : loc)  e2 (z1 z2 : Z) Q :
+  nclose specN ⊆ E1 →
+  envs_lookup i1 Δ1 = Some (p, spec_ctx ρ) →
+  envs_lookup_delete false i2 Δ1 = Some (false, j ⤇ e, Δ2)%I →
+  e = fill K' (FAA #l e2) →
+  IntoVal e2 #z2 →
+  envs_lookup i3 Δ2 = Some (false, l ↦ₛ #z1)%I →
+  envs_simple_replace i3 false
+    (Esnoc (Esnoc Enil i2 (j ⤇ fill K' #z1)) i3 (l ↦ₛ #(z1+z2))%I) Δ2 = Some Δ3 →
+  envs_entails Δ3 (|={E1,E2}=> Q) →
+  envs_entails Δ1 (|={E1,E2}=> Q).
+Proof.
+  rewrite envs_entails_eq. intros ??? Hfill <- ?? HQ.
+  rewrite -(idemp bi_and (of_envs Δ1)).
+  rewrite {1}(envs_lookup_sound' Δ1 false). 2: eassumption.
+  rewrite bi.sep_elim_l.
+  enough (<pers> spec_ctx ρ ∧ of_envs Δ1 ={E1,E2}=∗ Q) as <-.
+  { rewrite -bi.intuitionistically_into_persistently_1.
+    destruct p; simpl;
+    by rewrite ?(bi.intuitionistic_intuitionistically (spec_ctx ρ)). }
+  rewrite bi.persistently_and_intuitionistically_sep_l.
+  rewrite bi.intuitionistic_intuitionistically.
+  rewrite envs_lookup_delete_sound // /=.
+  rewrite (envs_simple_replace_sound Δ2 Δ3 i3) //.
+  simpl. rewrite right_id Hfill.
+  (* (S (spec_ctx ρ) (S (j => fill _ _) (S (l ↦ v) ..))) *)
+  rewrite (assoc _ (spec_ctx ρ) (j ⤇ fill K' _)%I).
+  (* (S (S (spec_ctx ρ) (j => fill _ _)) (S (l ↦ v) ..)) *)
+  rewrite assoc.
+  rewrite -(assoc _ (spec_ctx ρ) (j ⤇ fill K' _)%I).
+  rewrite step_faa //.
+  rewrite -(fupd_trans E1 E1 E2).
+  rewrite fupd_frame_r.
+  apply fupd_mono.
+  by rewrite (comm _ (j ⤇ _)%I) bi.wand_elim_r.
+Qed.
+
+Tactic Notation "tp_faa" constr(j) :=
+  iStartProof;
+  eapply (tac_tp_faa j);
+    [solve_ndisj || fail "tp_faa: cannot prove 'nclose specN ⊆ ?'"
+    |iAssumptionCore || fail "tp_faa: cannot find spec_ctx" (* spec_ctx *)
+    |iAssumptionCore || fail "tp_faa: cannot find '" j " ⤇ ?'"
+    |tp_bind_helper (* e = K'[CAS _ _ _] *)
+    |iSolveTC (* IntoVal *)
+    |iAssumptionCore || fail "tp_faa: cannot find '? ↦ ?'"
+    |pm_reflexivity || fail "tp_faa: this should not happen"
+    |(* new goal *)].
+
 Lemma tac_tp_fork `{relocG Σ} j Δ1 Δ2 E1 E2 ρ i1 i2 p K' e e' Q :
   nclose specN ⊆ E1 →
   envs_lookup i1 Δ1 = Some (p, spec_ctx ρ) →

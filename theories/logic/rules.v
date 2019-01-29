@@ -248,6 +248,25 @@ Section rules.
     by iApply "Hlog".
   Qed.
 
+  Lemma refines_faa_r Γ E K l e2 (i1 i2 : Z) t A :
+    nclose specN ⊆ E →
+    IntoVal e2 #i2 →
+    l ↦ₛ #i1 -∗
+    (l ↦ₛ #(i1+i2) -∗ {E;Γ} ⊨ t << fill K (of_val #i1) : A)
+    -∗ {E;Γ} ⊨ t << fill K (FAA #l e2) : A.
+  Proof.
+    iIntros (?<-) "Hl Hlog".
+    pose (Φ := (fun w => ⌜w = #i1⌝ ∗ l ↦ₛ #(i1+i2))%I).
+    iApply (refines_step_r Φ with "[Hl]"); eauto.
+    { cbv[Φ].
+      iIntros (ρ j K') "#Hs Hj /=".
+      tp_faa j; auto.
+      iExists #i1. simpl.
+      iFrame. eauto. }
+    iIntros (w) "[% Hl]"; subst.
+    by iApply "Hlog".
+  Qed.
+
   Lemma refines_fork_r Γ E K (e t : expr) A
    (Hmasked : nclose specN ⊆ E)
    (Hclosed : is_closed_expr [] e) :
@@ -449,6 +468,18 @@ Section rules.
       { by right. }
       iDestruct "Hlog" as "[Hlog _]".
       iSpecialize ("Hlog" with "[]"); eauto.
+  Qed.
+
+  Lemma refines_faa_l K Γ E l e2 (i2 : Z) t A :
+    IntoVal e2 #i2 →
+    (|={⊤,E}=> ∃ (i1 : Z), ▷ l ↦ #i1 ∗
+     ▷ (l ↦ #(i1 + i2) -∗ {E;Γ} ⊨ fill K (of_val #i1) << t : A))
+    -∗ Γ ⊨ fill K (FAA #l e2) << t : A.
+  Proof.
+    iIntros (<-) "Hlog".
+    iApply refines_atomic_l; auto.
+    iMod "Hlog" as (i1) "[Hl Hlog]". iModIntro.
+    by iApply (wp_faa with "Hl").
   Qed.
 
 End rules.
