@@ -26,6 +26,13 @@ Inductive EqType : type → Prop :=
   | EqTProd τ τ' : EqType τ → EqType τ' → EqType (TProd τ τ')
   | EqSum τ τ' : EqType τ → EqType τ' → EqType (TSum τ τ').
 
+(** Which types are unboxed *)
+Inductive UnboxedType : type → Prop :=
+  | UnboxedTUnit : UnboxedType TUnit
+  | UnboxedTNat : UnboxedType TNat
+  | UnboxedTBool : UnboxedType TBool
+  | UnboxedTref τ : UnboxedType (Tref τ).
+
 (** Autosubst instances *)
 Instance Ids_type : Ids type. derive. Defined.
 Instance Rename_type : Rename type. derive. Defined.

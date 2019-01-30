@@ -1,6 +1,7 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Interpretations for System F_mu_ref types *)
 From iris.algebra Require Export list.
+From iris.proofmode Require Import tactics.
 From reloc.typing Require Export types.
 From reloc.logic Require Import model.
 From Autosubst Require Import Autosubst.
@@ -50,6 +51,35 @@ Section semtypes.
     apply lty2_rec_ne=> X /=.
     apply I. by f_equiv.
   Defined.
+
+  Lemma unboxed_type_sound τ Δ v v' :
+    UnboxedType τ →
+    interp τ Δ v v' -∗ ⌜val_is_unboxed v ∧ val_is_unboxed v'⌝.
+  Proof.
+    induction 1; simpl;
+    first [iIntros "[% %]"
+          |iDestruct 1 as (?) "[% %]"
+          |iDestruct 1 as (? ?) "[% [% ?]]"];
+    simplify_eq/=; eauto with iFrame.
+  Qed.
+
+  Lemma eq_type_sound τ Δ v v' :
+    EqType τ →
+    interp τ Δ v v' -∗ ⌜v = v'⌝.
+  Proof.
+    intros Hτ; revert v v'; induction Hτ; iIntros (v v') "#H1 /=".
+    - by iDestruct "H1" as "[% %]"; subst.
+    - by iDestruct "H1" as (n) "[% %]"; subst.
+    - by iDestruct "H1" as (b) "[% %]"; subst.
+    - iDestruct "H1" as (?? ??) "[% [% [H1 H2]]]"; simplify_eq/=.
+      rewrite IHHτ1 IHHτ2.
+      by iDestruct "H1" as "%"; iDestruct "H2" as "%"; subst.
+    - iDestruct "H1" as (??) "[H1|H1]".
+      + iDestruct "H1" as "[% [% H1]]"; simplify_eq/=.
+        rewrite IHHτ1. by iDestruct "H1" as "%"; subst.
+      + iDestruct "H1" as "[% [% H1]]"; simplify_eq/=.
+        rewrite IHHτ2. by iDestruct "H1" as "%"; subst.
+  Qed.
 
   Definition bin_log_related (E : coPset)
              (Δ : list lty2) (Γ : stringmap type)
