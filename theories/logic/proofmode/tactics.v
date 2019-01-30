@@ -232,19 +232,21 @@ Proof.
 Qed.
 
 Tactic Notation "rel_load_l" :=
+  let solve_mapsto _ :=
+    let l := match goal with |- _ = Some (_, (?l ↦{_} _)%I) => l end in
+    iAssumptionCore || fail "rel_load_l: cannot find" l "↦ ?" in
   iStartProof;
-  rel_reshape_cont_l ltac:(fun K e' =>
-      (* Try to apply the simple load tactic first. If it doesn't work then apply the atomic load rule *)
-      first
-        [eapply (tac_rel_load_l_simp K);
-         [reflexivity       (** e = fill K !#l *)
-         |iSolveTC          (** IntoLaters *)
-         |iAssumptionCore   (** find l ↦ - *)
-         |reflexivity       (** eres = fill K v *)
-         |                  (** new goal *)]
-        |iApply (refines_load_l K)];
-        rel_finish)
-  || fail "rel_load_l: cannot find 'Load'".
+  first
+    [rel_reshape_cont_l ltac:(fun K e' =>
+       eapply (tac_rel_load_l_simp K); first reflexivity)
+    |fail 1 "rel_load_l: cannot find 'Load'"];
+  (* the remaining goals are from tac_lel_load_l (except for the first one, which has already been solved by this point) *)
+  [iSolveTC             (** IntoLaters *)
+  |solve_mapsto ()
+  |reflexivity       (** eres = fill K v *)
+  |rel_finish  (** new goal *)].
+
+Tactic Notation "rel_load_l_atomic" := rel_apply_l refines_load_l.
 
 (* The structure for the tacticals on the right hand side is a bit
 different. Because there is only one type of rules, we can report
@@ -309,20 +311,25 @@ Proof.
 Qed.
 
 Tactic Notation "rel_store_l" :=
+  let solve_mapsto _ :=
+    let l := match goal with |- _ = Some (_, (?l ↦ _)%I) => l end in
+    iAssumptionCore || fail "rel_store_l: cannot find" l "↦ₛ ?" in
   iStartProof;
-  rel_reshape_cont_l ltac:(fun K e' =>
-      (* Try to apply the simple store tactic first. If it doesn't work then apply the atomic store rule *)
-      first
-        [eapply (tac_rel_store_l_simpl K);
-         [reflexivity       (** e = fill K !#l *)
-         |iSolveTC          (** IntoLaters *)
-         |iAssumptionCore   (** find l ↦ - *)
-         |pm_reflexivity   || fail "rel_store_l: this shouldn't happen"
-         |reflexivity       (** eres = fill K v *)
-         |                  (** new goal *)]
-        |iApply (refines_store_l K)];
-        rel_finish)
-  || fail "rel_store_l: cannot find 'Store'".
+  first
+    [rel_reshape_cont_r ltac:(fun K e' =>
+       eapply (tac_rel_store_l_simpl K);
+       [reflexivity (** e = fill K (#l <- e') *)
+       |iSolveTC    (** e' is a value *)
+       |idtac..])
+    |fail 1 "rel_store_l: cannot find 'Store'"];
+  (* the remaining goals are from tac_rel_store_l (except for the first one, which has already been solved by this point) *)
+  [iSolveTC        (** IntoLaters *)
+  |solve_mapsto ()
+  |pm_reflexivity || fail "rel_store_l: this should not happen O-:"
+  |reflexivity
+  |rel_finish  (** new goal *)].
+
+Tactic Notation "rel_store_l_atomic" := rel_apply_l refines_store_l.
 
 Tactic Notation "rel_store_r" :=
   let solve_mapsto _ :=

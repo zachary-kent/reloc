@@ -61,9 +61,9 @@ Lemma test4 l r Γ N :
 Proof.
   iIntros "#IN Hr".
   repeat (rel_load_r || rel_pure_r).
-  rel_load_l. iInv N as "?" "Hcl". iModIntro. iExists _; iFrame.
+  rel_load_l_atomic. iInv N as "?" "Hcl". iModIntro. iExists _; iFrame.
   iNext. iIntros "Hl". iMod ("Hcl" with "Hl") as "_".
-  repeat (rel_pure_l || rel_load_l).
+  repeat rel_pure_l. rel_load_l_atomic.
   iInv N as "?" "Hcl". iModIntro. iExists _; iFrame.
   iNext. iIntros "Hl". iMod ("Hcl" with "Hl") as "_".
   rel_pure_l.
@@ -83,7 +83,7 @@ Proof.
     iApply (wp_store with "Hl"). iNext. iIntros "Hl".
     by iApply "Hcl". }
   iNext. rel_pure_l. rel_pure_l.
-  rel_load_l. iInv N as "?" "Hcl". iModIntro. iExists _; iFrame.
+  rel_load_l_atomic. iInv N as "?" "Hcl". iModIntro. iExists _; iFrame.
   iNext. iIntros "Hl". iMod ("Hcl" with "Hl") as "_".
   repeat rel_pure_l.
   rel_store_r. rel_pure_r. rel_pure_r.
