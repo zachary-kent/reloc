@@ -98,7 +98,13 @@ Tactic Notation "rel_apply_l" open_constr(lem) :=
       iApplyHyp H)
     || lazymatch iTypeOf H with
       | Some (_,?P) => fail "rel_apply_l: Cannot apply" P
-      end)); rel_finish.
+      end));
+  try lazymatch goal with
+  | |- val_is_unboxed _ => fast_done
+  | |- vals_cas_compare_safe _ _ =>
+    fast_done || (left; fast_done) || (right; fast_done)
+  end;
+  try rel_finish.
 
 Tactic Notation "rel_apply_r" open_constr(lem) :=
   (iPoseProofCore lem as false true (fun H =>
@@ -111,7 +117,7 @@ Tactic Notation "rel_apply_r" open_constr(lem) :=
   try lazymatch goal with
   | |- _ ⊆ _ => try solve_ndisj
   end;
-  rel_finish.
+  try rel_finish.
 
 (** * Symbolic execution *)
 
@@ -347,6 +353,94 @@ Tactic Notation "rel_store_r" :=
   |pm_reflexivity || fail "rel_store_r: this should not happen O-:"
   |reflexivity
   |rel_finish  (** new goal *)].
+
+(** Cas *)
+(* TODO: non-atomic tactics for CAS? *)
+Tactic Notation "rel_cas_l_atomic" := rel_apply_l refines_cas_l.
+
+Lemma tac_rel_cas_fail_r `{relocG Σ} K ℶ1 i1 Γ E (l : loc) e1 e2 v1 v2 v e t eres A :
+  e = fill K (CAS (# l) e1 e2) →
+  IntoVal e1 v1 →
+  IntoVal e2 v2 →
+  nclose specN ⊆ E →
+  envs_lookup i1 ℶ1 = Some (false, l ↦ₛ v)%I →
+  v ≠ v1 →
+  vals_cas_compare_safe v v1 →
+  eres = fill K #false →
+  envs_entails ℶ1 (refines E Γ t eres A) →
+  envs_entails ℶ1 (refines E Γ t e A).
+Proof.
+  rewrite envs_entails_eq. intros ???????? Hg.
+  subst e eres.
+  rewrite envs_lookup_split // /= Hg; simpl.
+  apply bi.wand_elim_l'.
+  eapply refines_cas_fail_r; eauto.
+Qed.
+
+Lemma tac_rel_cas_suc_r `{relocG Σ} K ℶ1 ℶ2 i1 Γ E (l : loc) e1 e2 v1 v2 v e t eres A :
+  e = fill K (CAS (# l) e1 e2) →
+  IntoVal e1 v1 →
+  IntoVal e2 v2 →
+  nclose specN ⊆ E →
+  envs_lookup i1 ℶ1 = Some (false, l ↦ₛ v)%I →
+  v = v1 →
+  val_is_unboxed v1 →
+  envs_simple_replace i1 false (Esnoc Enil i1 (l ↦ₛ v2)) ℶ1 = Some ℶ2 →
+  eres = fill K #true →
+  envs_entails ℶ2 (refines E Γ t eres A) →
+  envs_entails ℶ1 (refines E Γ t e A).
+Proof.
+  rewrite envs_entails_eq. intros ????????? Hg.
+  subst e eres.
+  rewrite envs_simple_replace_sound //; simpl.
+  rewrite right_id Hg.
+  apply bi.wand_elim_l'.
+  eapply refines_cas_suc_r; eauto.
+Qed.
+
+Tactic Notation "rel_cas_fail_r" :=
+  let solve_mapsto _ :=
+    let l := match goal with |- _ = Some (_, (?l ↦ₛ _)%I) => l end in
+    iAssumptionCore || fail "rel_cas_fail_r: cannot find" l "↦ₛ ?" in
+  iStartProof;
+  first
+    [rel_reshape_cont_r ltac:(fun K e' =>
+       eapply (tac_rel_cas_fail_r K);
+       [reflexivity  (** e = fill K (CAS #l e1 e2) *)
+       |iSolveTC     (** e1 is a value *)
+       |iSolveTC     (** e2 is a value *)
+       |idtac..])
+    |fail 1 "rel_cas_fail_r: cannot find 'Cas'"];
+  (* the remaining goals are from tac_rel_cas_fail_r (except for the first one, which has already been solved by this point) *)
+  [solve_ndisj || fail "rel_cas_fail_r: cannot prove 'nclose specN ⊆ ?'"
+  |solve_mapsto ()
+  |try congruence   (** v ≠ v1 *)
+  |try (fast_done || (left; fast_done) || (right; fast_done)) (** vals_cas_compare_safe *)
+  |reflexivity
+  |rel_finish  (** new goal *)].
+
+Tactic Notation "rel_cas_suc_r" :=
+  let solve_mapsto _ :=
+    let l := match goal with |- _ = Some (_, (?l ↦ₛ _)%I) => l end in
+    iAssumptionCore || fail "rel_cas_suc_r: cannot find" l "↦ₛ ?" in
+  iStartProof;
+  first
+    [rel_reshape_cont_r ltac:(fun K e' =>
+       eapply (tac_rel_cas_suc_r K);
+       [reflexivity  (** e = fill K (CAS #l e1 e2) *)
+       |iSolveTC     (** e1 is a value *)
+       |iSolveTC     (** e2 is a value *)
+       |idtac..])
+    |fail 1 "rel_cas_suc_r: cannot find 'Cas'"];
+  (* the remaining goals are from tac_rel_cas_suc_r (except for the first one, which has already been solved by this point) *)
+  [solve_ndisj || fail "rel_cas_suc_r: cannot prove 'nclose specN ⊆ ?'"
+  |solve_mapsto ()
+  |try congruence   (** v = v1 *)
+  |try fast_done (** val_is_unboxed *)
+  |pm_reflexivity  (** new env *)
+  |reflexivity
+  |rel_finish  (** new goal *)].
+
 
 (** Fork *)
 Lemma tac_rel_fork_l `{relocG Σ} K ℶ E e' eres Γ e t A :
