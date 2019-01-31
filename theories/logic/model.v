@@ -336,18 +336,22 @@ Section related_facts.
 
 End related_facts.
 
+(** TODO this is a terrible hack and I should be ashamed of myself.
+    See iris issue 225. *)
+Notation is_closed_expr' := (λ e, ∀ vs, subst_map vs e = e).
+
 Section monadic.
   Context `{relocG Σ}.
 
   Lemma refines_ret' E Γ e1 e2 A :
-    is_closed_expr [] e1 →
-    is_closed_expr [] e2 →
+    is_closed_expr' e1 →
+    is_closed_expr' e2 →
     interp_expr E e1 e2 A -∗ {E;Γ} ⊨ e1 << e2 : A.
   Proof.
-    iIntros (??) "HA".
+    iIntros (Hcl1 Hcl2) "HA".
     rewrite refines_eq /refines_def.
     iIntros (vvs ρ) "#Hs #HΓ".
-    rewrite !subst_map_is_closed_nil//.
+    by rewrite Hcl1 Hcl2.
   Qed.
 
   Lemma refines_bind K K' E Γ A A' e e' :

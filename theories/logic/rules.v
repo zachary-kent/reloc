@@ -74,9 +74,6 @@ Section rules.
     by rewrite subst_map_fill.
   Qed.
 
-  (* See iris issue 225 *)
-  Notation is_closed_expr' := (λ e, ∀ vs, subst_map vs e = e).
-
   Lemma refines_wp_l Γ K e1 e2 A :
     is_closed_expr' e1 →
     (WP e1 {{ v,
