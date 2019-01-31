@@ -298,12 +298,12 @@ Section fundamental.
     iModIntro. tp_pure j _. wp_pures. iExists _; iFrame.
     iIntros (A). iDestruct ("H" $! A) as "#H". iAlways.
     iSpecialize ("H" $! vvs with "Hs [HΓ]"); auto.
-    { rewrite -map_fmap_compose /=. admit. }
+    { by rewrite (interp_ren A Δ Γ). }
     iIntros (j' K') "Hj". iModIntro.
     wp_pures. tp_pure j' _.
     iMod ("H" $! j' K' with "Hj") as "H".
     iApply "H".
-  Admitted.
+  Qed.
 
   Lemma bin_log_related_alloc Δ Γ e e' τ :
     ({Δ;Γ} ⊨ e ≤log≤ e' : τ) -∗

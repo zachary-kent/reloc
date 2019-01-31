@@ -163,6 +163,16 @@ Proof.
   - admit.
 Admitted.
 
+(* Hmmm *)
+Instance env_ltyped2_proper `{relocG Σ} :
+  Proper ((≡) ==> (=) ==> (≡)) env_ltyped2.
+Proof.
+  intros Γ Γ' HΓ ? vvs ->.
+  apply equiv_dist=>n.
+  setoid_rewrite equiv_dist in HΓ.
+  by rewrite HΓ.
+Qed.
+
 Section refinement.
   Context `{relocG Σ}.
 
