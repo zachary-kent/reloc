@@ -23,10 +23,10 @@ Existing Instance lty2_persistent.
 
 (* The COFE structure on semantic types *)
 Section lty2_ofe.
-  Context `{relocG Σ}.
+  Context `{invG Σ}.
 
-  Global Instance lty2_equiv : Equiv lty2 := λ A B, ∀ w1 w2, A w1 w2 ≡ B w1 w2.
-  Global Instance lty2_dist : Dist lty2 := λ n A B, ∀ w1 w2, A w1 w2 ≡{n}≡ B w1 w2.
+  Instance lty2_equiv : Equiv lty2 := λ A B, ∀ w1 w2, A w1 w2 ≡ B w1 w2.
+  Instance lty2_dist : Dist lty2 := λ n A B, ∀ w1 w2, A w1 w2 ≡{n}≡ B w1 w2.
   Lemma lty2_ofe_mixin : OfeMixin lty2.
   Proof. by apply (iso_ofe_mixin (lty2_car : lty2 → (val -c> val -c> iProp Σ))). Qed.
   Canonical Structure lty2C := OfeT lty2 lty2_ofe_mixin.
@@ -185,6 +185,17 @@ Section refinement.
     rewrite refines_eq /refines_def.
     solve_proper.
   Qed.
+
+  (* TODO: this is a bit icky *)
+  Global Instance refines_proper E  :
+    Proper ((≡) ==> (=) ==> (=) ==> (≡) ==> (≡)) (refines E).
+  Proof.
+    intros Γ Γ' HΓ ? e -> ? e' -> A A' HA.
+    apply equiv_dist=>n.
+    setoid_rewrite equiv_dist in HA.
+    setoid_rewrite equiv_dist in HΓ.
+    by rewrite HA HΓ.
+  Defined.
 
 End refinement.
 
