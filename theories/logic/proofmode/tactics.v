@@ -322,7 +322,7 @@ Tactic Notation "rel_store_l" :=
     iAssumptionCore || fail "rel_store_l: cannot find" l "↦ₛ ?" in
   iStartProof;
   first
-    [rel_reshape_cont_r ltac:(fun K e' =>
+    [rel_reshape_cont_l ltac:(fun K e' =>
        eapply (tac_rel_store_l_simpl K);
        [reflexivity (** e = fill K (#l <- e') *)
        |iSolveTC    (** e' is a value *)
@@ -353,6 +353,69 @@ Tactic Notation "rel_store_r" :=
   |pm_reflexivity || fail "rel_store_r: this should not happen O-:"
   |reflexivity
   |rel_finish  (** new goal *)].
+
+(** Alloc *)
+Tactic Notation "rel_alloc_l_atomic" := rel_apply_l refines_alloc_l.
+
+Lemma tac_rel_alloc_l_simpl `{relocG Σ} K ℶ1 ℶ2 Γ e t e' v' A :
+  e = fill K (Alloc e') →
+  IntoVal e' v' →
+  MaybeIntoLaterNEnvs 1 ℶ1 ℶ2 →
+  (envs_entails ℶ2 (∀ (l : loc),
+     (l ↦ v' -∗ refines ⊤ Γ (fill K (of_val #l)) t A))) →
+  envs_entails ℶ1 (refines ⊤ Γ e t A).
+Proof.
+  rewrite envs_entails_eq. intros ???; subst.
+  rewrite into_laterN_env_sound /=.
+  rewrite -(refines_alloc_l _ _ ⊤); eauto.
+  rewrite -fupd_intro.
+  apply bi.later_mono.
+Qed.
+
+Tactic Notation "rel_alloc_l" ident(l) "as" constr(H) :=
+  iStartProof;
+  first
+    [rel_reshape_cont_l ltac:(fun K e' =>
+       eapply (tac_rel_alloc_l_simpl K);
+       [reflexivity (** e = fill K (Alloc e') *)
+       |iSolveTC    (** e' is a value *)
+       |idtac..])
+    |fail 1 "rel_alloc_l: cannot find 'Alloc'"];
+  [iSolveTC        (** IntoLaters *)
+  |iIntros (l) H; rel_finish  (** new goal *)].
+
+Lemma tac_rel_alloc_r `{relocG Σ} K' ℶ E Γ t' v' e t A :
+  t = fill K' (Alloc t') →
+  IntoVal t' v' →
+  nclose specN ⊆ E →
+  envs_entails ℶ (∀ l, l ↦ₛ v' -∗ refines E Γ e (fill K' #l) A) →
+  envs_entails ℶ (refines E Γ e t A).
+Proof.
+  intros ????. subst t.
+  rewrite -refines_alloc_r //.
+Qed.
+
+Tactic Notation "rel_alloc_r" ident(l) "as" constr(H) :=
+  iStartProof;
+  first
+    [rel_reshape_cont_r ltac:(fun K e' =>
+       eapply (tac_rel_alloc_r K);
+       [reflexivity  (** t = K'[alloc t'] *)
+       |iSolveTC     (** t' is a value *)
+       |idtac..])
+    |fail 1 "rel_alloc_r: cannot find 'Alloc'"];
+  [solve_ndisj || fail "rel_alloc_r: cannot prove 'nclose specN ⊆ ?'"
+  |iIntros (l) H; rel_finish  (** new goal *)].
+
+Tactic Notation "rel_alloc_r" :=
+  let l := fresh in
+  let H := iFresh "H" in
+  rel_alloc_r l as H.
+
+Tactic Notation "rel_alloc_l" :=
+  let l := fresh in
+  let H := iFresh "H" in
+  rel_alloc_l l as H.
 
 (** Cas *)
 (* TODO: non-atomic tactics for CAS? *)
