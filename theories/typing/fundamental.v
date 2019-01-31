@@ -6,6 +6,7 @@ From reloc.logic.proofmode Require Export tactics spec_tactics.
 From reloc.typing Require Export interp.
 
 From iris.proofmode Require Export tactics.
+From Autosubst Require Import Autosubst.
 
 Section fundamental.
   Context `{relocG Σ}.
@@ -381,9 +382,6 @@ Section fundamental.
     destruct op; inversion Hopv'; simplify_eq/=; eauto.
   Qed.
 
-  (* TODO *)
-
-  From Autosubst Require Import Autosubst.
   Lemma bin_log_related_tapp' Δ Γ e e' τ τ' :
     ({Δ;Γ} ⊨ e ≤log≤ e' : TForall τ) -∗
     {Δ;Γ} ⊨ (TApp e) ≤log≤ (TApp e') : τ.[τ'/].
@@ -394,52 +392,53 @@ Section fundamental.
     rel_bind_ap e e' "IH" v v' "IH".
     iDestruct ("IH" $! (interp τ' Δ)) as "#IH".
     iApply refines_ret'; auto.
-    admit.
-  Admitted.
+    by rewrite -interp_subst.
+  Qed.
 
-(*
-  Lemma bin_log_related_tapp (τi : D) Δ Γ e e' τ :
-    {Δ;Γ} ⊨ e ≤log≤ e' : TForall τ -∗
-    {τi::Δ;⤉Γ} ⊨ TApp e ≤log≤ TApp e' : τ.
+  Lemma bin_log_related_tapp (τi : lty2) Δ Γ e e' τ :
+    ({Δ;Γ} ⊨ e ≤log≤ e' : TForall τ) -∗
+    {τi::Δ;⤉Γ} ⊨ (TApp e) ≤log≤ (TApp e') : τ.
   Proof.
-    rewrite bin_log_related_eq.
+    rewrite /bin_log_related refines_eq.
     iIntros "IH".
     iIntros (vvs ρ) "#Hs #HΓ"; iIntros (j K) "Hj /=".
-    wp_bind (env_subst _ e).
-    tp_bind j (env_subst _ e').
+    iModIntro. wp_bind (subst_map _ e).
+    tp_bind j (subst_map _ e').
     iSpecialize ("IH" with "Hs [HΓ] Hj").
-    { by rewrite interp_env_ren. }
-    iMod "IH" as "IH /=". iModIntro.
+    { by rewrite interp_ren. }
+    iMod "IH" as "IH /=".
     iApply (wp_wand with "IH").
     iIntros (v). iDestruct 1 as (v') "[Hj #IH]".
     iMod ("IH" $! τi with "Hj"); auto.
   Qed.
 
+  Lemma bin_log_related_unfold Δ Γ e e' τ :
+    ({Δ;Γ} ⊨ e ≤log≤ e' : TRec τ) -∗
+    {Δ;Γ} ⊨ rec_unfold e ≤log≤ rec_unfold e' : τ.[(TRec τ)/].
+  Proof.
+    iIntros "IH".
+    rel_bind_ap e e' "IH" v v' "IH".
+    iEval (rewrite lty_rec_unfold /lty2_car /=) in "IH".
+    change (lty2_rec _) with (interp (TRec τ) Δ).
+    unfold rec_unfold. unlock. (* TODO WHY?????? *)
+    rel_pure_l. rel_pure_r.
+    value_case. by rewrite -interp_subst.
+  Qed.
+
   Lemma bin_log_related_fold Δ Γ e e' τ :
-    {Δ;Γ} ⊨ e ≤log≤ e' : τ.[(TRec τ)/] -∗
-    {Δ;Γ} ⊨ Fold e ≤log≤ Fold e' : TRec τ.
+    ({Δ;Γ} ⊨ e ≤log≤ e' : τ.[(TRec τ)/]) -∗
+    {Δ;Γ} ⊨ e ≤log≤ e' : TRec τ.
   Proof.
     iIntros "IH".
     rel_bind_ap e e' "IH" v v' "IH".
     value_case.
-    rewrite fixpoint_unfold /= -interp_subst.
-    iExists (_, _); eauto.
+    iModIntro.
+    iEval (rewrite lty_rec_unfold /lty2_car /=).
+    change (lty2_rec _) with (interp (TRec τ) Δ).
+    by rewrite -interp_subst.
   Qed.
 
-  Lemma bin_log_related_unfold Δ Γ e e' τ :
-    {Δ;Γ} ⊨ e ≤log≤ e' : TRec τ -∗
-    {Δ;Γ} ⊨ Unfold e ≤log≤ Unfold e' : τ.[(TRec τ)/].
-  Proof.
-    iIntros "IH".
-    rel_bind_ap e e' "IH" v v' "IH".
-    rewrite /= fixpoint_unfold /=.
-    change (fixpoint _) with (interp ⊤ (TRec τ) Δ).
-    iDestruct "IH" as ([w w']) "#[% Hiz]"; simplify_eq/=.
-    rel_unfold_l.
-    rel_unfold_r.
-    value_case. by rewrite -interp_subst.
-  Qed.
-
+(*
   Lemma bin_log_related_pack' Δ Γ e e' τ τ' :
     {Δ;Γ} ⊨ e ≤log≤ e' : τ.[τ'/] -∗
     {Δ;Γ} ⊨ Pack e ≤log≤ Pack e' : TExists τ.
@@ -501,7 +500,7 @@ Section fundamental.
     rewrite (interp_weaken [] [τi] Δ _ τ2) /=.
     eauto.
   Qed.
-
+*)
 
   Theorem binary_fundamental Δ Γ e τ :
     Γ ⊢ₜ e : τ → ({Δ;Γ} ⊨ e ≤log≤ e : τ)%I.
@@ -521,30 +520,19 @@ Section fundamental.
     - by iApply bin_log_related_injr.
     - by iApply (bin_log_related_case with "[] []").
     - by iApply (bin_log_related_if with "[] []").
-    - assert (Closed (x :b: f :b: dom (gset string) Γ) e).
-      { apply typed_X_closed in Ht.
-        rewrite !dom_insert_binder in Ht.
-        revert Ht. destruct x,f; cbn-[union];
-        (* TODO: why is simple rewriting is not sufficient here? *)
-        erewrite ?(left_id ∅); eauto.
-        all: apply _. }
-      iApply (bin_log_related_rec with "[]"); eauto.
+    - iApply (bin_log_related_rec with "[]"); eauto.
     - by iApply (bin_log_related_app with "[] []").
-    - assert (Closed (dom _ Γ) e).
-      { apply typed_X_closed in Ht.
-        pose (K:=(dom_fmap (asubst (ren (+1))) Γ (D:=stringset))).
-        fold_leibniz. by rewrite -K. }
-      iApply bin_log_related_tlam; eauto.
+    - iApply bin_log_related_tlam; eauto.
     - by iApply bin_log_related_tapp'.
     - by iApply bin_log_related_fold.
     - by iApply bin_log_related_unfold.
-    - by iApply bin_log_related_pack'.
-    - iApply (bin_log_related_unpack with "[]"); eauto.
+    (* - by iApply bin_log_related_pack'. *)
+    (* - iApply (bin_log_related_unpack with "[]"); eauto. *)
     - by iApply bin_log_related_fork.
     - by iApply bin_log_related_alloc.
     - by iApply bin_log_related_load.
     - by iApply (bin_log_related_store with "[]").
     - by iApply (bin_log_related_CAS with "[] []").
   Qed.
-*)
+
 End fundamental.

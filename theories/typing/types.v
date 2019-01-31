@@ -116,7 +116,7 @@ Inductive typed (Γ : stringmap type) : expr → type → Prop :=
   | If_typed e0 e1 e2 τ :
      Γ ⊢ₜ e0 : TBool → Γ ⊢ₜ e1 : τ → Γ ⊢ₜ e2 : τ → Γ ⊢ₜ If e0 e1 e2 : τ
   | Rec_typed f x e τ1 τ2 :
-     <[x:=τ1]>(<[f:=TArrow τ1 τ2]>Γ) ⊢ₜ e : τ2 →
+     <[f:=TArrow τ1 τ2]>(<[x:=τ1]>Γ) ⊢ₜ e : τ2 →
      Γ ⊢ₜ Rec f x e : TArrow τ1 τ2
   | App_typed e1 e2 τ1 τ2 :
      Γ ⊢ₜ e1 : TArrow τ1 τ2 → Γ ⊢ₜ e2 : τ1 → Γ ⊢ₜ App e1 e2 : τ2
@@ -127,16 +127,17 @@ Inductive typed (Γ : stringmap type) : expr → type → Prop :=
      Γ ⊢ₜ e #() : τ.[τ'/]
   | TFold e τ : Γ ⊢ₜ e : τ.[TRec τ/] → Γ ⊢ₜe : TRec τ
   | TUnfold e τ : Γ ⊢ₜ e : TRec τ → Γ ⊢ₜ rec_unfold e : τ.[TRec τ/]
-  | TPack e τ τ' : Γ ⊢ₜ e : τ.[τ'/] → Γ ⊢ₜ e : TExists τ
-  | TUnpack e1 e2 τ τ2 : Γ ⊢ₜ e1 : TExists τ →
-      (subst (ren (+1%nat)) <$> Γ) ⊢ₜ e2 : TArrow τ (subst (ren (+1%nat)) τ2) →
-      Γ ⊢ₜ unpack e1 e2 : τ2
+  (* | TPack e τ τ' : Γ ⊢ₜ e : τ.[τ'/] → Γ ⊢ₜ e : TExists τ *)
+  (* | TUnpack e1 e2 τ τ2 : Γ ⊢ₜ e1 : TExists τ → *)
+  (*     (subst (ren (+1%nat)) <$> Γ) ⊢ₜ e2 : TArrow τ (subst (ren (+1%nat)) τ2) → *)
+  (*     Γ ⊢ₜ unpack e1 e2 : τ2 *)
   | TFork e : Γ ⊢ₜ e : TUnit → Γ ⊢ₜ Fork e : TUnit
   | TAlloc e τ : Γ ⊢ₜ e : τ → Γ ⊢ₜ Alloc e : Tref τ
   | TLoad e τ : Γ ⊢ₜ e : Tref τ → Γ ⊢ₜ Load e : τ
   | TStore e e' τ : Γ ⊢ₜ e : Tref τ → Γ ⊢ₜ e' : τ → Γ ⊢ₜ Store e e' : TUnit
   | TCAS e1 e2 e3 τ :
-     EqType τ → Γ ⊢ₜ e1 : Tref τ → Γ ⊢ₜ e2 : τ → Γ ⊢ₜ e3 : τ →
+     EqType τ → UnboxedType τ →
+     Γ ⊢ₜ e1 : Tref τ → Γ ⊢ₜ e2 : τ → Γ ⊢ₜ e3 : τ →
      Γ ⊢ₜ CAS e1 e2 e3 : TBool
 where "Γ ⊢ₜ e : τ" := (typed Γ e τ).
 

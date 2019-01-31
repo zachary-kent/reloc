@@ -169,4 +169,9 @@ Section interp_ren.
     destruct (Γ !! x); auto; simpl. f_equiv.
     symmetry. apply (interp_ren_up []).
   Qed.
+
+  Lemma interp_subst Δ2 τ τ' :
+    interp τ (interp τ' Δ2 :: Δ2) ≡ interp (τ.[τ'/]) Δ2.
+  Proof. Admitted.
+
 End interp_ren.

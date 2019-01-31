@@ -63,6 +63,10 @@ Section semtypes.
     Proper ((=) ==> (=) ==> dist n ==> dist n) (interp_expr E).
   Proof. solve_proper. Qed.
 
+  Global Instance interp_expr_proper E e e' :
+    Proper ((≡) ==> (≡)) (interp_expr E e e').
+  Proof. apply ne_proper=>n. by apply interp_expr_ne. Qed.
+
   Definition lty2_unit : lty2 := Lty2 (λ w1 w2, ⌜ w1 = #() ∧ w2 = #() ⌝%I).
   Definition lty2_bool : lty2 := Lty2 (λ w1 w2, ∃ b : bool, ⌜ w1 = #b ∧ w2 = #b ⌝)%I.
   Definition lty2_int : lty2 := Lty2 (λ w1 w2, ∃ n : Z, ⌜ w1 = #n ∧ w2 = #n ⌝)%I.
@@ -118,6 +122,9 @@ Section semtypes.
     f_equiv.
     apply lty2_car_ne; eauto.
   Qed.
+
+  Lemma lty_rec_unfold (C : lty2C -n> lty2C) : lty2_rec C ≡ lty2_rec1 C (lty2_rec C).
+  Proof. apply fixpoint_unfold. Qed.
 
 End semtypes.
 
