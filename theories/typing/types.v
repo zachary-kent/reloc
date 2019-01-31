@@ -139,3 +139,11 @@ Inductive typed (Γ : stringmap type) : expr → type → Prop :=
      EqType τ → Γ ⊢ₜ e1 : Tref τ → Γ ⊢ₜ e2 : τ → Γ ⊢ₜ e3 : τ →
      Γ ⊢ₜ CAS e1 e2 e3 : TBool
 where "Γ ⊢ₜ e : τ" := (typed Γ e τ).
+
+Lemma binop_nat_typed_safe (op : bin_op) (n1 n2 : Z) τ :
+  binop_nat_res_type op = Some τ → is_Some (bin_op_eval op #n1 #n2).
+Proof. destruct op; simpl; eauto. Qed.
+
+Lemma binop_bool_typed_safe (op : bin_op) (b1 b2 : bool) τ :
+  binop_bool_res_type op = Some τ → is_Some (bin_op_eval op #b1 #b2).
+Proof. destruct op; naive_solver. Qed.
