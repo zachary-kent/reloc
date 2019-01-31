@@ -110,3 +110,63 @@ Section props.
 End props.
 
 Notation "⤉ Γ" := (Autosubst_Classes.subst (ren (+1)%nat) <$> Γ) (at level 10, format "⤉ Γ").
+
+Section interp_ren.
+  Context `{relocG Σ}.
+
+  Import uPred.
+  Ltac properness :=
+    repeat match goal with
+    | |- (∃ _: _, _)%I ≡ (∃ _: _, _)%I => apply exist_proper =>?
+    | |- (∀ _: _, _)%I ≡ (∀ _: _, _)%I => apply forall_proper =>?
+    | |- (_ ∧ _)%I ≡ (_ ∧ _)%I => apply and_proper
+    | |- (_ ∨ _)%I ≡ (_ ∨ _)%I => apply or_proper
+    | |- (_ → _)%I ≡ (_ → _)%I => apply impl_proper
+    | |- (_ -∗ _)%I ≡ (_ -∗ _)%I => apply wand_proper
+    | |- (WP _ @ _ {{ _ }})%I ≡ (WP _ @ _ {{ _ }})%I => apply wp_proper =>?
+    | |- (▷ _)%I ≡ (▷ _)%I => apply later_proper
+    | |- (□ _)%I ≡ (□ _)%I => apply intuitionistically_proper
+    | |- (|={_,_}=> _ )%I ≡ (|={_,_}=> _ )%I => apply fupd_proper
+    | |- (_ ∗ _)%I ≡ (_ ∗ _)%I => apply sep_proper
+    | |- (inv _ _)%I ≡ (inv _ _)%I => apply (contractive_proper _)
+    end.
+
+
+  (* TODO: why do I need to unfold lty2_car here? *)
+  Lemma interp_ren_up Δ1 Δ2 τ τi :
+    interp τ (Δ1 ++ Δ2) ≡ interp (τ.[upn (length Δ1) (ren (+1)%nat)]) (Δ1 ++ τi :: Δ2).
+  Proof.
+    revert Δ1 Δ2. induction τ => Δ1 Δ2; simpl; eauto.
+    - intros v1 v2. unfold lty2_car. simpl. properness; eauto.
+        by apply IHτ1. by apply IHτ2.
+    - intros v1 v2. unfold lty2_car. simpl. properness; eauto.
+        by apply IHτ1. by apply IHτ2.
+    - intros v1 v2. unfold lty2_car. simpl.
+      unfold interp_expr. properness; eauto.
+        by apply IHτ1. by apply IHτ2.
+    - apply fixpoint_proper=> τ' w1 w2 /=.
+      unfold lty2_car. simpl.
+      properness; auto. apply (IHτ (_ :: _)).
+    - intros v1 v2; simpl. admit.
+      (* rewrite iter_up; destruct lt_dec as [Hl | Hl]; simpl; properness. *)
+      (* { by rewrite !lookup_app_l. } *)
+      (* change (bi_ofeC (uPredI (iResUR Σ))) with (uPredC (iResUR Σ)). *)
+      (* rewrite !lookup_app_r; [|lia ..]. *)
+      (* assert ((length Δ1 + S (x - length Δ1) - length Δ1) = S (x - length Δ1)) as Hwat. *)
+      (* { lia. } *)
+      (* rewrite Hwat. simpl. done. *)
+    - intros v1 v2; unfold lty2_car; simpl; unfold interp_expr;
+        simpl; properness; auto. apply (IHτ (_ :: _)).
+    - intros ??; unfold lty2_car; simpl; properness; auto. apply (IHτ (_ :: _)).
+    - intros ??; unfold lty2_car; simpl; properness; auto. by apply IHτ.
+  Admitted.
+
+  Lemma interp_ren A Δ (Γ : gmap string type) :
+    ((λ τ, interp τ (A::Δ)) <$> ⤉Γ) ≡ ((λ τ, interp τ Δ) <$> Γ).
+  Proof.
+    rewrite -map_fmap_compose => x /=.
+    rewrite !lookup_fmap.
+    destruct (Γ !! x); auto; simpl. f_equiv.
+    symmetry. apply (interp_ren_up []).
+  Qed.
+End interp_ren.

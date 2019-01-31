@@ -111,7 +111,7 @@ Section fundamental.
     (* TODO better proof here, without exposing interp_expr *)
     iSpecialize ("Hff" with "Hvv"). simpl.
     iApply refines_ret'; eauto.
-  Admitted.
+  Qed.
 
   Lemma bin_log_related_rec Δ (Γ : stringmap type) (f x : binder) (e e' : expr) τ1 τ2 :
     □ ({Δ;<[f:=TArrow τ1 τ2]>(<[x:=τ1]>Γ)} ⊨ e ≤log≤ e' : τ2) -∗
@@ -133,15 +133,12 @@ Section fundamental.
     rel_bind_r e1'.
     iApply (refines_bind _ _ _ _ (interp τ1 (R :: Δ)) with "[He1] [He2]").
     - rewrite /bin_log_related.
-      assert (((λ τ : type, (interp τ) (R :: Δ)) <$> ⤉Γ)
-                ≡ ((λ τ : type, (interp τ) Δ) <$> Γ)). admit.
-      (* rewrite H0. *)
-      (* TODO *) admit.
+      by rewrite interp_ren.
     - iIntros (? ?) "? /=".
       rel_pure_l. rel_rec_l.
       rel_pure_r. rel_rec_r.
       done.
-  Admitted.
+  Qed.
 
   (* TODO
   Lemma bin_log_related_seq' Δ Γ e1 e2 e1' e2' τ1 τ2 :
