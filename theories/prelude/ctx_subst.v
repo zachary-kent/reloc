@@ -49,23 +49,3 @@ Proof.
   intros es e. simpl.
   by rewrite IHK subst_map_fill_item.
 Qed.
-
-(* TODO: move to metatheory.v *)
-Lemma subst_map_is_closed X e vs :
-  is_closed_expr X e →
-  (∀ x, x ∈ X → vs !! x = None) →
-  subst_map vs e = e.
-Proof.
-  revert X vs. induction e => X vs /=;
-  rewrite ?bool_decide_spec ?andb_True=> Hc HX;
-     repeat case_decide; simplify_eq/=; f_equal;
-     intuition eauto 20 with set_solver.
-  - specialize (HX x). by rewrite HX.
-  - eapply IHe; eauto.
-    intro y. destruct f as [|f], x as [|x]; simpl; eauto;
-    intros [HH|HH]%elem_of_list_In; simplify_eq/=;
-    rewrite ?lookup_delete_None; try destruct HH; eauto;
-    repeat right; apply HX, elem_of_list_In; auto.
-Qed.
-Lemma subst_map_is_closed_nil e vs : is_closed_expr [] e → subst_map vs e = e.
-Proof. intros. apply subst_map_is_closed with []; set_solver. Qed.
