@@ -192,37 +192,10 @@ Instance map_zip_with_ne {K} {A B C : ofeT} (f : A → B → C)
   Proper (dist n ==> dist n ==> dist n)
     (@map_zip_with (gmap K) _ _ _ _ f).
 Proof.
-  intros Hf m1.
-  induction m1 as [|i x m Hnone IH] using map_ind.
-  { intros m2 Hm2 m1' m2' Hm2' i.
-    rewrite !map_lookup_zip_with.
-    induction m2 as [|j y m2 ? IH2] using map_ind.
-    - by rewrite lookup_empty.
-    - exfalso.
-      specialize (Hm2 j). revert Hm2.
-      rewrite lookup_insert lookup_empty /=. by inversion 1. }
-    { intros m2 Hm2 m1' m2' Hm2'.
-      assert (is_Some (m2 !! i)) as [y Hy].
-      { specialize (Hm2 i). revert Hm2. rewrite lookup_insert=>Hm2.
-        destruct (m2 !! i); first naive_solver.
-        inversion Hm2. }
-      replace m2 with (<[i:=y]>(delete i m2)); last first.
-      { rewrite insert_delete insert_id //. }
-      intros j. rewrite !map_lookup_zip_with.
-      destruct (decide (j = i)) as [->|?].
-      - rewrite !lookup_insert.
-        specialize (Hm2 i). revert Hm2.
-        rewrite lookup_insert Hy. intros Hm.
-        simplify_eq/=. apply Some_dist_inj in Hm.
-        apply option_mbind_ne; last by apply Hm2'.
-        intros x1 x2 ->. by rewrite Hf.
-      - rewrite !lookup_insert_ne //.
-        rewrite lookup_delete_ne //.
-        specialize (Hm2 j). revert Hm2. rewrite lookup_insert_ne //.
-        intros Hj. apply option_mbind_ne=>//.
-        intros x1 x2 Hx.
-        apply option_mbind_ne; last by apply Hm2'.
-        intros y1 y2 <-. by rewrite Hf. }
+  intros Hf m1 m2 Hm2 m1' m2' Hm2' i.
+  rewrite !map_lookup_zip_with. f_equiv =>//.
+  intros x1 x2 Hx2. f_equiv =>//.
+  intros y1 y2 Hy2. repeat f_equiv =>//.
 Qed.
 
 Instance env_ltyped2_ne `{relocG Σ} n :
