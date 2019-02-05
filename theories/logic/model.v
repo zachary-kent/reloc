@@ -139,6 +139,92 @@ Definition env_ltyped2 `{relocG Σ} (Γ : gmap string lty2)
   (⌜ ∀ x, is_Some (Γ !! x) ↔ is_Some (vs !! x) ⌝ ∧
   [∗ map] i ↦ Avv ∈ map_zip Γ vs, lty2_car Avv.1 Avv.2.1 Avv.2.2)%I.
 
+(** todo move this to prelude *)
+Section big_opm.
+  Context `{Countable K} {A : ofeT}.
+  Context `{Monoid M o}.
+
+  Infix "`o`" := o (at level 50, left associativity).
+  Implicit Types m : gmap K A.
+  Implicit Types f g : K → A → M.
+
+  Global Instance big_opM_ne2 n `{Proper _ (dist n ==> dist n ==> dist n) o} :
+    Proper (pointwise_relation _ (dist n ==> dist n) ==> dist n ==> dist n)
+           (big_opM o (K:=K) (A:=A)).
+  Proof.
+    intros f g Hf m1.
+    induction m1 as [|i x m Hnone IH] using map_ind.
+    { intros m2 Hm2. rewrite big_opM_empty.
+      induction m2 as [|j y m2 ? IH2] using map_ind.
+      - by rewrite big_opM_empty.
+      - exfalso.
+        specialize (Hm2 j). revert Hm2.
+        rewrite lookup_insert lookup_empty /=. by inversion 1. }
+    intros m2 Hm2.
+    assert (is_Some (m2 !! i)) as [y Hy].
+    { specialize (Hm2 i). revert Hm2. rewrite lookup_insert=>Hm2.
+      destruct (m2 !! i); first naive_solver.
+      inversion Hm2. }
+    replace m2 with (<[i:=y]>(delete i m2)).
+    - rewrite !big_opM_insert // /=; last by apply lookup_delete.
+      f_equiv.
+      + apply Hf. specialize (Hm2 i). revert Hm2.
+        rewrite Hy lookup_insert //. by inversion 1.
+      + apply IH=> j.
+        destruct (decide (j = i)) as [->|?].
+        * by rewrite lookup_delete Hnone.
+        * rewrite lookup_delete_ne//. specialize (Hm2 j).
+          revert Hm2. by rewrite lookup_insert_ne.
+    - rewrite insert_delete insert_id //.
+  Qed.
+
+End big_opm.
+
+(** todo, move to iris *)
+Instance option_mbind_ne {A B : ofeT} n :
+  Proper (((dist n) ==> (dist n)) ==> (dist n) ==> (dist n)) (@option_bind A B).
+Proof. destruct 2; simpl; try constructor; auto. Qed.
+
+(** todo generalize *)
+Instance map_zip_with_ne {K} {A B C : ofeT} (f : A → B → C)
+  `{Countable K} `{!EqDecision K} n :
+  Proper (dist n ==> dist n ==> dist n) f →
+  Proper (dist n ==> dist n ==> dist n)
+    (@map_zip_with (gmap K) _ _ _ _ f).
+Proof.
+  intros Hf m1.
+  induction m1 as [|i x m Hnone IH] using map_ind.
+  { intros m2 Hm2 m1' m2' Hm2' i.
+    rewrite !map_lookup_zip_with.
+    induction m2 as [|j y m2 ? IH2] using map_ind.
+    - by rewrite lookup_empty.
+    - exfalso.
+      specialize (Hm2 j). revert Hm2.
+      rewrite lookup_insert lookup_empty /=. by inversion 1. }
+    { intros m2 Hm2 m1' m2' Hm2'.
+      assert (is_Some (m2 !! i)) as [y Hy].
+      { specialize (Hm2 i). revert Hm2. rewrite lookup_insert=>Hm2.
+        destruct (m2 !! i); first naive_solver.
+        inversion Hm2. }
+      replace m2 with (<[i:=y]>(delete i m2)); last first.
+      { rewrite insert_delete insert_id //. }
+      intros j. rewrite !map_lookup_zip_with.
+      destruct (decide (j = i)) as [->|?].
+      - rewrite !lookup_insert.
+        specialize (Hm2 i). revert Hm2.
+        rewrite lookup_insert Hy. intros Hm.
+        simplify_eq/=. apply Some_dist_inj in Hm.
+        apply option_mbind_ne; last by apply Hm2'.
+        intros x1 x2 ->. by rewrite Hf.
+      - rewrite !lookup_insert_ne //.
+        rewrite lookup_delete_ne //.
+        specialize (Hm2 j). revert Hm2. rewrite lookup_insert_ne //.
+        intros Hj. apply option_mbind_ne=>//.
+        intros x1 x2 Hx.
+        apply option_mbind_ne; last by apply Hm2'.
+        intros y1 y2 <-. by rewrite Hf. }
+Qed.
+
 Instance env_ltyped2_ne `{relocG Σ} n :
   Proper (dist n ==> (=) ==> dist n) env_ltyped2.
 Proof.
@@ -167,8 +253,10 @@ Proof.
         apply (Hvvs x) in HH.
         destruct HH as [? HH].
         rewrite HH lawl. inversion 1. }
-  - admit.
-Admitted.
+  - apply big_opM_ne2; first apply _.
+    + by intros x A B ->.
+    + apply map_zip_with_ne=>//. apply _.
+Qed.
 
 (* Hmmm *)
 Instance env_ltyped2_proper `{relocG Σ} :
