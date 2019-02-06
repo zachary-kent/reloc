@@ -1,3 +1,5 @@
+(* ReLoC -- Relational logic for fine-grained concurrency *)
+(** Notion of contextual refinement & proof that it is a precongruence wrt the logical relation *)
 From iris.heap_lang Require Export lang.
 From iris.proofmode Require Import tactics.
 From reloc.typing Require Export types interp fundamental.

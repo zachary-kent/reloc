@@ -15,6 +15,7 @@ theories/typing/types.v
 theories/typing/interp.v
 theories/typing/fundamental.v
 theories/typing/contextual_refinement.v
+theories/typing/soundness.v
 
 theories/tests/tp_tests.v
 theories/tests/proofmode_tests.v
