@@ -4,17 +4,15 @@ From iris.algebra Require Export list.
 From iris.proofmode Require Import tactics.
 From reloc.typing Require Export types.
 From reloc.logic Require Import model.
+From reloc.prelude Require Import tactics asubst.
 From Autosubst Require Import Autosubst.
 
 Section semtypes.
   Context `{relocG Σ}.
-
   (** Type-level lambdas are interpreted as closures *)
-
   (** DF: lty2_forall is defined here because it depends on TApp *)
   Definition lty2_forall (C : lty2 → lty2) : lty2 := Lty2 (λ w1 w2,
     □ ∀ A : lty2, interp_expr ⊤ (TApp w1) (TApp w2) (C A))%I.
-
   Definition lty2_true : lty2 := Lty2 (λ w1 w2, True)%I.
 
   Program Definition ctx_lookup (x : var) : listC lty2C -n> lty2C := λne Δ,
@@ -113,53 +111,30 @@ Notation "⤉ Γ" := (Autosubst_Classes.subst (ren (+1)%nat) <$> Γ) (at level 1
 
 Section interp_ren.
   Context `{relocG Σ}.
-
-  Import uPred.
-  Ltac properness :=
-    repeat match goal with
-    | |- (∃ _: _, _)%I ≡ (∃ _: _, _)%I => apply exist_proper =>?
-    | |- (∀ _: _, _)%I ≡ (∀ _: _, _)%I => apply forall_proper =>?
-    | |- (_ ∧ _)%I ≡ (_ ∧ _)%I => apply and_proper
-    | |- (_ ∨ _)%I ≡ (_ ∨ _)%I => apply or_proper
-    | |- (_ → _)%I ≡ (_ → _)%I => apply impl_proper
-    | |- (_ -∗ _)%I ≡ (_ -∗ _)%I => apply wand_proper
-    | |- (WP _ @ _ {{ _ }})%I ≡ (WP _ @ _ {{ _ }})%I => apply wp_proper =>?
-    | |- (▷ _)%I ≡ (▷ _)%I => apply later_proper
-    | |- (□ _)%I ≡ (□ _)%I => apply intuitionistically_proper
-    | |- (|={_,_}=> _ )%I ≡ (|={_,_}=> _ )%I => apply fupd_proper
-    | |- (_ ∗ _)%I ≡ (_ ∗ _)%I => apply sep_proper
-    | |- (inv _ _)%I ≡ (inv _ _)%I => apply (contractive_proper _)
-    end.
-
+  Implicit Types Δ : list lty2.
 
   (* TODO: why do I need to unfold lty2_car here? *)
-  Lemma interp_ren_up Δ1 Δ2 τ τi :
+  Lemma interp_ren_up (Δ1 Δ2 : list lty2) τ τi :
     interp τ (Δ1 ++ Δ2) ≡ interp (τ.[upn (length Δ1) (ren (+1)%nat)]) (Δ1 ++ τi :: Δ2).
   Proof.
-    revert Δ1 Δ2. induction τ => Δ1 Δ2; simpl; eauto.
-    - intros v1 v2. unfold lty2_car. simpl. properness; eauto.
-        by apply IHτ1. by apply IHτ2.
-    - intros v1 v2. unfold lty2_car. simpl. properness; eauto.
-        by apply IHτ1. by apply IHτ2.
-    - intros v1 v2. unfold lty2_car. simpl.
-      unfold interp_expr. properness; eauto.
-        by apply IHτ1. by apply IHτ2.
+    revert Δ1 Δ2. induction τ => Δ1 Δ2; simpl; eauto;
+    try by
+      (intros ? ?; unfold lty2_car; simpl; properness; repeat f_equiv=>//).
     - apply fixpoint_proper=> τ' w1 w2 /=.
       unfold lty2_car. simpl.
       properness; auto. apply (IHτ (_ :: _)).
-    - intros v1 v2; simpl. admit.
-      (* rewrite iter_up; destruct lt_dec as [Hl | Hl]; simpl; properness. *)
-      (* { by rewrite !lookup_app_l. } *)
-      (* change (bi_ofeC (uPredI (iResUR Σ))) with (uPredC (iResUR Σ)). *)
-      (* rewrite !lookup_app_r; [|lia ..]. *)
-      (* assert ((length Δ1 + S (x - length Δ1) - length Δ1) = S (x - length Δ1)) as Hwat. *)
-      (* { lia. } *)
-      (* rewrite Hwat. simpl. done. *)
+    - intros v1 v2; simpl.
+      rewrite iter_up. case_decide; simpl; properness.
+      { by rewrite !lookup_app_l. }
+      change (bi_ofeC (uPredI (iResUR Σ))) with (uPredC (iResUR Σ)).
+      rewrite !lookup_app_r; [|lia..].
+      assert ((length Δ1 + S (x - length Δ1) - length Δ1) = S (x - length Δ1))%nat as Hwat.
+      { lia. }
+      rewrite Hwat. simpl. done.
     - intros v1 v2; unfold lty2_car; simpl; unfold interp_expr;
         simpl; properness; auto. apply (IHτ (_ :: _)).
     - intros ??; unfold lty2_car; simpl; properness; auto. apply (IHτ (_ :: _)).
-    - intros ??; unfold lty2_car; simpl; properness; auto. by apply IHτ.
-  Admitted.
+  Qed.
 
   Lemma interp_ren A Δ (Γ : gmap string type) :
     ((λ τ, interp τ (A::Δ)) <$> ⤉Γ) ≡ ((λ τ, interp τ Δ) <$> Γ).
@@ -170,8 +145,53 @@ Section interp_ren.
     symmetry. apply (interp_ren_up []).
   Qed.
 
+  Lemma interp_weaken (Δ1 Π Δ2 : list lty2) τ :
+    interp (τ.[upn (length Δ1) (ren (+ length Π))]) (Δ1 ++ Π ++ Δ2)
+    ≡ interp τ (Δ1 ++ Δ2).
+  Proof.
+    revert Δ1 Π Δ2. induction τ=> Δ1 Π Δ2; simpl; eauto;
+    try by
+      (intros ? ?; simpl; unfold lty2_car; simpl; repeat f_equiv =>//).
+    - apply fixpoint_proper=> τi ?? /=.
+      unfold lty2_car; simpl.
+      properness; auto. apply (IHτ (_ :: _)).
+    - intros ??; simpl; properness; auto.
+      rewrite iter_up; case_decide; properness; simpl.
+      { by rewrite !lookup_app_l. }
+      rewrite !lookup_app_r ;[| lia ..]. do 3 f_equiv. lia.
+    - intros ??; simpl; unfold lty2_car; simpl; unfold interp_expr.
+      properness; auto. by apply (IHτ (_ :: _)).
+    - intros ??; unfold lty2_car; simpl; properness; auto.
+        by apply (IHτ (_ :: _)).
+  Qed.
+
+  Lemma interp_subst_up (Δ1 Δ2 : list lty2) τ τ' :
+    interp τ (Δ1 ++ interp τ' Δ2 :: Δ2)
+    ≡ interp (τ.[upn (length Δ1) (τ' .: ids)]) (Δ1 ++ Δ2).
+  Proof.
+    revert Δ1 Δ2; induction τ=> Δ1 Δ2; simpl; eauto;
+    try by
+      (intros ? ?; unfold lty2_car; simpl; properness; repeat f_equiv=>//).
+    - apply fixpoint_proper=> τi ?? /=.
+      unfold lty2_car. simpl.
+      properness; auto. apply (IHτ (_ :: _)).
+    - intros w1 w2; simpl.
+      rewrite iter_up; case_decide; simpl; properness.
+      { by rewrite !lookup_app_l. }
+      rewrite !lookup_app_r; [|lia..].
+      case EQ: (x - length Δ1)%nat => [|n]; simpl.
+      { symmetry.
+        pose (HW := interp_weaken [] Δ1 Δ2 τ' w1 w2).
+        etrans; last by apply HW.
+        asimpl. reflexivity. }
+      rewrite !lookup_app_r; [|lia ..]. repeat f_equiv. lia.
+    - intros ??. unfold lty2_car; simpl; unfold interp_expr.
+      properness; auto. apply (IHτ (_ :: _)).
+    - intros ??; unfold lty2_car; simpl; properness; auto. apply (IHτ (_ :: _)).
+  Qed.
+
   Lemma interp_subst Δ2 τ τ' :
     interp τ (interp τ' Δ2 :: Δ2) ≡ interp (τ.[τ'/]) Δ2.
-  Proof. Admitted.
+  Proof. apply (interp_subst_up []). Qed.
 
 End interp_ren.
