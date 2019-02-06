@@ -7,7 +7,7 @@ From iris.heap_lang Require Export lifting metatheory.
 From iris.base_logic.lib Require Import invariants.
 From iris.algebra Require Import list gmap.
 From iris.heap_lang Require Import notation proofmode.
-From reloc Require Import logic.spec_rules prelude.ctx_subst.
+From reloc Require Import prelude.tactics logic.spec_rules prelude.ctx_subst.
 From reloc Require Export logic.spec_ra.
 
 (** Semantic intepretation of types *)
@@ -46,7 +46,7 @@ Section lty2_ofe.
   Global Instance lty2_car_ne n : Proper (dist n ==> (=) ==> (=) ==> dist n) lty2_car.
   Proof. by intros A A' ? w1 w2 <- ? ? <-. Qed.
   Global Instance lty2_car_proper : Proper ((≡) ==> (=) ==> (=) ==> (≡)) lty2_car.
-  Proof. by intros A A' ? w1 w2 <- ? ? <-. Qed.
+  Proof. solve_proper_from_ne. Qed.
 End lty2_ofe.
 
 Section semtypes.
@@ -65,7 +65,7 @@ Section semtypes.
 
   Global Instance interp_expr_proper E e e' :
     Proper ((≡) ==> (≡)) (interp_expr E e e').
-  Proof. apply ne_proper=>n. by apply interp_expr_ne. Qed.
+  Proof. apply ne_proper=>n. apply _. Qed.
 
   Definition lty2_unit : lty2 := Lty2 (λ w1 w2, ⌜ w1 = #() ∧ w2 = #() ⌝%I).
   Definition lty2_bool : lty2 := Lty2 (λ w1 w2, ∃ b : bool, ⌜ w1 = #b ∧ w2 = #b ⌝)%I.
@@ -185,7 +185,7 @@ Instance option_mbind_ne {A B : ofeT} n :
   Proper (((dist n) ==> (dist n)) ==> (dist n) ==> (dist n)) (@option_bind A B).
 Proof. destruct 2; simpl; try constructor; auto. Qed.
 
-(** todo generalize *)
+(** todo move somewhere *)
 Instance map_zip_with_ne {K} {A B C : ofeT} (f : A → B → C)
   `{Countable K} `{!EqDecision K} n :
   Proper (dist n ==> dist n ==> dist n) f →
@@ -204,42 +204,18 @@ Proof.
   intros Γ Γ' HΓ ? vvs ->.
   rewrite /env_ltyped2.
   f_equiv.
-  - repeat f_equiv. split.
-    { intros Hvvs x. split; intros HH.
-      - apply Hvvs. destruct (Γ !! x) as [?|] eqn:lawl; eauto.
-        specialize (HΓ x). revert HΓ.
-        destruct HH as [? HH].
-        rewrite HH lawl. inversion 1.
-      - destruct (Γ' !! x) as [?|] eqn:lawl; eauto.
-        specialize (HΓ x). revert HΓ.
-        apply (Hvvs x) in HH.
-        destruct HH as [? HH].
-        rewrite HH lawl. inversion 1. }
-    (* MM TASTY COPYPASTA WITH CARBONARYA SAUCE *)
-    { intros Hvvs x. split; intros HH.
-      - apply Hvvs. destruct (Γ' !! x) as [?|] eqn:lawl; eauto.
-        specialize (HΓ x). revert HΓ.
-        destruct HH as [? HH].
-        rewrite HH lawl. inversion 1.
-      - destruct (Γ !! x) as [?|] eqn:lawl; eauto.
-        specialize (HΓ x). revert HΓ.
-        apply (Hvvs x) in HH.
-        destruct HH as [? HH].
-        rewrite HH lawl. inversion 1. }
+  - f_equiv.
+    split;
+      intros Hvvs x; specialize (HΓ x); rewrite -(Hvvs x);
+      by apply (is_Some_ne n).
   - apply big_opM_ne2; first apply _.
     + by intros x A B ->.
     + apply map_zip_with_ne=>//. apply _.
 Qed.
 
-(* Hmmm *)
 Instance env_ltyped2_proper `{relocG Σ} :
   Proper ((≡) ==> (=) ==> (≡)) env_ltyped2.
-Proof.
-  intros Γ Γ' HΓ ? vvs ->.
-  apply equiv_dist=>n.
-  setoid_rewrite equiv_dist in HΓ.
-  by rewrite HΓ.
-Qed.
+Proof. solve_proper_from_ne. Qed.
 
 Section refinement.
   Context `{relocG Σ}.
@@ -264,17 +240,9 @@ Section refinement.
     solve_proper.
   Qed.
 
-  (* TODO: this is a bit icky *)
   Global Instance refines_proper E  :
     Proper ((≡) ==> (=) ==> (=) ==> (≡) ==> (≡)) (refines E).
-  Proof.
-    intros Γ Γ' HΓ ? e -> ? e' -> A A' HA.
-    apply equiv_dist=>n.
-    setoid_rewrite equiv_dist in HA.
-    setoid_rewrite equiv_dist in HΓ.
-    by rewrite HA HΓ.
-  Defined.
-
+  Proof. solve_proper_from_ne. Qed.
 End refinement.
 
 Notation "⟦ A ⟧ₑ" := (λ e e', interp_expr ⊤ e e' A).
