@@ -8,7 +8,7 @@ From reloc.logic Require Export model rules.
 
 Section rules.
   Context `{relocG Σ}.
-  Implicit Types A : lty2.
+  Implicit Types A : lty2 Σ.
 
   Lemma refines_weaken E Γ e1 e2 A A' :
     (∀ v1 v2, A v1 v2 ={⊤}=∗ A' v1 v2) -∗

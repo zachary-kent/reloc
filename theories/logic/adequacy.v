@@ -16,10 +16,10 @@ Instance subG_relocPreG {Σ} : subG relocΣ Σ → relocPreG Σ.
 Proof. solve_inG. Qed.
 
 Definition pure_lty2 `{relocG Σ} (P : val → val → Prop) :=
-  Lty2 (λ v v', ⌜P v v'⌝)%I.
+  @Lty2 Σ (λ v v', ⌜P v v'⌝)%I _.
 
 Lemma refines_adequate Σ `{relocPreG Σ}
-  (A : ∀ `{relocG Σ}, lty2)
+  (A : ∀ `{relocG Σ}, lty2 Σ)
   (P : val → val → Prop) e e' σ :
   (∀ `{relocG Σ}, ∀ v v', A v v' -∗ pure_lty2 P v v') →
   (∀ `{relocG Σ}, {⊤;∅} ⊨ e << e' : A) →
@@ -65,7 +65,7 @@ Proof.
 Qed.
 
 Theorem refines_typesafety Σ `{relocPreG Σ} e e' e1
-        (A : ∀ `{relocG Σ}, lty2) thp σ σ' :
+        (A : ∀ `{relocG Σ}, lty2 Σ) thp σ σ' :
   (∀ `{relocG Σ}, {⊤;∅} ⊨ e << e' : A) →
   rtc erased_step ([e], σ) (thp, σ') → e1 ∈ thp →
   is_Some (to_val e1) ∨ reducible e1 σ'.

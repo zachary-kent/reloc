@@ -10,7 +10,7 @@ From Autosubst Require Import Autosubst.
 
 Section fundamental.
   Context `{relocG Σ}.
-  Implicit Types Δ : listC lty2C.
+  Implicit Types Δ : listC (lty2C Σ).
   Hint Resolve to_of_val.
 
   (** TODO: actually use this folding tactic *)
@@ -287,7 +287,7 @@ Section fundamental.
   Qed.
 
   Lemma bin_log_related_tlam Δ Γ (e e' : expr) τ :
-    (∀ (A : lty2),
+    (∀ (A : lty2 Σ),
       □ ({(A::Δ);⤉Γ} ⊨ e ≤log≤ e' : τ)) -∗
     {Δ;Γ} ⊨ (Λ: e) ≤log≤ (Λ: e') : TForall τ.
   Proof.
@@ -395,7 +395,7 @@ Section fundamental.
     by rewrite -interp_subst.
   Qed.
 
-  Lemma bin_log_related_tapp (τi : lty2) Δ Γ e e' τ :
+  Lemma bin_log_related_tapp (τi : lty2 Σ) Δ Γ e e' τ :
     ({Δ;Γ} ⊨ e ≤log≤ e' : TForall τ) -∗
     {τi::Δ;⤉Γ} ⊨ (TApp e) ≤log≤ (TApp e') : τ.
   Proof.

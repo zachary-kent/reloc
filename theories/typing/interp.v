@@ -11,12 +11,12 @@ Section semtypes.
   Context `{relocG Σ}.
   (** Type-level lambdas are interpreted as closures *)
   (** DF: lty2_forall is defined here because it depends on TApp *)
-  Definition lty2_forall (C : lty2 → lty2) : lty2 := Lty2 (λ w1 w2,
-    □ ∀ A : lty2, interp_expr ⊤ (TApp w1) (TApp w2) (C A))%I.
-  Definition lty2_true : lty2 := Lty2 (λ w1 w2, True)%I.
+  Definition lty2_forall (C : lty2 Σ → lty2 Σ) : lty2 Σ := Lty2 (λ w1 w2,
+    □ ∀ A : lty2 Σ, interp_expr ⊤ (TApp w1) (TApp w2) (C A))%I.
+  Definition lty2_true : lty2 Σ := Lty2 (λ w1 w2, True)%I.
 
-  Program Definition ctx_lookup (x : var) : listC lty2C -n> lty2C := λne Δ,
-    (from_option id lty2_true (Δ !! x))%I.
+  Program Definition ctx_lookup (x : var) : listC (lty2C Σ) -n> (lty2C Σ)
+    := λne Δ, (from_option id lty2_true (Δ !! x))%I.
   Next Obligation.
     intros x n Δ Δ' HΔ.
     destruct (Δ !! x) as [P|] eqn:HP; cbn in *.
@@ -29,8 +29,8 @@ Section semtypes.
       rewrite HP in HP'. inversion HP'.
   Qed.
 
-  Program Fixpoint interp (τ : type) : listC lty2C -n> lty2C :=
-    match τ as _ return listC lty2C -n> lty2C with
+  Program Fixpoint interp (τ : type) : listC (lty2C Σ) -n> lty2C Σ :=
+    match τ as _ return listC (lty2C Σ) -n> lty2C Σ with
     | TUnit => λne _, lty2_unit
     | TNat => λne _, lty2_int
     | TBool => λne _, lty2_bool
@@ -80,7 +80,7 @@ Section semtypes.
   Qed.
 
   Definition bin_log_related (E : coPset)
-             (Δ : list lty2) (Γ : stringmap type)
+             (Δ : list (lty2 Σ)) (Γ : stringmap type)
              (e e' : expr) (τ : type) : iProp Σ :=
     {E;fmap (λ τ, interp τ Δ) Γ} ⊨ e << e' : (interp τ Δ).
 
@@ -111,10 +111,10 @@ Notation "⤉ Γ" := (Autosubst_Classes.subst (ren (+1)%nat) <$> Γ) (at level 1
 
 Section interp_ren.
   Context `{relocG Σ}.
-  Implicit Types Δ : list lty2.
+  Implicit Types Δ : list (lty2 Σ).
 
   (* TODO: why do I need to unfold lty2_car here? *)
-  Lemma interp_ren_up (Δ1 Δ2 : list lty2) τ τi :
+  Lemma interp_ren_up (Δ1 Δ2 : list (lty2 Σ)) τ τi :
     interp τ (Δ1 ++ Δ2) ≡ interp (τ.[upn (length Δ1) (ren (+1)%nat)]) (Δ1 ++ τi :: Δ2).
   Proof.
     revert Δ1 Δ2. induction τ => Δ1 Δ2; simpl; eauto;
@@ -145,7 +145,7 @@ Section interp_ren.
     symmetry. apply (interp_ren_up []).
   Qed.
 
-  Lemma interp_weaken (Δ1 Π Δ2 : list lty2) τ :
+  Lemma interp_weaken (Δ1 Π Δ2 : list (lty2 Σ)) τ :
     interp (τ.[upn (length Δ1) (ren (+ length Π))]) (Δ1 ++ Π ++ Δ2)
     ≡ interp τ (Δ1 ++ Δ2).
   Proof.
@@ -165,7 +165,7 @@ Section interp_ren.
         by apply (IHτ (_ :: _)).
   Qed.
 
-  Lemma interp_subst_up (Δ1 Δ2 : list lty2) τ τ' :
+  Lemma interp_subst_up (Δ1 Δ2 : list (lty2 Σ)) τ τ' :
     interp τ (Δ1 ++ interp τ' Δ2 :: Δ2)
     ≡ interp (τ.[upn (length Δ1) (τ' .: ids)]) (Δ1 ++ Δ2).
   Proof.

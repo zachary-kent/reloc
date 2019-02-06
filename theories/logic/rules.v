@@ -9,7 +9,7 @@ From reloc.prelude Require Import ctx_subst.
 
 Section rules.
   Context `{relocG Σ}.
-  Implicit Types A : lty2.
+  Implicit Types A : lty2 Σ.
   Implicit Types e t : expr.
   Implicit Types v w : val.
 
