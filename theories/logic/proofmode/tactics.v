@@ -6,6 +6,7 @@ From iris.proofmode Require Import
      reduction.
 From reloc.logic Require Import proofmode.spec_tactics.
 From reloc.logic Require Export model rules.
+From reloc.prelude Require Export pureclosed.
 From iris.proofmode Require Export tactics.
 (* Set Default Proof Using "Type". *)
 
@@ -125,7 +126,7 @@ Tactic Notation "rel_apply_r" open_constr(lem) :=
 
 Lemma tac_rel_pure_l `{relocG Σ} K e1 ℶ ℶ' E Γ e e2 eres ϕ n m t A :
   e = fill K e1 →
-  PureExec ϕ n e1 e2 →
+  PureClosed ϕ n e1 e2 →
   ϕ →
   ((m = n ∧ E = ⊤) ∨ m = 0%nat) →
   MaybeIntoLaterNEnvs m ℶ ℶ' →
@@ -142,7 +143,7 @@ Qed.
 
 Lemma tac_rel_pure_r `{relocG Σ} K e1 ℶ E Γ e e2 eres ϕ n t A :
   e = fill K e1 →
-  PureExec ϕ n e1 e2 →
+  PureClosed ϕ n e1 e2 →
   ϕ →
   nclose specN ⊆ E →
   eres = fill K e2 →
@@ -157,8 +158,8 @@ Tactic Notation "rel_pure_l" open_constr(ef) :=
   iStartProof;
   (eapply tac_rel_pure_l;
    [tac_bind_helper ef                           (** e = fill K e1' *)
-   |iSolveTC                                     (** PureExec ϕ n e1 e2 *)
-   |try fast_done                                (** The pure condition for PureExec *)
+   |iSolveTC                                     (** PureClosed ϕ n e1 e2 *)
+   |try fast_done                                (** The pure condition for PureClosed *)
    |first [left; split; reflexivity              (** Here we decide if the mask E is ⊤ *)
           | right; reflexivity]                  (**    (m = n ∧ E = ⊤) ∨ (m = 0) *)
    |iSolveTC                                     (** IntoLaters *)
@@ -173,7 +174,7 @@ Tactic Notation "rel_pure_l" :=
   rel_reshape_cont_l ltac:(fun K e' =>
       eapply (tac_rel_pure_l K e');
       [reflexivity                  (** e = fill K e1 *)
-      |iSolveTC                     (** PureExec ϕ e1 e2 *)
+      |iSolveTC                     (** PureClosed ϕ e1 e2 *)
       |try fast_done                (** φ *)
       |first [left; split; reflexivity              (** Here we decide if the mask E is ⊤ *)
              | right; reflexivity]                  (**    (m = n ∧ E = ⊤) ∨ (m = 0) *)
@@ -188,7 +189,7 @@ Tactic Notation "rel_pure_r" open_constr(ef) :=
       unify e' ef;
       eapply (tac_rel_pure_r K e');
       [reflexivity                  (** e = fill K e1 *)
-      |iSolveTC                     (** PureExec ϕ e1 e2 *)
+      |iSolveTC                     (** PureClosed ϕ e1 e2 *)
       |try fast_done                (** φ *)
       |solve_ndisj        || fail 1 "rel_pure_r: cannot solve ↑specN ⊆ ?"
       |simpl; reflexivity           (** eres = fill K e2 *)

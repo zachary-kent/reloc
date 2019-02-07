@@ -3,6 +3,7 @@
 theories/prelude/ctx_subst.v
 theories/prelude/tactics.v
 theories/prelude/asubst.v
+theories/prelude/pureclosed.v
 
 theories/logic/spec_ra.v
 theories/logic/spec_rules.v

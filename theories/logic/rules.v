@@ -5,7 +5,7 @@ From iris.algebra Require Import list.
 From iris.program_logic Require Import ectx_lifting.
 From iris.heap_lang Require Import proofmode.
 From reloc.logic Require Import model proofmode.spec_tactics.
-From reloc.prelude Require Import ctx_subst.
+From reloc.prelude Require Import ctx_subst pureclosed.
 
 Section rules.
   Context `{relocG Σ}.
@@ -19,26 +19,9 @@ Section rules.
 
   (** ** Forward reductions on the LHS *)
 
-  (* TODO: should this be an instance? *)
-  Lemma pureexec_subst_map ϕ n e e' vs :
-    PureExec ϕ n e e' →
-    PureExec ϕ n (subst_map vs e) (subst_map vs e').
-  Proof.
-    intros Hpure Hϕ. specialize (Hpure Hϕ). clear Hϕ.
-    (* assert (Hsafe : ∀ σ, reducible (subst_map vs e) σ). *)
-    (* { intros; apply subst_map_safe; eauto using pure_exec_safe. } *)
-    (* assert (to_val (subst_p es e) = None) as Hval. *)
-    (* { destruct (Hsafe ∅) as [e2 [σ2 [efs Hs]]]. *)
-    (*   by eapply language.val_stuck. } *)
-    induction Hpure; econstructor; eauto.
-    split.
-    - admit.
-    - admit.
-  Admitted.
-
   Lemma refines_pure_l Γ n
     (K' : list ectx_item) e e' t A ϕ :
-    PureExec ϕ n e e' →
+    PureClosed ϕ n e e' →
     ϕ →
     ▷^n (Γ ⊨ fill K' e' << t : A)
     ⊢ Γ ⊨ fill K' e << t : A.
@@ -49,7 +32,7 @@ Section rules.
     rewrite subst_map_fill.
     iApply wp_pure_step_later; [ | apply Hϕ | ].
     { apply pure_exec_ctx; first apply _.
-      apply pureexec_subst_map. eassumption. }
+      apply pureexec_subst_map. }
     iModIntro. iNext. iApply fupd_wp.
     iSpecialize ("IH" with "Hs HΓ Hj").
     by rewrite subst_map_fill.
@@ -57,7 +40,7 @@ Section rules.
 
   Lemma refines_masked_l E Γ n
     (K' : list ectx_item) e e' t A ϕ :
-    PureExec ϕ n e e' →
+    PureClosed ϕ n e e' →
     ϕ →
     ({E;Γ} ⊨ fill K' e' << t : A)
     ⊢ {E;Γ} ⊨ fill K' e << t : A.
@@ -68,7 +51,7 @@ Section rules.
     rewrite subst_map_fill.
     iApply wp_pure_step_later; [ | apply Hϕ | ].
     { apply pure_exec_ctx; first apply _.
-      apply pureexec_subst_map. eassumption. }
+      apply pureexec_subst_map. }
     iMod ("IH" with "Hs HΓ Hj") as "IH".
     iModIntro. iNext.
     by rewrite subst_map_fill.
@@ -116,7 +99,7 @@ Section rules.
 
   Lemma refines_pure_r Γ E K' e e' t A n
     (Hspec : nclose specN ⊆ E) ϕ :
-    PureExec ϕ n e e' →
+    PureClosed ϕ n e e' →
     ϕ →
     ({E;Γ} ⊨ t << fill K' e' : A)
     ⊢ {E;Γ} ⊨ t << fill K' e : A.
@@ -125,7 +108,7 @@ Section rules.
     iIntros "Hlog". iIntros (vvs ρ) "#Hs HΓ". iIntros (j K) "Hj /=".
     rewrite subst_map_fill -fill_app.
     assert (PureExec ϕ n (subst_map (snd <$> vvs) e) (subst_map (snd <$> vvs) e')).
-    { apply pureexec_subst_map. eassumption. }
+    { apply pureexec_subst_map. }
     tp_pure j _; auto.
     rewrite fill_app -subst_map_fill.
     iApply ("Hlog" with "Hs HΓ Hj").

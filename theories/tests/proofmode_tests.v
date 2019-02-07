@@ -15,8 +15,7 @@ Proof.
   iIntros "HP Ht".
   rel_bind_l #2. Undo.
   rel_pure_l (_ + _)%E. Undo.
-  rel_pure_l.
-  repeat rel_pure_r.
+  rel_pure_l. rel_pure_r.
   by iApply "Ht".
 Qed.
 
@@ -43,8 +42,8 @@ Proof.
   rel_apply_r (refines_load_r with "Hr").
   iIntros "Hr".
   rel_load_l.
-  do 2 rel_pure_r.
-  do 2 rel_pure_l.
+  progress repeat rel_pure_r.
+  progress repeat rel_pure_l.
   rel_apply_l refines_load_l. iModIntro. iExists _; iFrame.
   iNext. iIntros "Hl". simpl.
   rel_pure_l.
@@ -82,11 +81,11 @@ Proof.
   { iNext. iInv N as "Hl" "Hcl".
     iApply (wp_store with "Hl"). iNext. iIntros "Hl".
     by iApply "Hcl". }
-  iNext. rel_pure_l. rel_pure_l.
+  iNext. rel_pure_l.
   rel_load_l_atomic. iInv N as "?" "Hcl". iModIntro. iExists _; iFrame.
   iNext. iIntros "Hl". iMod ("Hcl" with "Hl") as "_".
   repeat rel_pure_l.
-  rel_store_r. rel_pure_r. rel_pure_r.
+  rel_store_r. rel_pure_r.
   rel_fork_r as i "Hi".
   repeat rel_pure_r.
   iApply refines_spec_ctx. iDestruct 1 as (?) "#?".

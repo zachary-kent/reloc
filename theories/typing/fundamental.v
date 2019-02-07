@@ -136,8 +136,7 @@ Section fundamental.
     - rewrite /bin_log_related.
       by rewrite interp_ren.
     - iIntros (? ?) "? /=".
-      rel_pure_l. rel_rec_l.
-      rel_pure_r. rel_rec_r.
+      rel_pure_l. rel_pure_r.
       done.
   Qed.
 
