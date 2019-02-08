@@ -69,15 +69,15 @@ Section lockG_rules.
   Global Instance locked_timeless γ : Timeless (locked γ).
   Proof. apply _. Qed.
 
-  Lemma bin_log_related_newlock_l (R : iProp Σ) Δ Γ K t τ :
+  Lemma bin_log_related_newlock_l (R : iProp Σ) Γ K t A :
     R -∗
     ▷(∀ (lk : loc) γ, is_lock γ #lk R
-      -∗ ({Δ;Γ} ⊨ fill K (of_val #lk) ≤log≤ t: τ)) -∗
-    {Δ;Γ} ⊨ fill K (newlock #()) ≤log≤ t: τ.
+      -∗ (Γ ⊨ fill K (of_val #lk) << t: A)) -∗
+    Γ ⊨ fill K (newlock #()) << t: A.
   Proof.
     iIntros "HR Hlog".
     unfold newlock. unlock.
-    rel_pure_l _. (* TODO figure out why `rel_pure_l` doesn't work *)
+    rel_pure_l.
     rel_alloc_l l as "Hl".
     iMod (own_alloc (Excl ())) as (γ) "Hγ"; first done.
     iMod (inv_alloc N _ (lock_inv γ l R) with "[-Hlog]") as "#?".
@@ -85,12 +85,12 @@ Section lockG_rules.
     iApply "Hlog". iExists l. eauto.
   Qed.
 
-  Lemma bin_log_related_release_l (R : iProp Σ) (lk : loc) γ Δ Γ K t τ :
+  Lemma bin_log_related_release_l (R : iProp Σ) (lk : loc) γ Γ K t A :
     is_lock γ #lk R -∗
     locked γ -∗
     R -∗
-    ▷({Δ;Γ} ⊨ fill K (of_val #()) ≤log≤ t: τ) -∗ (* TODO: why do I have to type `of_val` here? *)
-    {Δ;Γ} ⊨ fill K (release #lk) ≤log≤ t: τ.
+    ▷(Γ ⊨ fill K (of_val #()) << t: A) -∗ (* TODO: why do I have to type `of_val` here? *)
+    Γ ⊨ fill K (release #lk) << t: A.
   Proof.
     iIntros "Hlock Hlocked HR Hlog".
     iDestruct "Hlock" as (l) "[% #?]"; simplify_eq.
@@ -105,10 +105,10 @@ Section lockG_rules.
     iApply "Hlog".
   Qed.
 
-  Lemma bin_log_related_acquire_l (R : iProp Σ) (lk : loc) γ Δ Γ K t τ :
+  Lemma bin_log_related_acquire_l (R : iProp Σ) (lk : loc) γ Γ K t A :
     is_lock γ #lk R -∗
-    ▷(locked γ -∗ R -∗ {Δ;Γ} ⊨ fill K (of_val #()) ≤log≤ t: τ) -∗
-    {Δ;Γ} ⊨ fill K (acquire #lk) ≤log≤ t: τ.
+    ▷(locked γ -∗ R -∗ Γ ⊨ fill K (of_val #()) << t: A) -∗
+    Γ ⊨ fill K (acquire #lk) << t: A.
   Proof.
     iIntros "#Hlock Hlog".
     iLöb as "IH".
@@ -136,19 +136,15 @@ End lockG_rules.
 
 Section lock_rules_r.
   Context `{relocG Σ}.
-
   Variable (E : coPset).
-  Variable (Δ : list (lty2 Σ)).
 
-  Lemma bin_log_related_newlock_r Γ K t τ
+  Lemma bin_log_related_newlock_r Γ K t A
     (Hcl : nclose specN ⊆ E) :
-    (∀ l : loc, l ↦ₛ #false -∗ {E;Δ;Γ} ⊨ t ≤log≤ fill K (of_val #l) : τ) -∗
-    {E;Δ;Γ} ⊨ t ≤log≤ fill K (newlock #()): τ.
+    (∀ l : loc, l ↦ₛ #false -∗ {E;Γ} ⊨ t << fill K (of_val #l) : A) -∗
+    {E;Γ} ⊨ t << fill K (newlock #()): A.
   Proof.
     iIntros "Hlog".
     unfold newlock. unlock.
-    (* TODO here i need to unfold bin_log_def for the rel_reshape_cont_r to work! *)
-    unfold bin_log_related.
     rel_rec_r.
     rel_alloc_r l as "Hl".
     iApply ("Hlog" with "Hl").
@@ -158,15 +154,14 @@ Section lock_rules_r.
 
   Transparent acquire.
 
-  Lemma bin_log_related_acquire_r Γ K l t τ
+  Lemma bin_log_related_acquire_r Γ K l t A
     (Hcl : nclose specN ⊆ E) :
     l ↦ₛ #false -∗
-    (l ↦ₛ #true -∗ {E;Δ;Γ} ⊨ t ≤log≤ fill K (of_val #()) : τ) -∗
-    {E;Δ;Γ} ⊨ t ≤log≤ fill K (acquire #l) : τ.
+    (l ↦ₛ #true -∗ {E;Γ} ⊨ t << fill K (of_val #()) : A) -∗
+    {E;Γ} ⊨ t << fill K (acquire #l) : A.
   Proof.
     iIntros "Hl Hlog".
     unfold acquire. unlock.
-    unfold bin_log_related.
     rel_rec_r.
     rel_cas_suc_r. simpl.
     rel_if_r.
@@ -176,15 +171,14 @@ Section lock_rules_r.
   Global Opaque acquire.
 
   Transparent release.
-  Lemma bin_log_related_release_r Γ K l t τ (b : bool)
+  Lemma bin_log_related_release_r Γ K l t A (b : bool)
     (Hcl : nclose specN ⊆ E) :
     l ↦ₛ #b -∗
-    (l ↦ₛ #false -∗ {E;Δ;Γ} ⊨ t ≤log≤ fill K (of_val #()) : τ) -∗
-    {E;Δ;Γ} ⊨ t ≤log≤ fill K (release #l) : τ.
+    (l ↦ₛ #false -∗ {E;Γ} ⊨ t << fill K (of_val #()) : A) -∗
+    {E;Γ} ⊨ t << fill K (release #l) : A.
   Proof.
     iIntros "Hl Hlog".
     unfold release. unlock.
-    unfold bin_log_related.
     rel_rec_r.
     rel_store_r.
     by iApply "Hlog".
