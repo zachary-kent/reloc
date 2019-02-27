@@ -69,7 +69,7 @@ Section lockG_rules.
   Global Instance locked_timeless γ : Timeless (locked γ).
   Proof. apply _. Qed.
 
-  Lemma bin_log_related_newlock_l (R : iProp Σ) Γ K t A :
+  Lemma refines_newlock_l (R : iProp Σ) Γ K t A :
     R -∗
     ▷(∀ (lk : loc) γ, is_lock γ #lk R
       -∗ (Γ ⊨ fill K (of_val #lk) << t: A)) -∗
@@ -85,7 +85,7 @@ Section lockG_rules.
     iApply "Hlog". iExists l. eauto.
   Qed.
 
-  Lemma bin_log_related_release_l (R : iProp Σ) (lk : loc) γ Γ K t A :
+  Lemma refines_release_l (R : iProp Σ) (lk : loc) γ Γ K t A :
     is_lock γ #lk R -∗
     locked γ -∗
     R -∗
@@ -105,7 +105,7 @@ Section lockG_rules.
     iApply "Hlog".
   Qed.
 
-  Lemma bin_log_related_acquire_l (R : iProp Σ) (lk : loc) γ Γ K t A :
+  Lemma refines_acquire_l (R : iProp Σ) (lk : loc) γ Γ K t A :
     is_lock γ #lk R -∗
     ▷(locked γ -∗ R -∗ Γ ⊨ fill K (of_val #()) << t: A) -∗
     Γ ⊨ fill K (acquire #lk) << t: A.
@@ -138,7 +138,7 @@ Section lock_rules_r.
   Context `{relocG Σ}.
   Variable (E : coPset).
 
-  Lemma bin_log_related_newlock_r Γ K t A
+  Lemma refines_newlock_r Γ K t A
     (Hcl : nclose specN ⊆ E) :
     (∀ l : loc, l ↦ₛ #false -∗ {E;Γ} ⊨ t << fill K (of_val #l) : A) -∗
     {E;Γ} ⊨ t << fill K (newlock #()): A.
@@ -154,7 +154,7 @@ Section lock_rules_r.
 
   Transparent acquire.
 
-  Lemma bin_log_related_acquire_r Γ K l t A
+  Lemma refines_acquire_r Γ K l t A
     (Hcl : nclose specN ⊆ E) :
     l ↦ₛ #false -∗
     (l ↦ₛ #true -∗ {E;Γ} ⊨ t << fill K (of_val #()) : A) -∗
@@ -171,7 +171,7 @@ Section lock_rules_r.
   Global Opaque acquire.
 
   Transparent release.
-  Lemma bin_log_related_release_r Γ K l t A (b : bool)
+  Lemma refines_release_r Γ K l t A (b : bool)
     (Hcl : nclose specN ⊆ E) :
     l ↦ₛ #b -∗
     (l ↦ₛ #false -∗ {E;Γ} ⊨ t << fill K (of_val #()) : A) -∗
