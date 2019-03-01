@@ -58,4 +58,15 @@ Section compatibility.
     - iExists #(); eauto.
   Qed.
 
+  Lemma refines_exists (A : lty2 Σ) e e' (C : lty2 Σ → lty2 Σ) :
+    (REL e << e' : C A) -∗
+    REL e << e' : ∃ A, C A.
+  Proof.
+    iIntros "H".
+    rel_bind_ap e e' "H" v v' "Hvv".
+    value_case.
+    iModIntro. iExists A. done.
+  Qed.
+
 End compatibility.
+
