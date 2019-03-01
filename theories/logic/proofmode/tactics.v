@@ -11,16 +11,16 @@ From iris.proofmode Require Export tactics.
 (* Set Default Proof Using "Type". *)
 
 (** * General-purpose tactics *)
-Lemma tac_rel_bind_l `{relocG Σ} e' K ℶ E Γ e t A :
+Lemma tac_rel_bind_l `{relocG Σ} e' K ℶ E e t A :
   e = fill K e' →
-  envs_entails ℶ ({E;Γ} ⊨ fill K e' << t : A) →
-  envs_entails ℶ ({E;Γ} ⊨ e << t : A).
+  envs_entails ℶ (REL fill K e' << t @ E : A) →
+  envs_entails ℶ (REL e << t @ E : A).
 Proof. intros. subst. assumption. Qed.
 
-Lemma tac_rel_bind_r `{relocG Σ} t' K ℶ E Γ e t A :
+Lemma tac_rel_bind_r `{relocG Σ} t' K ℶ E e t A :
   t = fill K t' →
-  envs_entails ℶ ({E;Γ} ⊨ e << fill K t' : A) →
-  envs_entails ℶ ({E;Γ} ⊨ e << t : A).
+  envs_entails ℶ (REL e << fill K t' @ E : A) →
+  envs_entails ℶ (REL e << t @ E : A).
 Proof. intros. subst. assumption. Qed.
 
 Tactic Notation "rel_bind_l" open_constr(efoc) :=
@@ -65,19 +65,19 @@ Tactic Notation "tac_bind_helper" open_constr(efoc) :=
 (** Reshape the expression on the LHS/RHS untill you can apply `tac` to it *)
 Ltac rel_reshape_cont_l tac :=
   lazymatch goal with
-  | |- envs_entails _ (refines _ _ (fill ?K ?e) _ _) =>
+  | |- envs_entails _ (refines _ (fill ?K ?e) _ _) =>
     reshape_expr e ltac:(fun K' e' =>
       tac (K' ++ K) e')
-  | |- envs_entails _ (refines _ _ ?e _ _) =>
+  | |- envs_entails _ (refines _ ?e _ _) =>
     reshape_expr e ltac:(fun K' e' => tac K' e')
   end.
 
 Ltac rel_reshape_cont_r tac :=
   lazymatch goal with
-  | |- envs_entails _ (refines _ _ _ (fill ?K ?e) _) =>
+  | |- envs_entails _ (refines _ _ (fill ?K ?e) _) =>
     reshape_expr e ltac:(fun K' e' =>
       tac (K' ++ K) e')
-  | |- envs_entails _ (refines _ _ _ ?e _) =>
+  | |- envs_entails _ (refines _ _ ?e _) =>
     reshape_expr e ltac:(fun K' e' => tac K' e')
   end.
 
@@ -124,15 +124,15 @@ Tactic Notation "rel_apply_r" open_constr(lem) :=
 
 (** Pure reductions *)
 
-Lemma tac_rel_pure_l `{relocG Σ} K e1 ℶ ℶ' E Γ e e2 eres ϕ n m t A :
+Lemma tac_rel_pure_l `{relocG Σ} K e1 ℶ ℶ' E e e2 eres ϕ n m t A :
   e = fill K e1 →
-  PureClosed ϕ n e1 e2 →
+  PureExec ϕ n e1 e2 →
   ϕ →
   ((m = n ∧ E = ⊤) ∨ m = 0%nat) →
   MaybeIntoLaterNEnvs m ℶ ℶ' →
   eres = fill K e2 →
-  envs_entails ℶ' ({E;Γ} ⊨ eres << t : A) →
-  envs_entails ℶ ({E;Γ} ⊨ e << t : A).
+  envs_entails ℶ' (REL eres << t @ E : A) →
+  envs_entails ℶ (REL e << t @ E : A).
 Proof.
   rewrite envs_entails_eq.
   intros Hfill Hpure Hϕ Hm ?? Hp. subst.
@@ -141,14 +141,14 @@ Proof.
   - rewrite -refines_masked_l //.
 Qed.
 
-Lemma tac_rel_pure_r `{relocG Σ} K e1 ℶ E Γ e e2 eres ϕ n t A :
+Lemma tac_rel_pure_r `{relocG Σ} K e1 ℶ E e e2 eres ϕ n t A :
   e = fill K e1 →
-  PureClosed ϕ n e1 e2 →
+  PureExec ϕ n e1 e2 →
   ϕ →
   nclose specN ⊆ E →
   eres = fill K e2 →
-  envs_entails ℶ ({E;Γ} ⊨ t << eres : A) →
-  envs_entails ℶ ({E;Γ} ⊨ t << e : A).
+  envs_entails ℶ (REL t << eres @ E : A) →
+  envs_entails ℶ (REL t << e @ E : A).
 Proof.
   intros Hfill Hpure Hϕ ?? Hp. subst.
   rewrite -refines_pure_r //.
@@ -200,25 +200,25 @@ Tactic Notation "rel_pure_r" := rel_pure_r _.
 
 (** Load *)
 
-Lemma tac_rel_load_l_simp `{relocG Σ} K ℶ1 ℶ2 i1 Γ (l : loc) q v e t eres A :
+Lemma tac_rel_load_l_simp `{relocG Σ} K ℶ1 ℶ2 i1 (l : loc) q v e t eres A :
   e = fill K (Load (# l)) →
   MaybeIntoLaterNEnvs 1 ℶ1 ℶ2 →
   envs_lookup i1 ℶ2 = Some (false, l ↦{q} v)%I →
   eres = fill K (of_val v) →
-  envs_entails ℶ2 (refines ⊤ Γ eres t A) →
-  envs_entails ℶ1 (refines ⊤ Γ e t A).
+  envs_entails ℶ2 (refines ⊤ eres t A) →
+  envs_entails ℶ1 (refines ⊤ e t A).
 Proof.
   rewrite envs_entails_eq. intros ???? Hℶ2; subst.
   rewrite into_laterN_env_sound envs_lookup_split // /=.
   rewrite bi.later_sep. rewrite Hℶ2.
   apply: bi.wand_elim_l' =>/=.
-  rewrite -(refines_load_l K Γ ⊤ l q).
+  rewrite -(refines_load_l K ⊤ l q).
   rewrite -fupd_intro.
   rewrite -(bi.exist_intro v).
   by apply bi.wand_intro_r.
 Qed.
 
-Lemma tac_rel_load_r `{relocG Σ} K ℶ1 ℶ2 E Γ i1 (l : loc) q e t tres A v :
+Lemma tac_rel_load_r `{relocG Σ} K ℶ1 ℶ2 E i1 (l : loc) q e t tres A v :
   t = fill K (Load (# l)) →
   nclose specN ⊆ E →
   envs_lookup i1 ℶ1 = Some (false, l ↦ₛ{q} v)%I →
@@ -226,14 +226,14 @@ Lemma tac_rel_load_r `{relocG Σ} K ℶ1 ℶ2 E Γ i1 (l : loc) q e t tres A v :
   envs_simple_replace i1 false
     (Esnoc Enil i1 (l ↦ₛ{q} v)%I) ℶ1 = Some ℶ2 →
   tres = fill K (of_val v) →
-  envs_entails ℶ2 (refines E Γ e tres A) →
-  envs_entails ℶ1 (refines E Γ e t A).
+  envs_entails ℶ2 (refines E e tres A) →
+  envs_entails ℶ1 (refines E e t A).
 Proof.
   rewrite envs_entails_eq. intros ????? Hg.
   rewrite (envs_simple_replace_sound ℶ1 ℶ2 i1) //; simpl.
   rewrite right_id.
   subst t tres.
-  rewrite {1}(refines_load_r Γ E); [ | eassumption ].
+  rewrite {1}(refines_load_r E); [ | eassumption ].
   rewrite Hg.
   apply bi.wand_elim_l.
 Qed.
@@ -277,42 +277,42 @@ Tactic Notation "rel_load_r" :=
   |rel_finish  (** new goal *)].
 
 (** Store *)
-Lemma tac_rel_store_l_simpl `{relocG Σ} K ℶ1 ℶ2 ℶ3 i1 Γ (l : loc) v e' v' e t eres A :
+Lemma tac_rel_store_l_simpl `{relocG Σ} K ℶ1 ℶ2 ℶ3 i1 (l : loc) v e' v' e t eres A :
   e = fill K (Store (# l) e') →
   IntoVal e' v' →
   MaybeIntoLaterNEnvs 1 ℶ1 ℶ2 →
   envs_lookup i1 ℶ2 = Some (false, l ↦ v)%I →
   envs_simple_replace i1 false (Esnoc Enil i1 (l ↦ v')) ℶ2 = Some ℶ3 →
   eres = fill K #() →
-  envs_entails ℶ3 (refines ⊤ Γ eres t A) →
-  envs_entails ℶ1 (refines ⊤ Γ e t A).
+  envs_entails ℶ3 (refines ⊤ eres t A) →
+  envs_entails ℶ1 (refines ⊤ e t A).
 Proof.
   rewrite envs_entails_eq. intros ?????? Hg.
   subst e eres.
   rewrite into_laterN_env_sound envs_simple_replace_sound //; simpl.
   rewrite bi.later_sep.
   rewrite right_id.
-  rewrite -(refines_store_l K Γ ⊤ l).
+  rewrite -(refines_store_l K ⊤ l).
   rewrite -fupd_intro.
   rewrite -(bi.exist_intro v).
   by rewrite Hg.
 Qed.
 
-Lemma tac_rel_store_r `{relocG Σ} K ℶ1 ℶ2 i1 Γ E (l : loc) v e' v' e t eres A :
+Lemma tac_rel_store_r `{relocG Σ} K ℶ1 ℶ2 i1 E (l : loc) v e' v' e t eres A :
   e = fill K (Store (# l) e') →
   IntoVal e' v' →
   nclose specN ⊆ E →
   envs_lookup i1 ℶ1 = Some (false, l ↦ₛ v)%I →
   envs_simple_replace i1 false (Esnoc Enil i1 (l ↦ₛ v')) ℶ1 = Some ℶ2 →
   eres = fill K #() →
-  envs_entails ℶ2 (refines E Γ t eres A) →
-  envs_entails ℶ1 (refines E Γ t e A).
+  envs_entails ℶ2 (refines E t eres A) →
+  envs_entails ℶ1 (refines E t e A).
 Proof.
   rewrite envs_entails_eq. intros ?????? Hg.
   subst e eres.
   rewrite envs_simple_replace_sound //; simpl.
   rewrite right_id.
-  rewrite (refines_store_r Γ E K) //.
+  rewrite (refines_store_r E K) //.
   rewrite Hg.
   apply bi.wand_elim_l.
 Qed.
@@ -358,17 +358,17 @@ Tactic Notation "rel_store_r" :=
 (** Alloc *)
 Tactic Notation "rel_alloc_l_atomic" := rel_apply_l refines_alloc_l.
 
-Lemma tac_rel_alloc_l_simpl `{relocG Σ} K ℶ1 ℶ2 Γ e t e' v' A :
+Lemma tac_rel_alloc_l_simpl `{relocG Σ} K ℶ1 ℶ2 e t e' v' A :
   e = fill K (Alloc e') →
   IntoVal e' v' →
   MaybeIntoLaterNEnvs 1 ℶ1 ℶ2 →
   (envs_entails ℶ2 (∀ (l : loc),
-     (l ↦ v' -∗ refines ⊤ Γ (fill K (of_val #l)) t A))) →
-  envs_entails ℶ1 (refines ⊤ Γ e t A).
+     (l ↦ v' -∗ refines ⊤ (fill K (of_val #l)) t A))) →
+  envs_entails ℶ1 (refines ⊤ e t A).
 Proof.
   rewrite envs_entails_eq. intros ???; subst.
   rewrite into_laterN_env_sound /=.
-  rewrite -(refines_alloc_l _ _ ⊤); eauto.
+  rewrite -(refines_alloc_l _ ⊤); eauto.
   rewrite -fupd_intro.
   apply bi.later_mono.
 Qed.
@@ -385,12 +385,12 @@ Tactic Notation "rel_alloc_l" ident(l) "as" constr(H) :=
   [iSolveTC        (** IntoLaters *)
   |iIntros (l) H; rel_finish  (** new goal *)].
 
-Lemma tac_rel_alloc_r `{relocG Σ} K' ℶ E Γ t' v' e t A :
+Lemma tac_rel_alloc_r `{relocG Σ} K' ℶ E t' v' e t A :
   t = fill K' (Alloc t') →
   IntoVal t' v' →
   nclose specN ⊆ E →
-  envs_entails ℶ (∀ l, l ↦ₛ v' -∗ refines E Γ e (fill K' #l) A) →
-  envs_entails ℶ (refines E Γ e t A).
+  envs_entails ℶ (∀ l, l ↦ₛ v' -∗ refines E e (fill K' #l) A) →
+  envs_entails ℶ (refines E e t A).
 Proof.
   intros ????. subst t.
   rewrite -refines_alloc_r //.
@@ -422,7 +422,7 @@ Tactic Notation "rel_alloc_l" :=
 (* TODO: non-atomic tactics for CAS? *)
 Tactic Notation "rel_cas_l_atomic" := rel_apply_l refines_cas_l.
 
-Lemma tac_rel_cas_fail_r `{relocG Σ} K ℶ1 i1 Γ E (l : loc) e1 e2 v1 v2 v e t eres A :
+Lemma tac_rel_cas_fail_r `{relocG Σ} K ℶ1 i1 E (l : loc) e1 e2 v1 v2 v e t eres A :
   e = fill K (CAS (# l) e1 e2) →
   IntoVal e1 v1 →
   IntoVal e2 v2 →
@@ -431,8 +431,8 @@ Lemma tac_rel_cas_fail_r `{relocG Σ} K ℶ1 i1 Γ E (l : loc) e1 e2 v1 v2 v e t
   v ≠ v1 →
   vals_cas_compare_safe v v1 →
   eres = fill K #false →
-  envs_entails ℶ1 (refines E Γ t eres A) →
-  envs_entails ℶ1 (refines E Γ t e A).
+  envs_entails ℶ1 (refines E t eres A) →
+  envs_entails ℶ1 (refines E t e A).
 Proof.
   rewrite envs_entails_eq. intros ???????? Hg.
   subst e eres.
@@ -441,7 +441,7 @@ Proof.
   eapply refines_cas_fail_r; eauto.
 Qed.
 
-Lemma tac_rel_cas_suc_r `{relocG Σ} K ℶ1 ℶ2 i1 Γ E (l : loc) e1 e2 v1 v2 v e t eres A :
+Lemma tac_rel_cas_suc_r `{relocG Σ} K ℶ1 ℶ2 i1 E (l : loc) e1 e2 v1 v2 v e t eres A :
   e = fill K (CAS (# l) e1 e2) →
   IntoVal e1 v1 →
   IntoVal e2 v2 →
@@ -451,8 +451,8 @@ Lemma tac_rel_cas_suc_r `{relocG Σ} K ℶ1 ℶ2 i1 Γ E (l : loc) e1 e2 v1 v2 v
   val_is_unboxed v1 →
   envs_simple_replace i1 false (Esnoc Enil i1 (l ↦ₛ v2)) ℶ1 = Some ℶ2 →
   eres = fill K #true →
-  envs_entails ℶ2 (refines E Γ t eres A) →
-  envs_entails ℶ1 (refines E Γ t e A).
+  envs_entails ℶ2 (refines E t eres A) →
+  envs_entails ℶ1 (refines E t e A).
 Proof.
   rewrite envs_entails_eq. intros ????????? Hg.
   subst e eres.
@@ -507,12 +507,12 @@ Tactic Notation "rel_cas_suc_r" :=
 
 
 (** Fork *)
-Lemma tac_rel_fork_l `{relocG Σ} K ℶ E e' eres Γ e t A :
+Lemma tac_rel_fork_l `{relocG Σ} K ℶ E e' eres e t A :
   e = fill K (Fork e') →
   is_closed_expr [] e' →
   eres = fill K #() →
-  envs_entails ℶ (|={⊤,E}=> ▷ (WP e' {{ _ , True%I }} ∗ refines E Γ eres t A))%I →
-  envs_entails ℶ (refines ⊤ Γ e t A).
+  envs_entails ℶ (|={⊤,E}=> ▷ (WP e' {{ _ , True%I }} ∗ refines E eres t A))%I →
+  envs_entails ℶ (refines ⊤ e t A).
 Proof.
   intros ????. subst e eres.
   rewrite -refines_fork_l //.
@@ -529,13 +529,13 @@ Tactic Notation "rel_fork_l" :=
   |reflexivity    || fail "rel_fork_l: this should not happen O-:"
   |rel_finish  (** new goal *)].
 
-Lemma tac_rel_fork_r `{relocG Σ} K ℶ E e' Γ e t eres A :
+Lemma tac_rel_fork_r `{relocG Σ} K ℶ E e' e t eres A :
   e = fill K (Fork e') →
   nclose specN ⊆ E →
   is_closed_expr [] e' →
   eres = fill K #() →
-  envs_entails ℶ (∀ i, i ⤇ e' -∗ refines E Γ t eres A) →
-  envs_entails ℶ (refines E Γ t e A).
+  envs_entails ℶ (∀ i, i ⤇ e' -∗ refines E t eres A) →
+  envs_entails ℶ (refines E t e A).
 Proof.
   intros ?????. subst e eres.
   rewrite -refines_fork_r //.

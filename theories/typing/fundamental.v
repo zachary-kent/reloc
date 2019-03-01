@@ -1,8 +1,8 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Compatibility lemmas for the logical relation *)
 From iris.heap_lang Require Import proofmode.
-From reloc.logic Require Import model rules.
-From reloc.logic.proofmode Require Export tactics spec_tactics.
+From reloc.logic Require Import model.
+From reloc Require Export proofmode.
 From reloc.typing Require Export interp.
 
 From iris.proofmode Require Export tactics.
@@ -22,37 +22,28 @@ Section fundamental.
       fold (bin_log_related E Δ Γ e1 e2 T)
     end.
 
-  Local Ltac value_case := try rel_pure_l; try rel_pure_r; rel_values.
-
-  (* Local Ltac value_case' := iApply wp_value; [cbn; rewrite ?to_of_val; trivial|]; repeat iModIntro; try solve_to_val. *)
+  Local Ltac intro_clause := progress (iIntros (vs) "#Hvs"; iSimpl).
+  Local Ltac intro_clause' := progress (iIntros (?) "?"; iSimpl).
+  Local Ltac value_case := try intro_clause';
+    try rel_pure_l; try rel_pure_r; rel_values.
 
   Local Tactic Notation "rel_bind_ap" uconstr(e1) uconstr(e2) constr(IH) ident(v) ident(w) constr(Hv):=
-    rel_bind_l e1;
-    rel_bind_r e2;
+    rel_bind_l (_ e1);
+    rel_bind_r (_ e2);
+    try iSpecialize (IH with "Hvs");
     iApply (refines_bind with IH);
     iIntros (v w) Hv; simpl.
-
-  (* Old tactic *)
-  (* Local Tactic Notation "smart_bind" ident(j) uconstr(e) uconstr(e') constr(IH) ident(v) ident(w) constr(Hv):= *)
-  (*   try (iModIntro); *)
-  (*   wp_bind e; *)
-  (*   tp_bind j e'; *)
-  (*   iSpecialize (IH with "Hs [HΓ] Hj"); eauto; *)
-  (*   iApply fupd_wp; iApply (fupd_mask_mono _); auto; *)
-  (*   iMod IH as IH; iModIntro; *)
-  (*   iApply (wp_wand with IH); *)
-  (*   iIntros (v); *)
-  (*   let vh := iFresh in *)
-  (*   iIntros vh; *)
-  (*   try (iMod vh); *)
-  (*   iDestruct vh as (w) (String.append "[Hj " (String.append Hv " ]")); simpl. *)
 
   Lemma bin_log_related_var Δ Γ x τ :
     Γ !! x = Some τ →
     {Δ;Γ} ⊨ Var x ≤log≤ Var x : τ.
   Proof.
-    iIntros (Hx). iApply refines_var.
-    by rewrite lookup_fmap Hx /=.
+    iIntros (Hx). iIntros (vs) "#Hvs". simpl.
+    rewrite (env_ltyped2_lookup _ vs x); last first.
+    { rewrite lookup_fmap Hx //. }
+    rewrite !lookup_fmap.
+    iDestruct "Hvs" as (v1 v2 ->) "HA". simpl.
+    by iApply refines_ret.
   Qed.
 
   Lemma bin_log_related_unit Δ Γ : {Δ;Γ} ⊨ #() ≤log≤ #() : TUnit.
@@ -70,11 +61,10 @@ Section fundamental.
     {Δ;Γ} ⊨ Pair e1 e2 ≤log≤ Pair e1' e2' : TProd τ1 τ2.
   Proof.
     iIntros "IH1 IH2".
-    rel_bind_ap e2 e2' "IH2" v2 v2' "Hvv2".
-    rel_bind_ap e1 e1' "IH1" v1 v1' "Hvv1".
-    rel_pure_l. rel_pure_r.
-    rel_values.
-    iExists _, _, _, _; eauto.
+    intro_clause.
+    iApply (refines_pair with "[IH1] [IH2]").
+    - by iApply "IH1".
+    - by iApply "IH2".
   Qed.
 
   Lemma bin_log_related_fst Δ Γ e e' τ1 τ2 :
@@ -82,10 +72,9 @@ Section fundamental.
     {Δ;Γ} ⊨ Fst e ≤log≤ Fst e' : τ1.
   Proof.
     iIntros "IH".
+    intro_clause.
     rel_bind_ap e e' "IH" v w "IH".
     iDestruct "IH" as (v1 v2 w1 w2) "(% & % & IHw & IHw')". simplify_eq/=.
-    rel_proj_l.
-    rel_proj_r.
     value_case.
   Qed.
 
@@ -94,10 +83,9 @@ Section fundamental.
     {Δ;Γ} ⊨ Snd e ≤log≤ Snd e' : τ2.
   Proof.
     iIntros "IH".
+    intro_clause.
     rel_bind_ap e e' "IH" v w "IH".
     iDestruct "IH" as (v1 v2 w1 w2) "(% & % & IHw & IHw')". simplify_eq/=.
-    rel_proj_l.
-    rel_proj_r.
     value_case.
   Qed.
 
@@ -107,21 +95,109 @@ Section fundamental.
     {Δ;Γ} ⊨ App e1 e2 ≤log≤ App e1' e2' :  τ2.
   Proof.
     iIntros "IH1 IH2".
-    rel_bind_ap e2 e2' "IH2" v v' "Hvv".
-    rel_bind_ap e1 e1' "IH1" f f' "Hff".
-    (* TODO better proof here, without exposing interp_expr *)
-    iSpecialize ("Hff" with "Hvv"). simpl.
-    iApply refines_ret'; eauto.
+    intro_clause.
+    iApply (refines_app with "[IH1] [IH2]").
+    - by iApply "IH1".
+    - by iApply "IH2".
   Qed.
 
+  (* TODO horrible horrible *)
   Lemma bin_log_related_rec Δ (Γ : stringmap type) (f x : binder) (e e' : expr) τ1 τ2 :
     □ ({Δ;<[f:=TArrow τ1 τ2]>(<[x:=τ1]>Γ)} ⊨ e ≤log≤ e' : τ2) -∗
     {Δ;Γ} ⊨ Rec f x e ≤log≤ Rec f x e' : TArrow τ1 τ2.
   Proof.
     iIntros "#Ht".
-    iApply refines_rec. fold interp. (* TODO: why do I need to fold it here? *)
-    iAlways.
-    by rewrite /bin_log_related !binder_insert_fmap.
+    intro_clause.
+    rel_pure_l. rel_pure_r.
+    iApply refines_arrow_val.
+    iModIntro. iLöb as "IH". iIntros (v1 v2) "#Hτ1".
+    rel_pure_l. rel_pure_r.
+    iApply refines_spec_ctx. iDestruct 1 as (ρ) "#Hs".
+
+    set (r := (RecV f x (subst_map (binder_delete x (binder_delete f (fst <$> vs))) e), RecV f x (subst_map (binder_delete x (binder_delete f (snd <$> vs))) e'))).
+    set (vvs' := binder_insert f r (binder_insert x (v1,v2) vs)).
+    iSpecialize ("Ht" $! vvs' with "[#]").
+    { rewrite !binder_insert_fmap.
+      iApply (env_ltyped2_insert with "[IH]").
+      - iApply (interp_arrow_val with "Hs").
+        fold interp. (* ?? *)
+        iAlways. iApply "IH".
+      - iApply (env_ltyped2_insert with "Hτ1").
+        by iFrame. }
+
+    unfold vvs'.
+    destruct x as [|x], f as [|f];
+      rewrite /= ?fmap_insert ?subst_map_insert //;
+      try by iApply "H".
+    destruct (decide (x = f)) as [->|]; iSimpl in "Ht".
+    - rewrite !delete_insert_delete !subst_subst !delete_idemp.
+      by iApply "Ht".
+    - rewrite !delete_insert_ne // subst_map_insert.
+      rewrite !(subst_subst_ne _ x f) // subst_map_insert.
+      by iApply "Ht".
+  Qed.
+
+  Lemma bin_log_related_fork Δ Γ e e' :
+    ({Δ;Γ} ⊨ e ≤log≤ e' : TUnit) -∗
+    {Δ;Γ} ⊨ Fork e ≤log≤ Fork e' : TUnit.
+  Proof.
+    iIntros "IH".
+    intro_clause.
+    iApply refines_fork; first solve_ndisj.
+    by iApply "IH".
+  Qed.
+
+  Lemma bin_log_related_tlam Δ Γ (e e' : expr) τ :
+    (∀ (A : lty2 Σ),
+      □ ({(A::Δ);⤉Γ} ⊨ e ≤log≤ e' : τ)) -∗
+    {Δ;Γ} ⊨ (Λ: e) ≤log≤ (Λ: e') : TForall τ.
+  Proof.
+    iIntros "#H".
+    (* TODO: here it is also better to use some sort of characterization
+       of the semantic type for forall *)
+    intro_clause.
+    iApply refines_spec_ctx. iDestruct 1 as (ρ) "#Hs".
+    value_case. rewrite /lty2_forall /lty2_car /=.
+    iModIntro. iModIntro. iIntros (A) "!>". iIntros (? ?) "_".
+
+    rewrite /bin_log_related refines_eq /refines_def.
+    iDestruct ("H" $! A) as "#H1".
+    iSpecialize ("H1" with "[Hvs]").
+    { by rewrite (interp_ren A Δ Γ). }
+
+    iIntros (j K) "Hj /=".
+    iModIntro. tp_pure j _. wp_pures. simpl.
+
+    iMod ("H1" with "Hs Hj") as "$".
+  Qed.
+
+  Lemma bin_log_related_tapp' Δ Γ e e' τ τ' :
+    ({Δ;Γ} ⊨ e ≤log≤ e' : TForall τ) -∗
+    {Δ;Γ} ⊨ (TApp e) ≤log≤ (TApp e') : τ.[τ'/].
+  Proof.
+    (* TODO: here it is also better to use some sort of characterization
+       of the semantic type for forall *)
+    iIntros "IH".
+    intro_clause.
+    rel_bind_ap e e' "IH" v v' "IH".
+    iSpecialize ("IH" $! (interp τ' Δ)).
+    rewrite interp_val_arrow. iDestruct "IH" as "#IH".
+    iSpecialize ("IH" $! #() #() with "[//]").
+    by rewrite -interp_subst.
+  Qed.
+
+  Lemma bin_log_related_tapp (τi : lty2 Σ) Δ Γ e e' τ :
+    ({Δ;Γ} ⊨ e ≤log≤ e' : TForall τ) -∗
+    {τi::Δ;⤉Γ} ⊨ (TApp e) ≤log≤ (TApp e') : τ.
+  Proof.
+    iIntros "IH". intro_clause.
+    iApply (bin_log_related_app _ _ e #() e' #() TUnit τ with "[IH] [] Hvs").
+    - iClear (vs) "Hvs". intro_clause.
+      rewrite interp_ren.
+      iSpecialize ("IH" with "Hvs").
+      iApply (refines_wand with "IH").
+      eauto with iFrame.
+    - value_case.
   Qed.
 
   Lemma bin_log_related_seq R Δ Γ e1 e2 e1' e2' τ1 τ2 :
@@ -130,14 +206,15 @@ Section fundamental.
     {Δ;Γ} ⊨ (e1;; e2) ≤log≤ (e1';; e2') : τ2.
   Proof.
     iIntros "He1 He2".
-    rel_bind_l e1.
-    rel_bind_r e1'.
-    iApply (refines_bind _ _ _ _ (interp τ1 (R :: Δ)) with "[He1] [He2]").
-    - rewrite /bin_log_related.
+    intro_clause.
+    rel_bind_l (_ e1).
+    rel_bind_r (_ e1').
+    iApply (refines_bind _ _ _ (interp τ1 (R :: Δ)) with "[He1] [He2]").
+    - iApply ("He1" with "[Hvs]").
       by rewrite interp_ren.
     - iIntros (? ?) "? /=".
-      rel_pure_l. rel_pure_r.
-      done.
+      repeat rel_pure_l. repeat rel_pure_r.
+      by iApply "He2".
   Qed.
 
   (* TODO
@@ -156,6 +233,7 @@ Section fundamental.
     {Δ;Γ} ⊨ InjL e ≤log≤ InjL e' : (TSum τ1 τ2).
   Proof.
     iIntros "IH".
+    intro_clause.
     rel_bind_ap e e' "IH" v v' "Hvv".
     value_case. iExists _,_. eauto.
   Qed.
@@ -165,6 +243,7 @@ Section fundamental.
     {Δ;Γ} ⊨ InjR e ≤log≤ InjR e' : TSum τ1 τ2.
   Proof.
     iIntros "IH".
+    intro_clause.
     rel_bind_ap e e' "IH" v v' "Hvv".
     value_case. iExists _,_. eauto.
   Qed.
@@ -176,12 +255,13 @@ Section fundamental.
     {Δ;Γ} ⊨ Case e0 e1 e2 ≤log≤ Case e0' e1' e2' : τ3.
   Proof.
     iIntros "IH1 IH2 IH3".
+    intro_clause.
     rel_bind_ap e0 e0' "IH1" v0 v0' "IH1".
     iDestruct "IH1" as (w w') "[(% & % & #Hw)|(% & % & #Hw)]"; simplify_eq/=;
       rel_case_l; rel_case_r.
-    - iApply (bin_log_related_app with "IH2").
+    - iApply (bin_log_related_app Δ Γ _ w _ w'  with "IH2 [] Hvs").
       value_case.
-    - iApply (bin_log_related_app with "IH3").
+    - iApply (bin_log_related_app Δ Γ _ w _ w'  with "IH3 [] Hvs").
       value_case.
   Qed.
 
@@ -192,25 +272,12 @@ Section fundamental.
     {Δ;Γ} ⊨ If e0 e1 e2 ≤log≤ If e0' e1' e2' : τ.
   Proof.
     iIntros "IH1 IH2 IH3".
+    intro_clause.
     rel_bind_ap e0 e0' "IH1" v0 v0' "IH1".
     iDestruct "IH1" as ([]) "[% %]"; simplify_eq/=;
-      rel_if_l; rel_if_r; iAssumption.
-  Qed.
-
-  Lemma bin_log_related_fork Δ Γ e e' :
-    ({Δ;Γ} ⊨ e ≤log≤ e' : TUnit) -∗
-    {Δ;Γ} ⊨ Fork e ≤log≤ Fork e' : TUnit.
-  Proof.
-    iIntros "IH".
-    rewrite /bin_log_related refines_eq /refines_def.
-    iIntros (vvs ρ) "#Hs HΓ"; iIntros (j K) "Hj /=".
-    tp_fork j as i "Hi". iModIntro.
-    iApply (wp_fork with "[-Hj]").
-    - iNext. iSpecialize ("IH" with "Hs HΓ").
-      iSpecialize ("IH" $! i []). simpl.
-      iSpecialize ("IH" with "Hi").
-      iMod "IH". iApply (wp_wand with "IH"). eauto.
-    - iExists #(); eauto.
+      rel_if_l; rel_if_r.
+    - by iApply "IH2".
+    - by iApply "IH3".
   Qed.
 
   Lemma bin_log_related_load Δ Γ e e' τ :
@@ -218,6 +285,7 @@ Section fundamental.
     {Δ;Γ} ⊨ Load e ≤log≤ Load e' : τ.
   Proof.
     iIntros "IH".
+    intro_clause.
     rel_bind_ap e e' "IH" v v' "IH".
     iDestruct "IH" as (l l') "(% & % & Hinv)"; simplify_eq/=.
     rel_load_l_atomic.
@@ -236,6 +304,7 @@ Section fundamental.
     {Δ;Γ} ⊨ Store e1 e2 ≤log≤ Store e1' e2' : TUnit.
   Proof.
     iIntros "IH1 IH2".
+    intro_clause.
     rel_bind_ap e2 e2' "IH2" w w' "IH2".
     rel_bind_ap e1 e1' "IH1" v v' "IH1".
     iDestruct "IH1" as (l l') "(% & % & Hinv)"; simplify_eq/=.
@@ -258,6 +327,7 @@ Section fundamental.
     {Δ;Γ} ⊨ CAS e1 e2 e3 ≤log≤ CAS e1' e2' e3' : TBool.
   Proof.
     iIntros "IH1 IH2 IH3".
+    intro_clause.
     rel_bind_ap e3 e3' "IH3" v3 v3' "#IH3".
     rel_bind_ap e2 e2' "IH2" v2 v2' "#IH2".
     rel_bind_ap e1 e1' "IH1" v1 v1' "#IH1".
@@ -285,31 +355,12 @@ Section fundamental.
       rel_values.
   Qed.
 
-  Lemma bin_log_related_tlam Δ Γ (e e' : expr) τ :
-    (∀ (A : lty2 Σ),
-      □ ({(A::Δ);⤉Γ} ⊨ e ≤log≤ e' : τ)) -∗
-    {Δ;Γ} ⊨ (Λ: e) ≤log≤ (Λ: e') : TForall τ.
-  Proof.
-    iIntros "H".
-    (* TODO: here it is also better to use some sort of characterization
-       of the semantic type for forall *)
-    rewrite /bin_log_related refines_eq.
-    iIntros (vvs ρ) "#Hs #HΓ"; iIntros (j K) "Hj /=".
-    iModIntro. tp_pure j _. wp_pures. iExists _; iFrame.
-    iIntros (A). iDestruct ("H" $! A) as "#H". iAlways.
-    iSpecialize ("H" $! vvs with "Hs [HΓ]"); auto.
-    { by rewrite (interp_ren A Δ Γ). }
-    iIntros (j' K') "Hj". iModIntro.
-    wp_pures. tp_pure j' _.
-    iMod ("H" $! j' K' with "Hj") as "H".
-    iApply "H".
-  Qed.
-
   Lemma bin_log_related_alloc Δ Γ e e' τ :
     ({Δ;Γ} ⊨ e ≤log≤ e' : τ) -∗
     {Δ;Γ} ⊨ Alloc e ≤log≤ Alloc e' : Tref τ.
   Proof.
     iIntros "IH".
+    intro_clause.
     rel_bind_ap e e' "IH" v v' "IH".
     rel_alloc_l l as "Hl".
     rel_alloc_r k as "Hk".
@@ -325,6 +376,7 @@ Section fundamental.
     {Δ;Γ} ⊨ BinOp EqOp e1 e2 ≤log≤ BinOp EqOp e1' e2' : TBool.
   Proof.
     iIntros "IH1 IH2".
+    intro_clause.
     rel_bind_ap e2 e2' "IH2" v2 v2' "#IH2".
     rel_bind_ap e1 e1' "IH1" v1 v1' "#IH1".
     iDestruct "IH1" as (l1 l2) "[% [% #Hl]]"; simplify_eq/=.
@@ -352,6 +404,7 @@ Section fundamental.
     {Δ;Γ} ⊨ BinOp op e1 e2 ≤log≤ BinOp op e1' e2' : τ.
   Proof.
     iIntros (Hopτ) "IH1 IH2".
+    intro_clause.
     rel_bind_ap e2 e2' "IH2" v2 v2' "IH2".
     rel_bind_ap e1 e1' "IH1" v1 v1' "IH1".
     iDestruct "IH1" as (n) "[% %]"; simplify_eq/=.
@@ -370,6 +423,7 @@ Section fundamental.
     {Δ;Γ} ⊨ BinOp op e1 e2 ≤log≤ BinOp op e1' e2' : τ.
   Proof.
     iIntros (Hopτ) "IH1 IH2".
+    intro_clause.
     rel_bind_ap e2 e2' "IH2" v2 v2' "IH2".
     rel_bind_ap e1 e1' "IH1" v1 v1' "IH1".
     iDestruct "IH1" as (n) "[% %]"; simplify_eq/=.
@@ -381,41 +435,12 @@ Section fundamental.
     destruct op; inversion Hopv'; simplify_eq/=; eauto.
   Qed.
 
-  Lemma bin_log_related_tapp' Δ Γ e e' τ τ' :
-    ({Δ;Γ} ⊨ e ≤log≤ e' : TForall τ) -∗
-    {Δ;Γ} ⊨ (TApp e) ≤log≤ (TApp e') : τ.[τ'/].
-  Proof.
-    (* TODO: here it is also better to use some sort of characterization
-       of the semantic type for forall *)
-    iIntros "IH".
-    rel_bind_ap e e' "IH" v v' "IH".
-    iDestruct ("IH" $! (interp τ' Δ)) as "#IH".
-    iApply refines_ret'; auto.
-    by rewrite -interp_subst.
-  Qed.
-
-  Lemma bin_log_related_tapp (τi : lty2 Σ) Δ Γ e e' τ :
-    ({Δ;Γ} ⊨ e ≤log≤ e' : TForall τ) -∗
-    {τi::Δ;⤉Γ} ⊨ (TApp e) ≤log≤ (TApp e') : τ.
-  Proof.
-    rewrite /bin_log_related refines_eq.
-    iIntros "IH".
-    iIntros (vvs ρ) "#Hs #HΓ"; iIntros (j K) "Hj /=".
-    iModIntro. wp_bind (subst_map _ e).
-    tp_bind j (subst_map _ e').
-    iSpecialize ("IH" with "Hs [HΓ] Hj").
-    { by rewrite interp_ren. }
-    iMod "IH" as "IH /=".
-    iApply (wp_wand with "IH").
-    iIntros (v). iDestruct 1 as (v') "[Hj #IH]".
-    iMod ("IH" $! τi with "Hj"); auto.
-  Qed.
-
   Lemma bin_log_related_unfold Δ Γ e e' τ :
     ({Δ;Γ} ⊨ e ≤log≤ e' : TRec τ) -∗
     {Δ;Γ} ⊨ rec_unfold e ≤log≤ rec_unfold e' : τ.[(TRec τ)/].
   Proof.
     iIntros "IH".
+    intro_clause.
     rel_bind_ap e e' "IH" v v' "IH".
     iEval (rewrite lty_rec_unfold /lty2_car /=) in "IH".
     change (lty2_rec _) with (interp (TRec τ) Δ).
@@ -429,6 +454,7 @@ Section fundamental.
     {Δ;Γ} ⊨ e ≤log≤ e' : TRec τ.
   Proof.
     iIntros "IH".
+    intro_clause.
     rel_bind_ap e e' "IH" v v' "IH".
     value_case.
     iModIntro.

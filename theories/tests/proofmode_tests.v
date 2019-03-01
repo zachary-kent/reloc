@@ -7,22 +7,22 @@ Context `{relocG Σ}.
 
 Definition EqI : lty2 Σ := Lty2 (λ v1 v2, ⌜v1 = v2⌝)%I.
 (* Pure reductions *)
-Lemma test1 Γ A P t :
+Lemma test1 A P t :
   ▷ P -∗
-  (P -∗ Γ ⊨ #4 << t : A) -∗
-  Γ ⊨ (#2 + #2) << (λ: <>, t) #() : A.
+  (P -∗ REL #4 << t : A) -∗
+  REL (#2 + #2) << (λ: <>, t) #() : A.
 Proof.
   iIntros "HP Ht".
   rel_bind_l #2. Undo.
   rel_pure_l (_ + _)%E. Undo.
-  rel_pure_l. rel_pure_r.
+  rel_pure_l. repeat rel_pure_r.
   by iApply "Ht".
 Qed.
 
-Lemma test2 E Γ :
+Lemma test2 E :
   ↑specN ⊆ E →
   (|={E,⊤}=> True) -∗
-  {E;Γ} ⊨ (#2 + #2) << (#5 - #1) : EqI.
+  REL (#2 + #2) << (#5 - #1) @ E : EqI.
 Proof.
   intros ?.
   iIntros "Hclose".
@@ -33,10 +33,10 @@ Proof.
 Qed.
 
 (* testing rel_apply_l/r and rel_load_l/r *)
-Lemma test3 l r Γ :
+Lemma test3 l r :
   ▷ l ↦ #3 -∗
   r ↦ₛ #4 -∗
-  Γ ⊨ (!#l;;!#l+#1) << (!#r;;#0+!#r) : EqI.
+  REL (!#l;;!#l+#1) << (!#r;;#0+!#r) : EqI.
 Proof.
   iIntros "Hl Hr".
   rel_apply_r (refines_load_r with "Hr").
@@ -53,10 +53,10 @@ Proof.
 Qed.
 
 (* testing (atomic) load with invariants *)
-Lemma test4 l r Γ N :
+Lemma test4 l r N :
   inv N (l ↦ #3) -∗
   r ↦ₛ #4 -∗
-  Γ ⊨ (!#l;;!#l+#1) << (!#r;;#0+!#r) : EqI.
+  REL (!#l;;!#l+#1) << (!#r;;#0+!#r) : EqI.
 Proof.
   iIntros "#IN Hr".
   repeat (rel_load_r || rel_pure_r).
@@ -70,10 +70,10 @@ Proof.
 Qed.
 
 (* testing fork and store *)
-Lemma test5 l r Γ N :
+Lemma test5 l r N :
   inv N (l ↦ #3) -∗
   r ↦ₛ #4 -∗
-  Γ ⊨ (let: "x" := #1 + (Fork (#l <- #3);; !#l) in "x")
+  REL (let: "x" := #1 + (Fork (#l <- #3);; !#l) in "x")
   << (#r <- #0;; Fork (#r <- #4);; !#r) : EqI.
 Proof.
   iIntros "#IN Hr".
@@ -81,11 +81,11 @@ Proof.
   { iNext. iInv N as "Hl" "Hcl".
     iApply (wp_store with "Hl"). iNext. iIntros "Hl".
     by iApply "Hcl". }
-  iNext. rel_pure_l.
+  iNext. do 2 rel_pure_l.
   rel_load_l_atomic. iInv N as "?" "Hcl". iModIntro. iExists _; iFrame.
   iNext. iIntros "Hl". iMod ("Hcl" with "Hl") as "_".
   repeat rel_pure_l.
-  rel_store_r. rel_pure_r.
+  rel_store_r. do 2 rel_pure_r.
   rel_fork_r as i "Hi".
   repeat rel_pure_r.
   iApply refines_spec_ctx. iDestruct 1 as (?) "#?".

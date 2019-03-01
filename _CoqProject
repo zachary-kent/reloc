@@ -1,7 +1,7 @@
 -Q theories reloc
 -arg -w -arg -notation-overridden,-redundant-canonical-projection,-several-object-files
 theories/prelude/ctx_subst.v
-theories/prelude/tactics.v
+theories/prelude/properness.v
 theories/prelude/asubst.v
 theories/prelude/pureclosed.v
 
@@ -11,8 +11,9 @@ theories/logic/model.v
 theories/logic/adequacy.v
 theories/logic/proofmode/spec_tactics.v
 theories/logic/rules.v
-theories/logic/derived.v
 theories/logic/proofmode/tactics.v
+theories/logic/derived.v
+theories/logic/compatibility.v
 
 theories/typing/types.v
 theories/typing/interp.v
@@ -26,3 +27,4 @@ theories/tests/tp_tests.v
 theories/tests/proofmode_tests.v
 
 theories/examples/lock.v
+theories/examples/counter.v

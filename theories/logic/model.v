@@ -6,8 +6,9 @@
 From iris.heap_lang Require Export lifting metatheory.
 From iris.base_logic.lib Require Import invariants.
 From iris.algebra Require Import list gmap.
-From iris.heap_lang Require Import notation proofmode.
-From reloc Require Import prelude.tactics logic.spec_rules prelude.ctx_subst.
+From iris.heap_lang Require Export lang notation.
+From iris.heap_lang Require Import proofmode.
+From reloc Require Import prelude.properness logic.spec_rules prelude.ctx_subst.
 From reloc Require Export logic.spec_ra.
 
 (** Semantic intepretation of types *)
@@ -134,122 +135,30 @@ End semtypes.
 (* Nice notations *)
 Notation "()" := lty2_unit : lty_scope.
 Infix "→" := lty2_arr : lty_scope.
+Infix "×" := lty2_prod (at level 80) : lty_scope.
 Notation "'ref' A" := (lty2_ref A) : lty_scope.
-
-(* The semantic typing judgment *)
-Definition env_ltyped2 `{relocG Σ} (Γ : gmap string (lty2 Σ))
-    (vs : gmap string (val*val)) : iProp Σ :=
-  (⌜ ∀ x, is_Some (Γ !! x) ↔ is_Some (vs !! x) ⌝ ∧
-  [∗ map] i ↦ Avv ∈ map_zip Γ vs, lty2_car Avv.1 Avv.2.1 Avv.2.2)%I.
-
-(** todo move this to prelude *)
-Section big_opm.
-  Context `{Countable K} {A : ofeT}.
-  Context `{Monoid M o}.
-
-  Infix "`o`" := o (at level 50, left associativity).
-  Implicit Types m : gmap K A.
-  Implicit Types f g : K → A → M.
-
-  Global Instance big_opM_ne2 n `{Proper _ (dist n ==> dist n ==> dist n) o} :
-    Proper (pointwise_relation _ (dist n ==> dist n) ==> dist n ==> dist n)
-           (big_opM o (K:=K) (A:=A)).
-  Proof.
-    intros f g Hf m1.
-    induction m1 as [|i x m Hnone IH] using map_ind.
-    { intros m2 Hm2. rewrite big_opM_empty.
-      induction m2 as [|j y m2 ? IH2] using map_ind.
-      - by rewrite big_opM_empty.
-      - exfalso.
-        specialize (Hm2 j). revert Hm2.
-        rewrite lookup_insert lookup_empty /=. by inversion 1. }
-    intros m2 Hm2.
-    assert (is_Some (m2 !! i)) as [y Hy].
-    { specialize (Hm2 i). revert Hm2. rewrite lookup_insert=>Hm2.
-      destruct (m2 !! i); first naive_solver.
-      inversion Hm2. }
-    replace m2 with (<[i:=y]>(delete i m2)).
-    - rewrite !big_opM_insert // /=; last by apply lookup_delete.
-      f_equiv.
-      + apply Hf. specialize (Hm2 i). revert Hm2.
-        rewrite Hy lookup_insert //. by inversion 1.
-      + apply IH=> j.
-        destruct (decide (j = i)) as [->|?].
-        * by rewrite lookup_delete Hnone.
-        * rewrite lookup_delete_ne//. specialize (Hm2 j).
-          revert Hm2. by rewrite lookup_insert_ne.
-    - rewrite insert_delete insert_id //.
-  Qed.
-
-End big_opm.
-
-(** todo, move to iris *)
-Instance option_mbind_ne {A B : ofeT} n :
-  Proper (((dist n) ==> (dist n)) ==> (dist n) ==> (dist n)) (@option_bind A B).
-Proof. destruct 2; simpl; try constructor; auto. Qed.
-
-(** todo move somewhere *)
-Instance map_zip_with_ne {K} {A B C : ofeT} (f : A → B → C)
-  `{Countable K} `{!EqDecision K} n :
-  Proper (dist n ==> dist n ==> dist n) f →
-  Proper (dist n ==> dist n ==> dist n)
-    (@map_zip_with (gmap K) _ _ _ _ f).
-Proof.
-  intros Hf m1 m2 Hm2 m1' m2' Hm2' i.
-  rewrite !map_lookup_zip_with. f_equiv =>//.
-  intros x1 x2 Hx2. f_equiv =>//.
-  intros y1 y2 Hy2. repeat f_equiv =>//.
-Qed.
-
-Instance env_ltyped2_ne `{relocG Σ} n :
-  Proper (dist n ==> (=) ==> dist n) env_ltyped2.
-Proof.
-  intros Γ Γ' HΓ ? vvs ->.
-  rewrite /env_ltyped2.
-  f_equiv.
-  - f_equiv.
-    split;
-      intros Hvvs x; specialize (HΓ x); rewrite -(Hvvs x);
-      by apply (is_Some_ne n).
-  - apply big_opM_ne2; first apply _.
-    + by intros x A B ->.
-    + apply map_zip_with_ne=>//. apply _.
-Qed.
-
-Instance env_ltyped2_proper `{relocG Σ} :
-  Proper ((≡) ==> (=) ==> (≡)) env_ltyped2.
-Proof. solve_proper_from_ne. Qed.
 
 Section refinement.
   Context `{relocG Σ}.
 
-  Definition refines_def  (E : coPset)
-           (Γ : gmap string (lty2 Σ))
+  Definition refines_def (E : coPset)
            (e e' : expr) (A : lty2 Σ) : iProp Σ :=
-    (∀ vvs ρ, spec_ctx ρ -∗
-              env_ltyped2 Γ vvs -∗
-              interp_expr E (subst_map (fst <$> vvs) e)
-                            (subst_map (snd <$> vvs) e')
-                            A)%I.
+    (∀ ρ, spec_ctx ρ -∗ interp_expr E e e' A)%I.
   Definition refines_aux : seal refines_def. Proof. by eexists. Qed.
   Definition refines := unseal refines_aux.
   Definition refines_eq : refines = refines_def :=
     seal_eq refines_aux.
 
   Global Instance refines_ne E n :
-    Proper ((dist n) ==> (=) ==> (=) ==> (dist n) ==> (dist n)) (refines E).
-  Proof.
-    rewrite refines_eq /refines_def.
-    solve_proper.
-  Qed.
+    Proper ((=) ==> (=) ==> (dist n) ==> (dist n)) (refines E).
+  Proof. rewrite refines_eq /refines_def. solve_proper. Qed.
 
   Global Instance refines_proper E  :
-    Proper ((≡) ==> (=) ==> (=) ==> (≡) ==> (≡)) (refines E).
+    Proper ((=) ==> (=) ==> (≡) ==> (≡)) (refines E).
   Proof. solve_proper_from_ne. Qed.
 End refinement.
 
 Notation "⟦ A ⟧ₑ" := (λ e e', interp_expr ⊤ e e' A).
-Notation "⟦ Γ ⟧*" := (env_ltyped2 Γ).
 
 Section semtypes_properties.
   Context `{relocG Σ}.
@@ -299,76 +208,35 @@ Section semtypes_properties.
   Qed.
 End semtypes_properties.
 
-Section environment_properties.
-  Context `{relocG Σ}.
-  Implicit Types A B : lty2 Σ.
-  Implicit Types Γ : gmap string (lty2 Σ).
-
-  Lemma env_ltyped2_lookup Γ vs x A :
-    Γ !! x = Some A →
-    ⟦ Γ ⟧* vs -∗ ∃ v1 v2, ⌜ vs !! x = Some (v1,v2) ⌝ ∧ A v1 v2.
-  Proof.
-    iIntros (HΓx) "[Hlookup HΓ]". iDestruct "Hlookup" as %Hlookup.
-    destruct (proj1 (Hlookup x)) as [v Hx]; eauto.
-    iExists v.1,v.2. iSplit; first by destruct v.
-    iApply (big_sepM_lookup _ _ x (A,v) with "HΓ").
-    by rewrite map_lookup_zip_with HΓx /= Hx.
-  Qed.
-
-  Lemma env_ltyped2_insert Γ vs x A v1 v2 :
-    A v1 v2 -∗ ⟦ Γ ⟧* vs -∗
-    ⟦ (binder_insert x A Γ) ⟧* (binder_insert x (v1,v2) vs).
-  Proof.
-    destruct x as [|x]=> /=; first by auto.
-    iIntros "#HA [Hlookup #HΓ]". iDestruct "Hlookup" as %Hlookup. iSplit.
-    - iPureIntro=> y. rewrite !lookup_insert_is_Some'. naive_solver.
-    - rewrite -map_insert_zip_with. by iApply big_sepM_insert_2.
-  Qed.
-
-  Lemma env_ltyped2_empty :
-    ⟦ ∅ ⟧* ∅.
-  Proof.
-    iSplit.
-    - iPureIntro=> y. rewrite !lookup_empty -!not_eq_None_Some. by naive_solver.
-    - by rewrite map_zip_with_empty.
-  Qed.
-
-  Global Instance env_ltyped2_persistent Γ vs : Persistent (⟦ Γ ⟧* vs).
-  Proof. apply _. Qed.
-
-End environment_properties.
-
-Notation "'{' E ';' Γ '}' ⊨ e1 '<<' e2 : A" :=
-  (refines E Γ e1%E e2%E (A)%lty2)
-  (at level 100, E at next level, Γ at next level, e1, e2 at next level,
+Notation "'REL' e1 '<<' e2 '@' E ':' A" :=
+  (refines E e1%E e2%E (A)%lty2)
+  (at level 100, E at next level, e1, e2 at next level,
    A at level 200,
-   format "'[hv' '{' E ';' Γ '}'  ⊨  '/  ' e1  '/' '<<'  '/  ' e2  :  A ']'").
-Notation "Γ ⊨ e1 '<<' e2 : A" :=
-  (refines ⊤ Γ e1%E e2%E (A)%lty2)%I
+   format "'[hv' 'REL'  e1  '/' '<<'  '/  ' e2  '@'  E  :  A ']'").
+Notation "'REL' e1 '<<' e2 ':' A" :=
+  (refines ⊤ e1%E e2%E (A)%lty2)
   (at level 100, e1, e2 at next level,
    A at level 200,
-   format "'[hv' Γ  ⊨  '/  ' e1  '/' '<<'  '/  ' e2  :  A ']'").
+   format "'[hv' 'REL'  e1  '/' '<<'  '/  ' e2  :  A ']'").
 
 (** Properties of the relational interpretation *)
 Section related_facts.
   Context `{relocG Σ}.
 
   (* We need this to be able to open and closed invariants in front of logrels *)
-  Lemma fupd_logrel E1 E2 Γ e e' A :
-    ((|={E1,E2}=> {E2;Γ} ⊨ e << e' : A)
-     -∗ ({E1;Γ} ⊨ e << e' : A))%I.
+  Lemma fupd_logrel E1 E2 e e' A :
+    ((|={E1,E2}=> REL e << e' @ E2 : A)
+     -∗ (REL e << e' @ E1 : A))%I.
   Proof.
     rewrite refines_eq /refines_def.
-    iIntros "H".
-    iIntros (vvs ρ) "#Hs HΓ"; iIntros (j K) "Hj /=".
-    iMod "H" as "H".
-    iApply ("H" with "Hs HΓ Hj").
+    iIntros "H". iIntros (ρ) "#Hs"; iIntros (j K) "Hj /=".
+    iMod "H" as "H". iApply ("H" with "Hs Hj").
   Qed.
 
-  Global Instance elim_fupd_logrel p E1 E2 Γ e e' P A :
+  Global Instance elim_fupd_logrel p E1 E2 e e' P A :
    (* TODO: DF: look at the booleans here *)
    ElimModal True p false (|={E1,E2}=> P) P
-     ({E1;Γ} ⊨ e << e' : A) ({E2;Γ} ⊨ e << e' : A).
+     (REL e << e' @ E1 : A) (REL e << e' @ E2: A).
   Proof.
     rewrite /ElimModal. intros _.
     iIntros "[HP HI]". iApply fupd_logrel.
@@ -376,79 +244,62 @@ Section related_facts.
     iMod "HP"; iModIntro; by iApply "HI".
   Qed.
 
-  Global Instance elim_bupd_logrel p E Γ e e' P A :
+  Global Instance elim_bupd_logrel p E e e' P A :
    ElimModal True p false (|==> P) P
-     ({E;Γ} ⊨ e << e' : A) ({E;Γ} ⊨ e << e' : A).
+     (REL e << e' @ E : A) (REL e << e' @ E : A).
   Proof.
     rewrite /ElimModal (bupd_fupd E).
     apply: elim_fupd_logrel.
   Qed.
 
   (* This + elim_modal_timless_bupd' is useful for stripping off laters of timeless propositions. *)
-  Global Instance is_except_0_logrel E Γ e e' A :
-    IsExcept0 ({E;Γ} ⊨ e << e' : A).
+  Global Instance is_except_0_logrel E e e' A :
+    IsExcept0 (REL e << e' @ E : A).
   Proof.
-    rewrite /IsExcept0.
-    iIntros "HL".
-    iApply fupd_logrel.
-    by iMod "HL".
+    rewrite /IsExcept0. iIntros "HL".
+    iApply fupd_logrel. by iMod "HL".
   Qed.
-
 End related_facts.
-
-(** TODO this is a terrible hack and I should be ashamed of myself.
-    See iris issue 225. *)
-Notation is_closed_expr' := (λ e, ∀ vs, subst_map vs e = e).
 
 Section monadic.
   Context `{relocG Σ}.
 
-  Lemma refines_ret' E Γ e1 e2 A :
-    is_closed_expr' e1 →
-    is_closed_expr' e2 →
-    interp_expr E e1 e2 A -∗ {E;Γ} ⊨ e1 << e2 : A.
-  Proof.
-    iIntros (Hcl1 Hcl2) "HA".
-    rewrite refines_eq /refines_def.
-    iIntros (vvs ρ) "#Hs #HΓ".
-    by rewrite Hcl1 Hcl2.
-  Qed.
+  (* Lemma refines_ret_expr E e1 e2 A : *)
+  (*   interp_expr E e1 e2 A -∗ REL e1 << e2 @ E : A. *)
+  (* Proof. *)
+  (*   iIntros "HA". rewrite refines_eq /refines_def. *)
+  (*   eauto with iFrame. *)
+  (* Qed. *)
 
-  Lemma refines_bind K K' E Γ A A' e e' :
-    ({E;Γ} ⊨ e << e' : A) -∗
+  Lemma refines_bind K K' E A A' e e' :
+    (REL e << e' @ E : A) -∗
     (∀ v v', A v v' -∗
-             ({⊤;Γ} ⊨ fill K (of_val v) << fill K' (of_val v') : A')) -∗
-    ({E;Γ} ⊨ fill K e << fill K' e' : A').
+      (REL fill K (of_val v) << fill K' (of_val v') : A')) -∗
+    (REL fill K e << fill K' e' @ E : A').
   Proof.
     iIntros "Hm Hf".
     rewrite refines_eq /refines_def.
-    iIntros (vvs ρ) "#Hs #HΓ". iSpecialize ("Hm" with "Hs HΓ").
+    iIntros (ρ) "#Hs". iSpecialize ("Hm" with "Hs").
     iIntros (j K₁) "Hj /=".
-    rewrite !subst_map_fill -fill_app.
-    iMod ("Hm" with "Hj") as "Hm".
+    rewrite -fill_app. iMod ("Hm" with "Hj") as "Hm".
     iModIntro. iApply wp_bind.
     iApply (wp_wand with "Hm").
     iIntros (v). iDestruct 1 as (v') "[Hj HA]".
-    change (of_val v')
-      with (subst_map (snd <$> vvs) (of_val v')).
-    rewrite fill_app -!subst_map_fill.
-    iMod ("Hf" with "HA Hs HΓ Hj") as "Hf/=".
-    by rewrite !subst_map_fill /=.
+    rewrite fill_app.
+    by iMod ("Hf" with "HA Hs Hj") as "Hf/=".
   Qed.
 
-  Lemma refines_ret E Γ e1 e2 v1 v2 (A : lty2 Σ) :
+  Lemma refines_ret E e1 e2 v1 v2 (A : lty2 Σ) :
     IntoVal e1 v1 →
     IntoVal e2 v2 →
-    (|={E,⊤}=> A v1 v2) -∗ {E;Γ} ⊨ e1 << e2 : A.
+    (|={E,⊤}=> A v1 v2) -∗ REL e1 << e2 @ E : A.
   Proof.
     iIntros (<-<-) "HA".
     rewrite refines_eq /refines_def.
-    iIntros (vvs ρ) "#Hs #HΓ". simpl.
+    iIntros (ρ) "#Hs". simpl.
     iIntros (j K) "Hj /=".
     iMod "HA" as "HA". iModIntro.
     iApply wp_value. iExists _. by iFrame.
   Qed.
 
 End monadic.
-
-Typeclasses Opaque env_ltyped2.

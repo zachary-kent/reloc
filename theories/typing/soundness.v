@@ -15,7 +15,10 @@ Proof.
   eapply (refines_adequate Σ A); last first.
   - intros HΣ. specialize (Hlog HΣ []).
     revert Hlog. unfold A, bin_log_related.
-    by rewrite fmap_empty.
+    rewrite !fmap_empty. intros Hvs.
+    iPoseProof Hvs as "H". iSpecialize ("H" $! ∅ with "[]").
+    { iApply env_ltyped2_empty. }
+    by rewrite !fmap_empty !subst_map_empty.
   - intros HΣ v v'. unfold A. iIntros "Hvv".
     unfold ObsType. cbn.
     iIntros (Hτ). by iApply (eq_type_sound with "Hvv").

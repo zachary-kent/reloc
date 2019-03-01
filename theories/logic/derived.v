@@ -10,23 +10,23 @@ Section rules.
   Context `{relocG Σ}.
   Implicit Types A : lty2 Σ.
 
-  Lemma refines_weaken E Γ e1 e2 A A' :
+  Lemma refines_wand E e1 e2 A A' :
+    (REL e1 << e2 @ E : A) -∗
     (∀ v1 v2, A v1 v2 ={⊤}=∗ A' v1 v2) -∗
-    ({E;Γ} ⊨ e1 << e2 : A) -∗
-    {E;Γ} ⊨ e1 << e2 : A'.
+    REL e1 << e2 @ E : A'.
   Proof.
-    iIntros "HAA He".
+    iIntros "He HAA".
     iApply (refines_bind [] [] with "He").
     iIntros (v v') "HA /=". iApply refines_ret.
     by iApply "HAA".
   Qed.
 
-  Lemma refines_arrow Γ (f x f' x' : binder) (e e' eb eb' : expr) A A' :
+  Lemma refines_arrow (f x f' x' : binder) (e e' eb eb' : expr) A A' :
     e = of_val (RecV f x eb)%E →
     e' = of_val (RecV f' x' eb')%E →
-    □(∀ v1 v2 : val, □(Γ ⊨ of_val v1 << of_val v2 : A) -∗
-      Γ ⊨ App e (of_val v1) << App e' (of_val v2) : A') -∗
-    Γ ⊨ e << e' : (A → A')%lty2.
+    □(∀ v1 v2 : val, □(REL of_val v1 << of_val v2 : A) -∗
+      REL App (RecV f x eb) (of_val v1) << App (RecV f' x' eb') (of_val v2) : A') -∗
+    REL (RecV f x eb) << (RecV f' x' eb') : (A → A')%lty2.
   Proof.
     iIntros (??) "#H".
     iApply refines_arrow_val; eauto.

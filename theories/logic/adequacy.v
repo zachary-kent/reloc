@@ -22,7 +22,7 @@ Lemma refines_adequate Σ `{relocPreG Σ}
   (A : ∀ `{relocG Σ}, lty2 Σ)
   (P : val → val → Prop) e e' σ :
   (∀ `{relocG Σ}, ∀ v v', A v v' -∗ pure_lty2 P v v') →
-  (∀ `{relocG Σ}, {⊤;∅} ⊨ e << e' : A) →
+  (∀ `{relocG Σ}, REL e << e' : A) →
   adequate NotStuck e σ
     (λ v _, ∃ thp' h v', rtc erased_step ([e'], σ) (of_val v' :: thp', h)
             ∧ P v v').
@@ -43,10 +43,8 @@ Proof.
   iSplitL.
   - iPoseProof (Hlog _) as "Hrel".
     rewrite refines_eq /refines_def /spec_ctx.
-    iSpecialize ("Hrel" $! ∅ with "Hcfg []").
-    { iApply env_ltyped2_empty. }
-    rewrite !fmap_empty !subst_map_empty.
     iApply fupd_wp.
+    iSpecialize ("Hrel" with "Hcfg").
     iApply ("Hrel" $! 0%nat []).
     rewrite tpool_mapsto_eq /tpool_mapsto_def. iFrame.
   - iIntros (v).
@@ -66,7 +64,7 @@ Qed.
 
 Theorem refines_typesafety Σ `{relocPreG Σ} e e' e1
         (A : ∀ `{relocG Σ}, lty2 Σ) thp σ σ' :
-  (∀ `{relocG Σ}, {⊤;∅} ⊨ e << e' : A) →
+  (∀ `{relocG Σ}, REL e << e' : A) →
   rtc erased_step ([e], σ) (thp, σ') → e1 ∈ thp →
   is_Some (to_val e1) ∨ reducible e1 σ'.
 Proof.

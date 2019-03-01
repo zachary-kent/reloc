@@ -14,31 +14,6 @@ Definition with_lock : val := λ: "e" "l" "x",
   let: "v" := "e" "x" in
   release "l";; "v".
 
-Definition LockType := Tref TBool.
-
-(* Hint Unfold LockType : typeable. *)
-
-(* Lemma newlock_type Γ : typed Γ newlock (TArrow TUnit LockType). *)
-(* Proof. solve_typed. Qed. *)
-
-(* Hint Resolve newlock_type : typeable. *)
-
-(* Lemma acquire_type Γ : typed Γ acquire (TArrow LockType TUnit). *)
-(* Proof. solve_typed. Qed. *)
-
-(* Hint Resolve acquire_type : typeable. *)
-
-(* Lemma release_type Γ : typed Γ release (TArrow LockType TUnit). *)
-(* Proof. solve_typed. Qed. *)
-
-(* Hint Resolve release_type : typeable. *)
-
-(* Lemma with_lock_type Γ τ τ' : *)
-(*   typed Γ with_lock (TArrow (TArrow τ τ') (TArrow LockType (TArrow τ τ'))). *)
-(* Proof. solve_typed. Qed. *)
-
-(* Hint Resolve with_lock_type : typeable. *)
-
 Class lockG Σ := LockG { lock_tokG :> inG Σ (exclR unitC) }.
 Definition lockΣ : gFunctors := #[GFunctor (exclR unitC)].
 
@@ -69,11 +44,11 @@ Section lockG_rules.
   Global Instance locked_timeless γ : Timeless (locked γ).
   Proof. apply _. Qed.
 
-  Lemma refines_newlock_l (R : iProp Σ) Γ K t A :
+  Lemma refines_newlock_l (R : iProp Σ) K t A :
     R -∗
     ▷(∀ (lk : loc) γ, is_lock γ #lk R
-      -∗ (Γ ⊨ fill K (of_val #lk) << t: A)) -∗
-    Γ ⊨ fill K (newlock #()) << t: A.
+      -∗ (REL fill K (of_val #lk) << t: A)) -∗
+    REL fill K (newlock #()) << t: A.
   Proof.
     iIntros "HR Hlog".
     unfold newlock. unlock.
@@ -85,12 +60,12 @@ Section lockG_rules.
     iApply "Hlog". iExists l. eauto.
   Qed.
 
-  Lemma refines_release_l (R : iProp Σ) (lk : loc) γ Γ K t A :
+  Lemma refines_release_l (R : iProp Σ) (lk : loc) γ K t A :
     is_lock γ #lk R -∗
     locked γ -∗
     R -∗
-    ▷(Γ ⊨ fill K (of_val #()) << t: A) -∗ (* TODO: why do I have to type `of_val` here? *)
-    Γ ⊨ fill K (release #lk) << t: A.
+    ▷(REL fill K (of_val #()) << t: A) -∗ (* TODO: why do I have to type `of_val` here? *)
+    REL fill K (release #lk) << t: A.
   Proof.
     iIntros "Hlock Hlocked HR Hlog".
     iDestruct "Hlock" as (l) "[% #?]"; simplify_eq.
@@ -105,10 +80,10 @@ Section lockG_rules.
     iApply "Hlog".
   Qed.
 
-  Lemma refines_acquire_l (R : iProp Σ) (lk : loc) γ Γ K t A :
+  Lemma refines_acquire_l (R : iProp Σ) (lk : loc) γ K t A :
     is_lock γ #lk R -∗
-    ▷(locked γ -∗ R -∗ Γ ⊨ fill K (of_val #()) << t: A) -∗
-    Γ ⊨ fill K (acquire #lk) << t: A.
+    ▷(locked γ -∗ R -∗ REL fill K (of_val #()) << t: A) -∗
+    REL fill K (acquire #lk) << t: A.
   Proof.
     iIntros "#Hlock Hlog".
     iLöb as "IH".
@@ -138,10 +113,10 @@ Section lock_rules_r.
   Context `{relocG Σ}.
   Variable (E : coPset).
 
-  Lemma refines_newlock_r Γ K t A
+  Lemma refines_newlock_r K t A
     (Hcl : nclose specN ⊆ E) :
-    (∀ l : loc, l ↦ₛ #false -∗ {E;Γ} ⊨ t << fill K (of_val #l) : A) -∗
-    {E;Γ} ⊨ t << fill K (newlock #()): A.
+    (∀ l : loc, l ↦ₛ #false -∗ REL t << fill K (of_val #l) @ E : A) -∗
+    REL t << fill K (newlock #()) @ E : A.
   Proof.
     iIntros "Hlog".
     unfold newlock. unlock.
@@ -150,15 +125,11 @@ Section lock_rules_r.
     iApply ("Hlog" with "Hl").
   Qed.
 
-  Global Opaque newlock.
-
-  Transparent acquire.
-
-  Lemma refines_acquire_r Γ K l t A
+  Lemma refines_acquire_r K l t A
     (Hcl : nclose specN ⊆ E) :
     l ↦ₛ #false -∗
-    (l ↦ₛ #true -∗ {E;Γ} ⊨ t << fill K (of_val #()) : A) -∗
-    {E;Γ} ⊨ t << fill K (acquire #l) : A.
+    (l ↦ₛ #true -∗ REL t << fill K (of_val #()) @ E : A) -∗
+    REL t << fill K (acquire #l) @ E : A.
   Proof.
     iIntros "Hl Hlog".
     unfold acquire. unlock.
@@ -168,14 +139,11 @@ Section lock_rules_r.
     by iApply "Hlog".
   Qed.
 
-  Global Opaque acquire.
-
-  Transparent release.
-  Lemma refines_release_r Γ K l t A (b : bool)
+  Lemma refines_release_r K l t A (b : bool)
     (Hcl : nclose specN ⊆ E) :
     l ↦ₛ #b -∗
-    (l ↦ₛ #false -∗ {E;Γ} ⊨ t << fill K (of_val #()) : A) -∗
-    {E;Γ} ⊨ t << fill K (release #l) : A.
+    (l ↦ₛ #false -∗ REL t << fill K (of_val #()) @ E : A) -∗
+    REL t << fill K (release #l) @ E : A.
   Proof.
     iIntros "Hl Hlog".
     unfold release. unlock.
@@ -184,6 +152,6 @@ Section lock_rules_r.
     by iApply "Hlog".
   Qed.
 
-  Global Opaque release.
-
 End lock_rules_r.
+
+Opaque acquire release newlock.

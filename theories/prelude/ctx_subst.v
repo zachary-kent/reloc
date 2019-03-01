@@ -1,6 +1,6 @@
 From iris.program_logic Require Export ectx_language ectxi_language.
 From iris.heap_lang Require Export lang metatheory.
-From stdpp Require Import base stringmap fin_collections fin_map_dom.
+From stdpp Require Import base stringmap fin_sets fin_map_dom.
 
 (** Substitution in the contexts *)
 Fixpoint subst_map_ctx_item (es : stringmap val) (K : ectx_item)
