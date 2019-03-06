@@ -21,14 +21,12 @@ Section rules.
     by iApply "HAA".
   Qed.
 
-  Lemma refines_arrow (f x f' x' : binder) (e e' eb eb' : expr) A A' :
-    e = of_val (RecV f x eb)%E →
-    e' = of_val (RecV f' x' eb')%E →
+  Lemma refines_arrow (f x f' x' : binder) (eb eb' : expr) A A' :
     □(∀ v1 v2 : val, □(REL of_val v1 << of_val v2 : A) -∗
       REL App (RecV f x eb) (of_val v1) << App (RecV f' x' eb') (of_val v2) : A') -∗
     REL (RecV f x eb) << (RecV f' x' eb') : (A → A')%lty2.
   Proof.
-    iIntros (??) "#H".
+    iIntros "#H".
     iApply refines_arrow_val; eauto.
     iAlways. iIntros (v1 v2) "#HA".
     iApply "H". iAlways.

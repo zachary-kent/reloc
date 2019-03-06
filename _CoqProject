@@ -29,3 +29,4 @@ theories/tests/proofmode_tests.v
 theories/examples/lock.v
 theories/examples/counter.v
 theories/examples/bit.v
+theories/examples/Y.v
