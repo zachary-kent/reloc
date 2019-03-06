@@ -30,3 +30,4 @@ theories/examples/lock.v
 theories/examples/counter.v
 theories/examples/bit.v
 theories/examples/Y.v
+theories/examples/or.v
