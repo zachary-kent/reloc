@@ -86,7 +86,7 @@ Proof.
   iNext. iIntros "Hl". iMod ("Hcl" with "Hl") as "_".
   repeat rel_pure_l.
   rel_store_r. do 2 rel_pure_r.
-  rel_fork_r as i "Hi".
+  rel_fork_r i as "Hi".
   repeat rel_pure_r.
   iApply refines_spec_ctx. iDestruct 1 as (?) "#?".
   tp_store i.

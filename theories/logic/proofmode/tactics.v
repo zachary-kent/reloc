@@ -541,7 +541,7 @@ Proof.
   rewrite -refines_fork_r //.
 Qed.
 
-Tactic Notation "rel_fork_r" "as" ident(i) constr(H) :=
+Tactic Notation "rel_fork_r" ident(i) "as" constr(H) :=
   iStartProof;
   first
     [rel_reshape_cont_r ltac:(fun K e' =>

@@ -1,6 +1,5 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Semantic typeability and equivalences for fixed point combinators. *)
-
 From iris.proofmode Require Import tactics.
 From reloc Require Export proofmode.
 
