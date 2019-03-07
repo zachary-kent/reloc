@@ -127,7 +127,8 @@ Inductive typed (Γ : stringmap type) : expr → type → Prop :=
      Γ ⊢ₜ e #() : τ.[τ'/]
   | TFold e τ : Γ ⊢ₜ e : τ.[TRec τ/] → Γ ⊢ₜe : TRec τ
   | TUnfold e τ : Γ ⊢ₜ e : TRec τ → Γ ⊢ₜ rec_unfold e : τ.[TRec τ/]
-  (* | TPack e τ τ' : Γ ⊢ₜ e : τ.[τ'/] → Γ ⊢ₜ e : TExists τ *)
+  | TPack e τ τ' : Γ ⊢ₜ e : τ.[τ'/] → Γ ⊢ₜ e : TExists τ
+  (* todo *)
   (* | TUnpack e1 e2 τ τ2 : Γ ⊢ₜ e1 : TExists τ → *)
   (*     (subst (ren (+1%nat)) <$> Γ) ⊢ₜ e2 : TArrow τ (subst (ren (+1%nat)) τ2) → *)
   (*     Γ ⊢ₜ unpack e1 e2 : τ2 *)

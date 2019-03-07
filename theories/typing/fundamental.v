@@ -463,68 +463,45 @@ Section fundamental.
     by rewrite -interp_subst.
   Qed.
 
-(*
-  Lemma bin_log_related_pack' Δ Γ e e' τ τ' :
-    {Δ;Γ} ⊨ e ≤log≤ e' : τ.[τ'/] -∗
-    {Δ;Γ} ⊨ Pack e ≤log≤ Pack e' : TExists τ.
+  Lemma bin_log_related_pack' Δ Γ e e' (τ τ' : type) :
+    ({Δ;Γ} ⊨ e ≤log≤ e' : τ.[τ'/]) -∗
+    {Δ;Γ} ⊨ e ≤log≤ e' : TExists τ.
   Proof.
     iIntros "IH".
+    intro_clause.
     rel_bind_ap e e' "IH" v v' "#IH".
     value_case.
-    iExists (v, v'). iModIntro. simpl; iSplit; eauto.
-    iExists (⟦ τ' ⟧ Δ).
+    iModIntro. iExists (interp τ' Δ).
     by rewrite interp_subst.
   Qed.
 
-  Lemma bin_log_related_pack (τi : D) Δ Γ e e' τ :
-    {τi::Δ;⤉Γ} ⊨ e ≤log≤ e' : τ -∗
-    {Δ;Γ} ⊨ Pack e ≤log≤ Pack e' : TExists τ.
+  Lemma bin_log_related_pack (τi : lty2 Σ) Δ Γ e e' τ :
+    ({τi::Δ;⤉Γ} ⊨ e ≤log≤ e' : τ) -∗
+    {Δ;Γ} ⊨ e ≤log≤ e' : TExists τ.
   Proof.
-    rewrite bin_log_related_eq.
     iIntros "IH".
-    iIntros (vvs ρ) "#Hs #HΓ"; iIntros (j K) "Hj /=".
-    wp_bind (env_subst _ e).
-    tp_bind j (env_subst _ e').
-    iSpecialize ("IH" with "Hs [HΓ] Hj").
-    { by rewrite interp_env_ren. }
-    iMod "IH" as "IH /=". iModIntro.
-    iApply (wp_wand with "IH").
-    iIntros (v). iDestruct 1 as (v') "[Hj #IH]".
-    iApply wp_value.
-    iExists (PackV v'). simpl. iFrame.
-    iExists (v, v'). simpl; iSplit; eauto.
+    intro_clause.
+    iSpecialize ("IH" $! vs with "[Hvs]").
+    { by rewrite interp_ren. }
+    rel_bind_ap e e' "IH" v v' "#IH".
+    value_case.
+    iModIntro. by iExists τi.
   Qed.
 
+(*
   Lemma bin_log_related_unpack Δ Γ e1 e1' e2 e2' τ τ2 :
-    {Δ;Γ} ⊨ e1 ≤log≤ e1' : TExists τ -∗
-    (∀ τi : D,
+    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : TExists τ) -∗
+    (∀ τi : lty2 Σ,
       {τi::Δ;⤉Γ} ⊨
-        e2 ≤log≤ e2' : TArrow τ (asubst (ren (+1)) τ2)) -∗
-    {Δ;Γ} ⊨ Unpack e1 e2 ≤log≤ Unpack e1' e2' : τ2.
+        e2 ≤log≤ e2' : TArrow τ (subst (ren (+1)) τ2)) -∗
+    {Δ;Γ} ⊨ unpack e1 e2 ≤log≤ unpack e1' e2' : τ2.
   Proof.
-    rewrite bin_log_related_eq.
     iIntros "IH1 IH2".
-    iIntros (vvs ρ) "#Hs #HΓ"; iIntros (j K) "Hj /=".
-    smart_bind j (env_subst _ e1) (env_subst _ e1') "IH1" v v' "IH1".
-    iDestruct "IH1" as ([w w']) "[% #Hτi]"; simplify_eq/=.
-    iDestruct "Hτi" as (τi) "#Hτi"; simplify_eq/=.
-    wp_unpack.
-    iApply fupd_wp.
-    tp_pack j; eauto. iModIntro.
-    iSpecialize ("IH2" $! τi with "Hs [HΓ]"); auto.
-    { by rewrite interp_env_ren. }
-    tp_bind j (env_subst (snd <$> vvs) e2').
-    iMod ("IH2" with "Hj") as "IH2". simpl.
-    wp_bind (env_subst (fst <$> vvs) e2).
-    iApply (wp_wand with "IH2").
-    iIntros (v). iDestruct 1 as (v') "[Hj #Hvv']".
-    iSpecialize ("Hvv'" $! (w,w') with "Hτi Hj"). simpl.
-    iMod "Hvv'".
-    iApply (wp_wand with "Hvv'"). clear v v'.
-    iIntros (v). iDestruct 1 as (v') "[Hj #Hvv']".
-    rewrite (interp_weaken [] [τi] Δ _ τ2) /=.
-    eauto.
-  Qed.
+    intro_clause.
+    Abort.
+    iSpecialize ("IH2" $! vs with "[Hvs]").
+    { by rewrite interp_ren. }
+    rel_bind_ap e2 e2' "IH2" v v' "#IH2".
 *)
 
   Theorem binary_fundamental Δ Γ e τ :
@@ -551,7 +528,7 @@ Section fundamental.
     - by iApply bin_log_related_tapp'.
     - by iApply bin_log_related_fold.
     - by iApply bin_log_related_unfold.
-    (* - by iApply bin_log_related_pack'. *)
+    - by iApply bin_log_related_pack'.
     (* - iApply (bin_log_related_unpack with "[]"); eauto. *)
     - by iApply bin_log_related_fork.
     - by iApply bin_log_related_alloc.
