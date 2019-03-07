@@ -94,6 +94,9 @@ End semtypes.
    used when inserting a new type interpretation in Δ. *)
 Notation "⤉ Γ" := (Autosubst_Classes.subst (ren (+1)%nat) <$> Γ) (at level 10, format "⤉ Γ").
 
+Notation "∀ A1 .. An , C" :=
+  (lty2_forall (λ A1, .. (lty2_forall (λ An, C%lty2)) ..)) : lty_scope.
+
 (** ** Properties of the type inrpretation w.r.t. the substitutions *)
 Section interp_ren.
   Context `{relocG Σ}.
@@ -196,7 +199,7 @@ Section env_typed.
   (** Substitution [vs] is well-typed w.r.t. [Γ] *)
   Definition env_ltyped2 (Γ : gmap string (lty2 Σ))
     (vs : gmap string (val*val)) : iProp Σ :=
-    (⌜ ∀ x, is_Some (Γ !! x) ↔ is_Some (vs !! x) ⌝ ∧
+    (⌜ ∀ x, is_Some (Γ !! x) ↔ is_Some (vs !! x) ⌝ ∧ (* TODO why not equality of `dom`s? *)
     [∗ map] i ↦ Avv ∈ map_zip Γ vs, lty2_car Avv.1 Avv.2.1 Avv.2.2)%I.
 
   Notation "⟦ Γ ⟧*" := (env_ltyped2 Γ).
@@ -247,6 +250,17 @@ Section env_typed.
     iSplit.
     - iPureIntro=> y. rewrite !lookup_empty -!not_eq_None_Some. by naive_solver.
     - by rewrite map_zip_with_empty.
+  Qed.
+
+  Lemma env_ltyped2_empty_inv vs :
+    ⟦ ∅ ⟧* vs -∗ ⌜vs = ∅⌝.
+  Proof.
+    iIntros "[H1 H2]". iDestruct "H1" as %coo.
+    iPureIntro. apply map_eq=>x. specialize (coo x).
+    revert coo. rewrite !lookup_empty /=.
+    destruct (vs !! x); eauto.
+    intros ?. exfalso. eapply is_Some_None. apply coo.
+    eauto.
   Qed.
 
   Global Instance env_ltyped2_persistent Γ vs : Persistent (⟦ Γ ⟧* vs).
