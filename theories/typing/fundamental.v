@@ -13,15 +13,6 @@ Section fundamental.
   Implicit Types Δ : listC (lty2C Σ).
   Hint Resolve to_of_val.
 
-  (** TODO: actually use this folding tactic *)
-  (* right now it is not compatible with the _atomic tactics *)
-  Local Ltac fold_logrel :=
-    lazymatch goal with
-    | |- environments.envs_entails _
-         (refines ?E (fmap (λ τ, _ _ ?Δ) ?Γ) ?e1 ?e2 (_ (interp ?T) _)) =>
-      fold (bin_log_related E Δ Γ e1 e2 T)
-    end.
-
   Local Ltac intro_clause := progress (iIntros (vs) "#Hvs /=").
   Local Ltac intro_clause' := progress (iIntros (?) "? /=").
   Local Ltac value_case := try intro_clause';
@@ -205,16 +196,17 @@ Section fundamental.
       by iApply "He2".
   Qed.
 
-  (* TODO
   Lemma bin_log_related_seq' Δ Γ e1 e2 e1' e2' τ1 τ2 :
     ({Δ;Γ} ⊨ e1 ≤log≤ e1' : τ1) -∗
     ({Δ;Γ} ⊨ e2 ≤log≤ e2' : τ2) -∗
     {Δ;Γ} ⊨ (e1;; e2) ≤log≤ (e1';; e2') : τ2.
   Proof.
     iIntros "He1 He2".
-    iApply (bin_log_related_seq (λne _, True%I) _ _ _ _ _ _ τ1.[ren (+1)] with "[He1]"); auto.
-    by iApply bin_log_related_weaken_2.
-  Qed. *)
+    iApply (bin_log_related_seq lty2_true _ _ _ _ _ _ τ1.[ren (+1)] with "[He1] He2").
+    intro_clause.
+    rewrite interp_ren -(interp_ren_up [] Δ τ1).
+    by iApply "He1".
+  Qed.
 
   Lemma bin_log_related_injl Δ Γ e e' τ1 τ2 :
     ({Δ;Γ} ⊨ e ≤log≤ e' : τ1) -∗

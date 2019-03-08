@@ -34,7 +34,7 @@ Proof.
     as (γc) "[Hcfg1 Hcfg2]".
   { apply auth_valid_discrete_2. split=>//.
     - apply prod_included. split=>///=.
-      (* TODO: use gmap.empty_included *) eexists. by rewrite left_id.
+      apply: ucmra_unit_least.
     - split=>//. apply to_tpool_valid. apply to_gen_heap_valid. }
   set (Hcfg := RelocG _ _ (CFGSG _ _ γc)).
   iMod (inv_alloc specN _ (spec_inv ([e'], σ)) with "[Hcfg1]") as "#Hcfg".
