@@ -151,14 +151,10 @@ Section fundamental.
     {Δ;Γ} ⊨ (Λ: e) ≤log≤ (Λ: e') : TForall τ.
   Proof.
     iIntros "#H".
-    (* TODO: here it is also better to use some sort of characterization
-       of the semantic type for forall
-       RK: good idea. *)
-    intro_clause.
+   intro_clause.
     iApply refines_spec_ctx. iDestruct 1 as (ρ) "#Hs".
     value_case. rewrite /lty2_forall /lty2_car /=.
     iModIntro. iModIntro. iIntros (A) "!>". iIntros (? ?) "_".
-
     rel_pure_l. rel_pure_r.
     iDestruct ("H" $! A) as "#H1".
     iApply "H1".
@@ -169,8 +165,6 @@ Section fundamental.
     ({Δ;Γ} ⊨ e ≤log≤ e' : TForall τ) -∗
     {Δ;Γ} ⊨ (TApp e) ≤log≤ (TApp e') : τ.[τ'/].
   Proof.
-    (* TODO: here it is also better to use some sort of characterization
-       of the semantic type for forall *)
     iIntros "IH".
     intro_clause.
     rel_bind_ap e e' "IH" v v' "IH".

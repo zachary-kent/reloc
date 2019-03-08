@@ -64,7 +64,7 @@ Section lockG_rules.
     is_lock γ #lk R -∗
     locked γ -∗
     R -∗
-    ▷(REL fill K (of_val #()) << t: A) -∗ (* TODO: why do I have to type `of_val` here? *)
+    ▷(REL fill K (#() : expr) << t : A) -∗
     REL fill K (release #lk) << t: A.
   Proof.
     iIntros "Hlock Hlocked HR Hlog".
