@@ -59,24 +59,31 @@ Section semtypes.
   Implicit Types E : coPset.
   Implicit Types A B : lty2 Σ.
 
-  Definition interp_expr E e e' A : iProp Σ :=
-    (∀ j K, j ⤇ fill K e'
-    ={E,⊤}=∗ WP e {{ v, ∃ v', j ⤇ fill K (of_val v') ∗ A v v' }})%I.
+  Definition refines_def (E : coPset)
+           (e e' : expr) (A : lty2 Σ) : iProp Σ :=
+    (* TODO: refactor the quantifiers *)
+    (∀ ρ, spec_ctx ρ -∗ (∀ j K, j ⤇ fill K e'
+        ={E,⊤}=∗ WP e {{ v, ∃ v', j ⤇ fill K (of_val v') ∗ A v v' }}))%I.
 
-  Global Instance interp_expr_ne E n :
-    Proper ((=) ==> (=) ==> dist n ==> dist n) (interp_expr E).
-  Proof. solve_proper. Qed.
+  Definition refines_aux : seal refines_def. Proof. by eexists. Qed.
+  Definition refines := unseal refines_aux.
+  Definition refines_eq : refines = refines_def :=
+    seal_eq refines_aux.
 
-  Global Instance interp_expr_proper E e e' :
-    Proper ((≡) ==> (≡)) (interp_expr E e e').
-  Proof. apply ne_proper=>n. apply _. Qed.
+  Global Instance refines_ne E n :
+    Proper ((=) ==> (=) ==> (dist n) ==> (dist n)) (refines E).
+  Proof. rewrite refines_eq /refines_def. solve_proper. Qed.
+
+  Global Instance refines_proper E  :
+    Proper ((=) ==> (=) ==> (≡) ==> (≡)) (refines E).
+  Proof. solve_proper_from_ne. Qed.
 
   Definition lty2_unit : lty2 Σ := Lty2 (λ w1 w2, ⌜ w1 = #() ∧ w2 = #() ⌝%I).
   Definition lty2_bool : lty2 Σ := Lty2 (λ w1 w2, ∃ b : bool, ⌜ w1 = #b ∧ w2 = #b ⌝)%I.
   Definition lty2_int : lty2 Σ := Lty2 (λ w1 w2, ∃ n : Z, ⌜ w1 = #n ∧ w2 = #n ⌝)%I.
 
   Definition lty2_arr (A1 A2 : lty2 Σ) : lty2 Σ := Lty2 (λ w1 w2,
-    □ ∀ v1 v2, A1 v1 v2 -∗ interp_expr ⊤ (App w1 v1) (App w2 v2) A2)%I.
+    □ ∀ v1 v2, A1 v1 v2 -∗ refines ⊤ (App w1 v1) (App w2 v2) A2)%I.
 
   Definition lty2_ref (A : lty2 Σ) : lty2 Σ := Lty2 (λ w1 w2,
     ∃ l1 l2: loc, ⌜w1 = #l1⌝ ∧ ⌜w2 = #l2⌝ ∧
@@ -107,17 +114,17 @@ Section semtypes.
     ∃ A, C A w1 w2)%I.
 
   (** The lty2 constructors are non-expansive *)
-  Instance lty2_prod_ne n : Proper (dist n ==> (dist n ==> dist n)) lty2_prod.
+  Instance lty2_prod_ne n : Proper (dist n ==> dist n ==> dist n) lty2_prod.
   Proof. solve_proper. Qed.
 
-  Instance lty2_sum_ne n : Proper (dist n ==> (dist n ==> dist n)) lty2_sum.
+  Instance lty2_sum_ne n : Proper (dist n ==> dist n ==> dist n) lty2_sum.
   Proof. solve_proper. Qed.
 
   Instance lty2_arr_ne n : Proper (dist n ==> dist n ==> dist n) lty2_arr.
   Proof. solve_proper. Qed.
 
   Instance lty2_rec_ne n : Proper (dist n ==> dist n)
-                                   (lty2_rec : (lty2C Σ -n> lty2C Σ) -> lty2C Σ).
+       (lty2_rec : (lty2C Σ -n> lty2C Σ) -> lty2C Σ).
   Proof.
     intros F F' HF.
     unfold lty2_rec, lty2_car.
@@ -139,28 +146,6 @@ Infix "×" := lty2_prod (at level 80) : lty_scope.
 Notation "'ref' A" := (lty2_ref A) : lty_scope.
 Notation "∃ A1 .. An , C" :=
   (lty2_exists (λ A1, .. (lty2_exists (λ An, C%lty2)) ..)) : lty_scope.
-
-Section refinement.
-  Context `{relocG Σ}.
-
-  Definition refines_def (E : coPset)
-           (e e' : expr) (A : lty2 Σ) : iProp Σ :=
-    (∀ ρ, spec_ctx ρ -∗ interp_expr E e e' A)%I.
-  Definition refines_aux : seal refines_def. Proof. by eexists. Qed.
-  Definition refines := unseal refines_aux.
-  Definition refines_eq : refines = refines_def :=
-    seal_eq refines_aux.
-
-  Global Instance refines_ne E n :
-    Proper ((=) ==> (=) ==> (dist n) ==> (dist n)) (refines E).
-  Proof. rewrite refines_eq /refines_def. solve_proper. Qed.
-
-  Global Instance refines_proper E  :
-    Proper ((=) ==> (=) ==> (≡) ==> (≡)) (refines E).
-  Proof. solve_proper_from_ne. Qed.
-End refinement.
-
-Notation "⟦ A ⟧ₑ" := (λ e e', interp_expr ⊤ e e' A).
 
 Section semtypes_properties.
   Context `{relocG Σ}.
@@ -199,15 +184,6 @@ Section semtypes_properties.
     compute in Hfoo. eauto.
   Qed.
 
-  Lemma interp_ret (A : lty2 Σ) E e1 e2 v1 v2 :
-    IntoVal e1 v1 →
-    IntoVal e2 v2 →
-    (|={E,⊤}=> A v1 v2)%I -∗ interp_expr E e1 e2 A.
-  Proof.
-    iIntros (<- <-) "HA".
-    iIntros (j K) "Hj /=". iMod "HA".
-    iApply wp_value; eauto.
-  Qed.
 End semtypes_properties.
 
 Notation "'REL' e1 '<<' e2 '@' E ':' A" :=

@@ -120,10 +120,10 @@ Section interp_ren.
       assert ((length Δ1 + S (x - length Δ1) - length Δ1) = S (x - length Δ1))%nat as Hwat.
       { lia. }
       rewrite Hwat. simpl. done.
-    - intros v1 v2; unfold lty2_car; simpl; unfold interp_expr;
+    - intros v1 v2; unfold lty2_car; simpl;
         simpl; properness; auto.
       rewrite /lty2_car /=. properness; auto.
-      apply interp_expr_proper. apply (IHτ (_ :: _)).
+      apply refines_proper=> //. apply (IHτ (_ :: _)).
     - intros ??; unfold lty2_car; simpl; properness; auto. apply (IHτ (_ :: _)).
   Qed.
 
@@ -150,10 +150,10 @@ Section interp_ren.
       rewrite iter_up; case_decide; properness; simpl.
       { by rewrite !lookup_app_l. }
       rewrite !lookup_app_r ;[| lia ..]. do 3 f_equiv. lia.
-    - intros ??; simpl; unfold lty2_car; simpl; unfold interp_expr.
+    - intros ??; simpl; unfold lty2_car; simpl;
       properness; auto.
       rewrite /lty2_car /=. properness; auto.
-      apply interp_expr_proper. apply (IHτ (_ :: _)).
+      apply refines_proper=> //. apply (IHτ (_ :: _)).
     - intros ??; unfold lty2_car; simpl; properness; auto.
         by apply (IHτ (_ :: _)).
   Qed.
@@ -178,10 +178,10 @@ Section interp_ren.
         etrans; last by apply HW.
         asimpl. reflexivity. }
       rewrite !lookup_app_r; [|lia ..]. repeat f_equiv. lia.
-    - intros ??. unfold lty2_car; simpl; unfold interp_expr.
+    - intros ??. unfold lty2_car; simpl;
       properness; auto.
       rewrite /lty2_car /=. properness; auto.
-      apply interp_expr_proper. apply (IHτ (_ :: _)).
+      apply refines_proper=>//. apply (IHτ (_ :: _)).
     - intros ??; unfold lty2_car; simpl; properness; auto. apply (IHτ (_ :: _)).
   Qed.
 

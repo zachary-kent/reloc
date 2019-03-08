@@ -39,7 +39,7 @@ Section compatibility.
     iIntros "IH1 IH2".
     rel_bind_ap e2 e2' "IH2" v v' "Hvv".
     rel_bind_ap e1 e1' "IH1" f f' "Hff".
-    rewrite interp_val_arrow. by iApply "Hff".
+    by iApply "Hff".
   Qed.
 
   Lemma refines_fork e e' E :
@@ -51,7 +51,7 @@ Section compatibility.
     rewrite refines_eq /refines_def.
     iIntros (ρ) "#Hρ"; iIntros (j K) "Hj /=".
     tp_fork j as i "Hi".
-    iSpecialize ("IH" with "Hρ"). unfold interp_expr.
+    iSpecialize ("IH" with "Hρ").
     iMod ("IH" $! i [] with "Hi") as "IH".
     iApply (wp_fork with "[-Hj]").
     - iNext. iApply (wp_wand with "IH"). eauto.

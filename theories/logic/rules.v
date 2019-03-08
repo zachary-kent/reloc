@@ -291,29 +291,6 @@ Section rules.
     by iApply "H".
   Qed.
 
-  Lemma interp_val_arrow (A A' : lty2 Σ) (v v' : val) :
-    (A → A')%lty2 v v' -∗
-    ((∀ (w w' : val), A w w'
-      -∗ REL v w << v' w' : A'))%I.
-  Proof.
-    iIntros "#H". iIntros (v1 v2) "HA".
-    iSpecialize ("H" with "HA").
-    rewrite refines_eq /refines_def.
-    eauto with iFrame.
-  Qed.
-
-  Lemma interp_arrow_val (A A' : lty2 Σ) (v v' : val) ρ :
-    spec_ctx ρ -∗
-    (□ (∀ (w w' : val), A w w'
-         -∗ REL v w << v' w' : A') -∗
-    (A → A')%lty2 v v')%I.
-  Proof.
-    iIntros "#Hs #H". iModIntro. iIntros (v1 v2) "HA".
-    iSpecialize ("H" with "HA").
-    rewrite refines_eq /refines_def.
-    by iApply "H".
-  Qed.
-
   (** * Some derived (symbolic execution) rules *)
 
   (** ** Stateful reductions on the LHS *)

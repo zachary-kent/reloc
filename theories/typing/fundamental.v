@@ -22,8 +22,8 @@ Section fundamental.
       fold (bin_log_related E Δ Γ e1 e2 T)
     end.
 
-  Local Ltac intro_clause := progress (iIntros (vs) "#Hvs"; iSimpl).
-  Local Ltac intro_clause' := progress (iIntros (?) "?"; iSimpl).
+  Local Ltac intro_clause := progress (iIntros (vs) "#Hvs /=").
+  Local Ltac intro_clause' := progress (iIntros (?) "? /=").
   Local Ltac value_case := try intro_clause';
     try rel_pure_l; try rel_pure_r; rel_values.
 
@@ -119,9 +119,7 @@ Section fundamental.
     iSpecialize ("Ht" $! vvs' with "[#]").
     { rewrite !binder_insert_fmap.
       iApply (env_ltyped2_insert with "[IH]").
-      - iApply (interp_arrow_val with "Hs").
-        fold interp. (* ?? *)
-        iAlways. iApply "IH".
+      - iApply "IH".
       - iApply (env_ltyped2_insert with "Hτ1").
         by iFrame. }
 
@@ -154,21 +152,17 @@ Section fundamental.
   Proof.
     iIntros "#H".
     (* TODO: here it is also better to use some sort of characterization
-       of the semantic type for forall *)
+       of the semantic type for forall
+       RK: good idea. *)
     intro_clause.
     iApply refines_spec_ctx. iDestruct 1 as (ρ) "#Hs".
     value_case. rewrite /lty2_forall /lty2_car /=.
     iModIntro. iModIntro. iIntros (A) "!>". iIntros (? ?) "_".
 
-    rewrite /bin_log_related refines_eq /refines_def.
+    rel_pure_l. rel_pure_r.
     iDestruct ("H" $! A) as "#H1".
-    iSpecialize ("H1" with "[Hvs]").
-    { by rewrite (interp_ren A Δ Γ). }
-
-    iIntros (j K) "Hj /=".
-    iModIntro. tp_pure j _. wp_pures. simpl.
-
-    iMod ("H1" with "Hs Hj") as "$".
+    iApply "H1".
+    by rewrite (interp_ren A Δ Γ).
   Qed.
 
   Lemma bin_log_related_tapp' Δ Γ e e' τ τ' :
@@ -181,7 +175,7 @@ Section fundamental.
     intro_clause.
     rel_bind_ap e e' "IH" v v' "IH".
     iSpecialize ("IH" $! (interp τ' Δ)).
-    rewrite interp_val_arrow. iDestruct "IH" as "#IH".
+    iDestruct "IH" as "#IH".
     iSpecialize ("IH" $! #() #() with "[//]").
     by rewrite -interp_subst.
   Qed.
