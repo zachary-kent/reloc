@@ -90,10 +90,6 @@ Section semtypes.
   Qed.
 End semtypes.
 
-(* Shift all the indices in the context by one,
-   used when inserting a new type interpretation in Δ. *)
-Notation "⤉ Γ" := (Autosubst_Classes.subst (ren (+1)%nat) <$> Γ) (at level 10, format "⤉ Γ").
-
 Notation "∀ A1 .. An , C" :=
   (lty2_forall (λ A1, .. (lty2_forall (λ An, C%lty2)) ..)) : lty_scope.
 

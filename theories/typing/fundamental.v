@@ -28,8 +28,8 @@ Section fundamental.
     try rel_pure_l; try rel_pure_r; rel_values.
 
   Local Tactic Notation "rel_bind_ap" uconstr(e1) uconstr(e2) constr(IH) ident(v) ident(w) constr(Hv):=
-    rel_bind_l (_ e1);
-    rel_bind_r (_ e2);
+    rel_bind_l (subst_map _ e1);
+    rel_bind_r (subst_map _ e2);
     try iSpecialize (IH with "Hvs");
     iApply (refines_bind with IH);
     iIntros (v w) Hv; simpl.
@@ -482,21 +482,31 @@ Section fundamental.
     iModIntro. by iExists τi.
   Qed.
 
-(*
-  Lemma bin_log_related_unpack Δ Γ e1 e1' e2 e2' τ τ2 :
+  Lemma bin_log_related_unpack Δ Γ x e1 e1' e2 e2' τ τ2 :
     ({Δ;Γ} ⊨ e1 ≤log≤ e1' : TExists τ) -∗
     (∀ τi : lty2 Σ,
-      {τi::Δ;⤉Γ} ⊨
-        e2 ≤log≤ e2' : TArrow τ (subst (ren (+1)) τ2)) -∗
-    {Δ;Γ} ⊨ unpack e1 e2 ≤log≤ unpack e1' e2' : τ2.
+      {τi::Δ;<[x:=τ]>(⤉Γ)} ⊨
+        e2 ≤log≤ e2' : (subst (ren (+1)) τ2)) -∗
+    {Δ;Γ} ⊨ (unpack: x := e1 in e2) ≤log≤ (unpack: x := e1' in e2') : τ2.
   Proof.
     iIntros "IH1 IH2".
     intro_clause.
-    Abort.
-    iSpecialize ("IH2" $! vs with "[Hvs]").
-    { by rewrite interp_ren. }
-    rel_bind_ap e2 e2' "IH2" v v' "#IH2".
-*)
+    rel_pure_l. rel_pure_r.
+    rel_bind_ap e1 e1' "IH1" v v' "#IH1".
+    iDestruct "IH1" as (A) "#IH".
+    unlock unpack.
+    rel_pure_l. rel_pure_l. rel_pure_l.
+    rel_pure_r. rel_pure_r. rel_pure_r.
+    rel_pure_l. rel_pure_r.
+    iSpecialize ("IH2" $! A (binder_insert x (v,v') vs) with "[Hvs]").
+    { rewrite -(interp_ren A).
+      rewrite binder_insert_fmap.
+      iApply (env_ltyped2_insert with "IH Hvs"). }
+    rewrite !binder_insert_fmap !subst_map_binder_insert /=.
+    iApply (refines_wand with "IH2").
+    iIntros (v1 v2). rewrite (interp_ren_up [] Δ τ2 A).
+    asimpl. eauto.
+  Qed.
 
   Theorem binary_fundamental Δ Γ e τ :
     Γ ⊢ₜ e : τ → ({Δ;Γ} ⊨ e ≤log≤ e : τ)%I.
@@ -523,7 +533,7 @@ Section fundamental.
     - by iApply bin_log_related_fold.
     - by iApply bin_log_related_unfold.
     - by iApply bin_log_related_pack'.
-    (* - iApply (bin_log_related_unpack with "[]"); eauto. *)
+    - iApply (bin_log_related_unpack with "[]"); eauto.
     - by iApply bin_log_related_fork.
     - by iApply bin_log_related_alloc.
     - by iApply bin_log_related_load.

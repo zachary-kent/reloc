@@ -73,6 +73,10 @@ Notation "'ref' τ" := (Tref τ%F) (at level 30, right associativity): FType_sco
 (** * Typing judgements *)
 Reserved Notation "Γ ⊢ₜ e : τ" (at level 74, e, τ at next level).
 
+(* Shift all the indices in the context by one,
+   used when inserting a new type interpretation in Δ. *)
+Notation "⤉ Γ" := (Autosubst_Classes.subst (ren (+1)%nat) <$> Γ) (at level 10, format "⤉ Γ").
+
 (** We model type-level lambdas and applications as thunks *)
 Notation "Λ: e" := (λ: <>, e)%E (at level 200).
 Notation "'TApp' e" := (App e%E #()%E) (at level 200).
@@ -81,6 +85,14 @@ Notation "'TApp' e" := (App e%E #()%E) (at level 200).
 unfold operator to be the identity function. *)
 Definition rec_unfold : val := λ: "x", "x".
 Definition unpack : val := λ: "x" "y", "y" "x".
+
+Notation "'unpack:' x := e1 'in' e2" := (unpack e1%E (Lam x%bind e2%E))
+  (at level 200, x at level 1, e1, e2 at level 200, only parsing,
+   format "'[' 'unpack:'  x  :=  '[' e1 ']'  'in'  '/' e2 ']'") : expr_scope.
+
+Notation "'unpack:' x := e1 'in' e2" := (unpack e1%E (LamV x%bind e2%E))
+  (at level 200, x at level 1, e1, e2 at level 200, only parsing,
+   format "'[' 'unpack:'  x  :=  '[' e1 ']'  'in'  '/' e2 ']'") : val_scope.
 
 (** Operation lifts *)
 Instance insert_binder (A : Type): Insert binder A (stringmap A) :=
@@ -121,17 +133,17 @@ Inductive typed (Γ : stringmap type) : expr → type → Prop :=
   | App_typed e1 e2 τ1 τ2 :
      Γ ⊢ₜ e1 : TArrow τ1 τ2 → Γ ⊢ₜ e2 : τ1 → Γ ⊢ₜ App e1 e2 : τ2
   | TLam_typed e τ :
-     subst (ren (+1%nat)) <$> Γ ⊢ₜ e : τ →
+     ⤉ Γ ⊢ₜ e : τ →
      Γ ⊢ₜ (Λ: e) : TForall τ
   | TApp_typed e τ τ' : Γ ⊢ₜ e : TForall τ →
      Γ ⊢ₜ e #() : τ.[τ'/]
   | TFold e τ : Γ ⊢ₜ e : τ.[TRec τ/] → Γ ⊢ₜe : TRec τ
   | TUnfold e τ : Γ ⊢ₜ e : TRec τ → Γ ⊢ₜ rec_unfold e : τ.[TRec τ/]
   | TPack e τ τ' : Γ ⊢ₜ e : τ.[τ'/] → Γ ⊢ₜ e : TExists τ
-  (* todo *)
-  (* | TUnpack e1 e2 τ τ2 : Γ ⊢ₜ e1 : TExists τ → *)
-  (*     (subst (ren (+1%nat)) <$> Γ) ⊢ₜ e2 : TArrow τ (subst (ren (+1%nat)) τ2) → *)
-  (*     Γ ⊢ₜ unpack e1 e2 : τ2 *)
+  | TUnpack e1 x e2 τ τ2 :
+      Γ ⊢ₜ e1 : TExists τ →
+      <[x:=τ]>(⤉ Γ) ⊢ₜ e2 : (subst (ren (+1%nat)) τ2) →
+      Γ ⊢ₜ (unpack: x := e1 in e2) : τ2
   | TFork e : Γ ⊢ₜ e : TUnit → Γ ⊢ₜ Fork e : TUnit
   | TAlloc e τ : Γ ⊢ₜ e : τ → Γ ⊢ₜ Alloc e : Tref τ
   | TLoad e τ : Γ ⊢ₜ e : Tref τ → Γ ⊢ₜ Load e : τ
