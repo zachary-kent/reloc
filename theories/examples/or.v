@@ -40,7 +40,7 @@ Section rules.
     REL fill K (or v1 v2) << t : A.
   Proof.
     iIntros "H".
-    unlock or. repeat rel_pure_l.
+    rel_rec_l. repeat rel_pure_l.
     rel_alloc_l x as "Hx".
     iMod (inv_alloc orN _ (or_inv x) with "[Hx]") as "#Hinv";
       first close_inv.
@@ -66,7 +66,7 @@ Section rules.
     REL e << fill K (or v1 v2) : A.
   Proof.
     iIntros "H".
-    unlock or. repeat rel_pure_r.
+    rel_rec_r. repeat rel_pure_r.
     rel_alloc_r x as "Hx".
     repeat rel_pure_r.
     rel_fork_r j as "Hj".

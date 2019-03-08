@@ -432,8 +432,7 @@ Section fundamental.
     rel_bind_ap e e' "IH" v v' "IH".
     iEval (rewrite lty_rec_unfold /lty2_car /=) in "IH".
     change (lty2_rec _) with (interp (TRec τ) Δ).
-    unfold rec_unfold. unlock. (* TODO WHY?????? *)
-    rel_pure_l. rel_pure_r.
+    rel_rec_l. rel_rec_r.
     value_case. by rewrite -interp_subst.
   Qed.
 
@@ -488,9 +487,8 @@ Section fundamental.
     rel_pure_l. rel_pure_r.
     rel_bind_ap e1 e1' "IH1" v v' "#IH1".
     iDestruct "IH1" as (A) "#IH".
-    unlock unpack.
-    rel_pure_l. rel_pure_l. rel_pure_l.
-    rel_pure_r. rel_pure_r. rel_pure_r.
+    rel_rec_l. rel_pure_l. rel_pure_l.
+    rel_rec_r. rel_pure_r. rel_pure_r.
     rel_pure_l. rel_pure_r.
     iSpecialize ("IH2" $! A (binder_insert x (v,v') vs) with "[Hvs]").
     { rewrite -(interp_ren A).

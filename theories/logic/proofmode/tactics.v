@@ -154,24 +154,23 @@ Proof.
   rewrite -refines_pure_r //.
 Qed.
 
+(* Tactic Notation "rel_pure_l" open_constr(ef) := *)
+(*   iStartProof; *)
+(*   (eapply tac_rel_pure_l; *)
+(*    [tac_bind_helper ef                           (** e = fill K e1' *) *)
+(*    |iSolveTC                                     (** PureClosed ϕ n e1 e2 *) *)
+(*    |try fast_done                                (** The pure condition for PureClosed *) *)
+(*    |first [left; split; reflexivity              (** Here we decide if the mask E is ⊤ *) *)
+(*           | right; reflexivity]                  (**    (m = n ∧ E = ⊤) ∨ (m = 0) *) *)
+(*    |iSolveTC                                     (** IntoLaters *) *)
+(*    |simpl; reflexivity                           (** eres = fill K e2 *) *)
+(*    |rel_finish                                   (** new goal *)]) *)
+(*   || fail "rel_pure_l: cannot find the reduct". *)
+
 Tactic Notation "rel_pure_l" open_constr(ef) :=
   iStartProof;
-  (eapply tac_rel_pure_l;
-   [tac_bind_helper ef                           (** e = fill K e1' *)
-   |iSolveTC                                     (** PureClosed ϕ n e1 e2 *)
-   |try fast_done                                (** The pure condition for PureClosed *)
-   |first [left; split; reflexivity              (** Here we decide if the mask E is ⊤ *)
-          | right; reflexivity]                  (**    (m = n ∧ E = ⊤) ∨ (m = 0) *)
-   |iSolveTC                                     (** IntoLaters *)
-   |simpl; reflexivity                           (** eres = fill K e2 *)
-   |rel_finish                                   (** new goal *)])
-  || fail "rel_pure_l: cannot find the reduct".
-
-(* Tactic Notation "rel_pure_l" := rel_pure_l _. *)
-
-Tactic Notation "rel_pure_l" :=
-  iStartProof;
   rel_reshape_cont_l ltac:(fun K e' =>
+      unify e' ef;
       eapply (tac_rel_pure_l K e');
       [reflexivity                  (** e = fill K e1 *)
       |iSolveTC                     (** PureClosed ϕ e1 e2 *)
@@ -182,6 +181,8 @@ Tactic Notation "rel_pure_l" :=
       |simpl; reflexivity           (** eres = fill K e2 *)
       |rel_finish                   (** new goal *)])
   || fail "rel_pure_l: cannot find the reduct".
+
+Tactic Notation "rel_pure_l" := rel_pure_l _.
 
 Tactic Notation "rel_pure_r" open_constr(ef) :=
   iStartProof;
@@ -554,10 +555,25 @@ Tactic Notation "rel_fork_r" ident(i) "as" constr(H) :=
   |iIntros (i) H; rel_finish  (** new goal *)].
 
 
+(* The handling of beta-reductions is special because it also unlocks
+ the locked `RecV` values. The the comments for the `wp_rec` tactic in
+ the heap_lang
+ proofmode.
+ *)
+Tactic Notation "rel_rec_l" :=
+  let H := fresh in
+  assert (H := AsRecV_recv_locked);
+  rel_pure_l (App _ _);
+  clear H.
+Tactic Notation "rel_rec_r" :=
+  let H := fresh in
+  assert (H := AsRecV_recv_locked);
+  rel_pure_r (App _ _);
+  clear H.
+
 (** For backwards compatibility *)
-Tactic Notation "rel_rec_l" := rel_pure_l (App _ _).
-Tactic Notation "rel_seq_l" := rel_rec_l.
-Tactic Notation "rel_let_l" := rel_rec_l.
+Tactic Notation "rel_seq_l" := rel_pure_l (App _ _).
+Tactic Notation "rel_let_l" := rel_pure_l (App _ _).
 Tactic Notation "rel_fst_l" := rel_pure_l (Fst _).
 Tactic Notation "rel_snd_l" := rel_pure_l (Snd _).
 Tactic Notation "rel_proj_l" := rel_pure_l (_ (Val (PairV _ _))).
@@ -570,9 +586,8 @@ Tactic Notation "rel_if_true_l" := rel_pure_l (If #true _ _).
 Tactic Notation "rel_if_false_l" := rel_pure_l (If #false _ _).
 Tactic Notation "rel_if_l" := rel_pure_l (If _ _ _).
 
-Tactic Notation "rel_rec_r" := rel_pure_r (App _ _).
-Tactic Notation "rel_seq_r" := rel_rec_r.
-Tactic Notation "rel_let_r" := rel_rec_r.
+Tactic Notation "rel_seq_r" := rel_pure_r (App _ _).
+Tactic Notation "rel_let_r" := rel_pure_r (App _ _).
 Tactic Notation "rel_fst_r" := rel_pure_r (Fst _).
 Tactic Notation "rel_snd_r" := rel_pure_r (Snd _).
 Tactic Notation "rel_proj_r" := rel_pure_r (_ (Val (PairV _ _))).

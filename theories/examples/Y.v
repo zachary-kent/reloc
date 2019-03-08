@@ -25,7 +25,6 @@ Section contents.
     REL fill K (bot #()) << t : A.
   Proof.
     iLöb as "IH".
-    unlock bot.
     rel_rec_l.
     iApply "IH".
   Qed.
@@ -126,13 +125,10 @@ Section contents.
     REL v (F v) << F v : (α → β).
   Proof.
     iIntros "#Hv".
-    unlock F.
-    rel_let_r.
+    rel_rec_r.
     iApply (refines_app with "Hv").
     iApply (refines_app with "[] Hv").
-    (* TODO: :( unlocking *)
-    iPoseProof FIX_semtype as "F". unlock F.
-    iApply "F".
+    iApply FIX_semtype.
   Qed.
 
   (** Same but as a post-fixed point *)
@@ -141,13 +137,10 @@ Section contents.
     REL F v << v (F v) : (α → β).
   Proof.
     iIntros "#Hv".
-    unlock F.
-    rel_let_l.
+    rel_rec_l.
     iApply (refines_app with "Hv").
     iApply (refines_app with "[] Hv").
-    (* TODO: :( unlocking *)
-    iPoseProof FIX_semtype as "F". unlock F.
-    iApply "F".
+    iApply FIX_semtype.
   Qed.
 
   (** Open Question: show that F is also the greatest fixed point *)

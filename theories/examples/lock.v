@@ -51,8 +51,7 @@ Section lockG_rules.
     REL fill K (newlock #()) << t: A.
   Proof.
     iIntros "HR Hlog".
-    unfold newlock. unlock.
-    rel_pure_l.
+    rel_rec_l.
     rel_alloc_l l as "Hl".
     iMod (own_alloc (Excl ())) as (γ) "Hγ"; first done.
     iMod (inv_alloc N _ (lock_inv γ l R) with "[-Hlog]") as "#?".
@@ -69,9 +68,7 @@ Section lockG_rules.
   Proof.
     iIntros "Hlock Hlocked HR Hlog".
     iDestruct "Hlock" as (l) "[% #?]"; simplify_eq.
-    unlock release. simpl.
-    rel_let_l.
-    rel_store_l_atomic.
+    rel_rec_l. rel_store_l_atomic.
     iInv N as (b) "[Hl _]" "Hclose".
     iModIntro. iExists _. iFrame.
     iNext. iIntros "Hl".
@@ -87,7 +84,6 @@ Section lockG_rules.
   Proof.
     iIntros "#Hlock Hlog".
     iLöb as "IH".
-    unlock acquire. simpl.
     rel_rec_l.
     iDestruct "Hlock" as (l) "[% #?]". simplify_eq.
     rel_cas_l_atomic.
@@ -119,7 +115,6 @@ Section lock_rules_r.
     REL t << fill K (newlock #()) @ E : A.
   Proof.
     iIntros "Hlog".
-    unfold newlock. unlock.
     rel_rec_r.
     rel_alloc_r l as "Hl".
     iApply ("Hlog" with "Hl").
@@ -132,7 +127,6 @@ Section lock_rules_r.
     REL t << fill K (acquire #l) @ E : A.
   Proof.
     iIntros "Hl Hlog".
-    unfold acquire. unlock.
     rel_rec_r.
     rel_cas_suc_r. simpl.
     rel_if_r.
@@ -146,7 +140,6 @@ Section lock_rules_r.
     REL t << fill K (release #l) @ E : A.
   Proof.
     iIntros "Hl Hlog".
-    unfold release. unlock.
     rel_rec_r.
     rel_store_r.
     by iApply "Hlog".

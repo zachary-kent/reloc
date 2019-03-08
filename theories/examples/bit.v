@@ -47,7 +47,7 @@ Section bit_refinement.
       iIntros ([b [? ?]]); simplify_eq/=.
       repeat rel_pure_l. repeat rel_pure_r.
       destruct b; simpl; rel_if_r; rel_values.
-    - rel_pure_l. rel_pure_r. unlock.
+    - rel_pure_l. rel_pure_r.
       iApply refines_arrow_val.
       iIntros "!#" (v1 v2) "/=".
       iIntros ([b [? ?]]); simplify_eq/=.

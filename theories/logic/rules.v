@@ -277,12 +277,14 @@ Section rules.
   Qed.
 
   (** This rule is useful for proving that functions refine each other *)
-  Lemma refines_arrow_val (f x f' x' : binder) eb eb' A A' :
+  Lemma refines_arrow_val v v' (f x f' x' : binder) eb eb' A A' :
+    AsRecV v f x eb →
+    AsRecV v' f' x' eb' →
     □(∀ v1 v2, A v1 v2 -∗
-      REL App (RecV f x eb) (of_val v1) << App (RecV f' x' eb') (of_val v2) : A') -∗
-    REL (RecV f x eb) << (RecV f' x' eb') : (A → A')%lty2.
+      REL App v (of_val v1) << App v' (of_val v2) : A') -∗
+    REL v << v' : (A → A')%lty2.
   Proof.
-    iIntros "#H".
+    rewrite /AsRecV. iIntros (-> ->) "#H".
     iApply refines_spec_ctx. iDestruct 1 as (ρ) "#Hs".
     iApply refines_ret. iModIntro.
     iModIntro. iIntros (v1 v2) "HA".

@@ -42,7 +42,7 @@ Section CG_Counter.
     REL t << fill K (CG_increment #x #l) @ E : A)%I.
   Proof.
     iIntros (?) "Hx Hl Hlog".
-    unfold CG_increment. unlock.
+    rel_rec_r.
     repeat rel_pure_r.
     rel_apply_r (refines_acquire_r with "Hl").
     iIntros "Hl".
@@ -62,8 +62,7 @@ Section CG_Counter.
     REL t << fill K (counter_read #x) @ E : A.
   Proof.
     iIntros "Hx Hlog".
-    unfold counter_read. unlock. simpl.
-    repeat rel_pure_r. rel_load_r.
+    rel_rec_r. repeat rel_pure_r. rel_load_r.
     by iApply "Hlog".
   Qed.
 
@@ -75,8 +74,7 @@ Section CG_Counter.
     REL t << fill K (FG_increment #x) @ E : A)%I.
   Proof.
     iIntros (?) "Hx Hlog".
-    unlock FG_increment.
-    repeat rel_pure_r.
+    rel_rec_r. repeat rel_pure_r.
     rel_load_r. repeat rel_pure_r.
     rel_cas_suc_r.
     rel_if_r.
@@ -96,8 +94,7 @@ Section CG_Counter.
   Proof.
     iIntros "HP #H".
     iLöb as "IH".
-    rewrite {2}/FG_increment. unlock. simpl.
-    repeat rel_pure_l.
+    rel_rec_l. repeat rel_pure_l.
     iPoseProof "H" as "H2". (* lolwhat *)
     rel_load_l_atomic.
     iMod "H" as (n) "[Hx [HR Hrev]]".  iModIntro.
@@ -121,7 +118,6 @@ Section CG_Counter.
       rel_if_false_l.
       iDestruct "HQ" as "[HQ _]".
       iMod ("HQ" with "[$Hx $HR]").
-      rewrite /FG_increment. unlock. simpl.
       by iApply "IH".
   Qed.
 
@@ -135,8 +131,7 @@ Section CG_Counter.
     -∗ REL fill K (counter_read #x) << t : A.
   Proof.
     iIntros "HP #H".
-    unfold counter_read. unlock. simpl.
-    repeat rel_pure_l. rel_load_l_atomic.
+    rel_rec_l. repeat rel_pure_l. rel_load_l_atomic.
     iMod "H" as (n) "[Hx [HR Hfin]]". iModIntro.
     iExists _; iFrame "Hx". iNext.
     iIntros "Hx".
@@ -204,7 +199,7 @@ Section CG_Counter.
     unfold FG_counter, CG_counter. unlock.
     iApply refines_arrow_val.
     iAlways. iIntros (? ?) "_"; simplify_eq/=.
-    unlock. rel_rec_l. rel_rec_r.
+    rel_rec_l. rel_rec_r.
     rel_apply_r refines_newlock_r; auto.
     iIntros (l) "Hl".
     repeat rel_pure_r.
