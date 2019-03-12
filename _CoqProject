@@ -30,6 +30,7 @@ theories/tests/proofmode_tests.v
 theories/lib/lock.v
 theories/lib/counter.v
 theories/lib/Y.v
+theories/lib/assert.v
 
 theories/examples/bit.v
 theories/examples/or.v
