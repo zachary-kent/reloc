@@ -6,7 +6,7 @@ Those are mostly "generative ADTs". *)
 From iris.proofmode Require Import tactics.
 From iris.heap_lang.lib Require Export par.
 From reloc Require Export proofmode prelude.bijections.
-From reloc.examples Require Export counter lock.
+From reloc.lib Require Export counter lock.
 From reloc.typing Require Export interp soundness.
 
 (** Using references for name generation *)

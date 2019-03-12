@@ -27,9 +27,11 @@ theories/proofmode.v
 theories/tests/tp_tests.v
 theories/tests/proofmode_tests.v
 
-theories/examples/lock.v
-theories/examples/counter.v
+theories/lib/lock.v
+theories/lib/counter.v
+theories/lib/Y.v
+
 theories/examples/bit.v
-theories/examples/Y.v
 theories/examples/or.v
 theories/examples/generative.v
+

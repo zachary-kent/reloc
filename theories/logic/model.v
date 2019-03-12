@@ -139,7 +139,7 @@ Section semtypes.
 
 End semtypes.
 
-(* Nice notations *)
+(** Nice notations *)
 Notation "()" := lty2_unit : lty_scope.
 Infix "→" := lty2_arr : lty_scope.
 Infix "×" := lty2_prod (at level 80) : lty_scope.
@@ -241,13 +241,6 @@ End related_facts.
 
 Section monadic.
   Context `{relocG Σ}.
-
-  (* Lemma refines_ret_expr E e1 e2 A : *)
-  (*   interp_expr E e1 e2 A -∗ REL e1 << e2 @ E : A. *)
-  (* Proof. *)
-  (*   iIntros "HA". rewrite refines_eq /refines_def. *)
-  (*   eauto with iFrame. *)
-  (* Qed. *)
 
   Lemma refines_bind K K' E A A' e e' :
     (REL e << e' @ E : A) -∗

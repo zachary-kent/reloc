@@ -2,7 +2,7 @@
 (** (Syntactic) Typing for System F_mu_ref with existential types and concurrency *)
 From stdpp Require Export stringmap.
 From iris.heap_lang Require Export lang notation metatheory.
-From Autosubst Require Import Autosubst.
+From Autosubst Require Export Autosubst.
 
 (** * Types *)
 Inductive type :=

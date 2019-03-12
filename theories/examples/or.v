@@ -79,6 +79,8 @@ Section rules.
       rel_load_r. repeat rel_pure_r. eauto with iFrame.
   Qed.
 
+  Opaque or.
+
   (** Compatibility rule *)
   Lemma or_compatible e1 e2 e1' e2' A :
     (REL e1 << e1' : () → A) -∗
@@ -89,7 +91,6 @@ Section rules.
     rel_bind_l e2. rel_bind_r e2'.
     iApply (refines_bind with "H2").
     iIntros (v2 v2') "#Hv2".
-    (* ^ TODO the arrow interpretation gets unfolded here *)
     rel_bind_l e1. rel_bind_r e1'.
     iApply (refines_bind with "H1").
     iIntros (v1 v1') "#Hv1". iSimpl.

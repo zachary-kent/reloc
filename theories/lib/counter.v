@@ -1,7 +1,7 @@
 From reloc Require Export proofmode.
 From reloc.typing Require Export types interp.
 From reloc.logic Require Import compatibility.
-From reloc.examples Require Import lock.
+From reloc.lib Require Import lock.
 From reloc.typing Require Import soundness.
 
 Definition CG_increment : val := λ: "x" "l",
