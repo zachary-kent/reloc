@@ -114,16 +114,16 @@ Section semtypes.
     ∃ A, C A w1 w2)%I.
 
   (** The lty2 constructors are non-expansive *)
-  Instance lty2_prod_ne n : Proper (dist n ==> dist n ==> dist n) lty2_prod.
+  Global Instance lty2_prod_ne n : Proper (dist n ==> dist n ==> dist n) lty2_prod.
   Proof. solve_proper. Qed.
 
-  Instance lty2_sum_ne n : Proper (dist n ==> dist n ==> dist n) lty2_sum.
+  Global Instance lty2_sum_ne n : Proper (dist n ==> dist n ==> dist n) lty2_sum.
   Proof. solve_proper. Qed.
 
-  Instance lty2_arr_ne n : Proper (dist n ==> dist n ==> dist n) lty2_arr.
+  Global Instance lty2_arr_ne n : Proper (dist n ==> dist n ==> dist n) lty2_arr.
   Proof. solve_proper. Qed.
 
-  Instance lty2_rec_ne n : Proper (dist n ==> dist n)
+  Global Instance lty2_rec_ne n : Proper (dist n ==> dist n)
        (lty2_rec : (lty2C Σ -n> lty2C Σ) -> lty2C Σ).
   Proof.
     intros F F' HF.

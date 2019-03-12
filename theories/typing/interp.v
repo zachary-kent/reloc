@@ -54,11 +54,6 @@ Section semtypes.
     apply lty2_rec_ne=> X /=.
     apply I. by f_equiv.
   Defined.
-  Next Obligation.
-    intros I τ τ' n Δ Δ' HΔ' ??.
-    rewrite /lty2_forall /lty2_car /=.
-    solve_proper.
-  Defined.
 
   Lemma unboxed_type_sound τ Δ v v' :
     UnboxedType τ →
