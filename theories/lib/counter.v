@@ -194,7 +194,7 @@ Section CG_Counter.
   Qed.
 
   Lemma FG_CG_counter_refinement :
-    REL FG_counter << CG_counter : (() → (() → lty2_int) × (() → lty2_int))%lty2.
+    REL FG_counter << CG_counter : () → (() → lty2_int) * (() → lty2_int).
   Proof.
     unfold FG_counter, CG_counter. unlock.
     iApply refines_arrow_val.

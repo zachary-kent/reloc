@@ -14,10 +14,8 @@ Fixpoint is_list (hd : val) (xs : list val) : Prop :=
   | x :: xs => ∃ hd', hd = CONSV x hd' ∧ is_list hd' xs
   end.
 
-(* TODO: is it possible to do this without `Program Definition`? *)
-(* TODO: notation for lty_sum *)
 Program Definition lty_list `{relocG Σ} (A : lty2 Σ) : lty2 Σ :=
-  lty2_rec (λne B, lty2_sum () (A × B))%lty2.
+  lty2_rec (λne B, () + (A * B))%lty2.
 Next Obligation. solve_proper. Qed.
 
 Definition nth : val := rec: "nth" "l" "n" :=

@@ -15,8 +15,8 @@ From reloc.typing Require Import interp soundness.
 (** * Symbol table *)
 Definition lty_symbol `{relocG Σ} : lty2 Σ :=
   ∃ α, (α → α → lty2_bool)    (* equality check *)
-     × (lty2_int → α)          (* insert *)
-     × (α → lty2_int).         (* lookup *)
+     * (lty2_int → α)          (* insert *)
+     * (α → lty2_int).         (* lookup *)
 
 Definition eqKey : val := λ: "n" "m", "n" = "m".
 Definition symbol1 : val := λ: <>,

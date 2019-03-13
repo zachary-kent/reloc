@@ -41,7 +41,7 @@ Section namegen_refinement.
                         end)%I.
 
   Lemma nameGen_ref1 :
-    REL nameGen1 << nameGen2 : ∃ α, (() → α) × (α → α → lty2_bool).
+    REL nameGen1 << nameGen2 : ∃ α, (() → α) * (α → α → lty2_bool).
   Proof.
     unlock nameGen1 nameGen2.
     rel_alloc_r c as "Hc".
@@ -164,7 +164,7 @@ Section cell_refinement.
      ∗ cellInt R r1 r2 r3 l r)%I.
 
   Lemma cell2_cell1_refinement :
-    REL cell2 << cell1 : ∀ α, ∃ β, (α → β) × (β → α) × (β → α → ()).
+    REL cell2 << cell1 : ∀ α, ∃ β, (α → β) * (β → α) * (β → α → ()).
   Proof.
     unlock cell2 cell1.
     (* TODO: this uuugly *)

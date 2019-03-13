@@ -22,7 +22,7 @@ Section compatibility.
   Lemma refines_pair e1 e2 e1' e2' A B :
     (REL e1 << e1' : A) -∗
     (REL e2 << e2' : B) -∗
-    REL (e1, e2) << (e1', e2') : A × B.
+    REL (e1, e2) << (e1', e2') : A * B.
   Proof.
     iIntros "IH1 IH2".
     rel_bind_ap e2 e2' "IH2" v2 v2' "Hvv2".

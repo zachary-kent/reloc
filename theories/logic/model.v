@@ -142,7 +142,8 @@ End semtypes.
 (** Nice notations *)
 Notation "()" := lty2_unit : lty_scope.
 Infix "→" := lty2_arr : lty_scope.
-Infix "×" := lty2_prod (at level 80) : lty_scope.
+Infix "*" := lty2_prod : lty_scope.
+Infix "+" := lty2_sum : lty_scope.
 Notation "'ref' A" := (lty2_ref A) : lty_scope.
 Notation "∃ A1 .. An , C" :=
   (lty2_exists (λ A1, .. (lty2_exists (λ An, C%lty2)) ..)) : lty_scope.
