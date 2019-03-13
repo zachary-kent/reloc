@@ -5,7 +5,7 @@ From iris.algebra Require Import list.
 From iris.program_logic Require Import ectx_lifting.
 From iris.heap_lang Require Import proofmode.
 From reloc.logic Require Import model proofmode.spec_tactics.
-From reloc.prelude Require Import ctx_subst pureclosed.
+From reloc.prelude Require Import ctx_subst.
 
 Section rules.
   Context `{relocG Σ}.
