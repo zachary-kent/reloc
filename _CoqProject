@@ -31,8 +31,9 @@ theories/lib/lock.v
 theories/lib/counter.v
 theories/lib/Y.v
 theories/lib/assert.v
+theories/lib/list.v
 
 theories/examples/bit.v
 theories/examples/or.v
 theories/examples/generative.v
-
+theories/examples/symbol.v
