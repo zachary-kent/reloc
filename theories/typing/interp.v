@@ -10,15 +10,6 @@ From Autosubst Require Import Autosubst.
 (** * Interpretation of types *)
 Section semtypes.
   Context `{relocG Σ}.
-  (** Type-level lambdas are interpreted as closures *)
-  (** DF: lty2_forall is defined here because it depends on TApp *)
-  Definition lty2_forall (C : lty2 Σ → lty2 Σ) : lty2 Σ := Lty2 (λ w1 w2,
-    □ ∀ A : lty2 Σ, (() → C A)%lty2 w1 w2)%I.
-  Lemma lty2_forall_spec (C : lty2 Σ → lty2 Σ) w1 w2 :
-    lty2_forall C w1 w2 -∗ ∀ A, (() → C A)%lty2 w1 w2.
-  Proof. eauto with iFrame. Qed.
-
-  Definition lty2_true : lty2 Σ := Lty2 (λ w1 w2, True)%I.
 
   Program Definition ctx_lookup (x : var) : listC (lty2C Σ) -n> (lty2C Σ)
     := λne Δ, (from_option id lty2_true (Δ !! x))%I.
@@ -71,7 +62,7 @@ Section semtypes.
     interp τ Δ v v' -∗ ⌜v = v'⌝.
   Proof.
     intros Hτ; revert v v'; induction Hτ; iIntros (v v') "#H1 /=".
-    - by iDestruct "H1" as "[% %]"; subst.
+    - by iDestruct "H1" as %[-> ->].
     - by iDestruct "H1" as (n) "[% %]"; subst.
     - by iDestruct "H1" as (b) "[% %]"; subst.
     - iDestruct "H1" as (?? ??) "[% [% [H1 H2]]]"; simplify_eq/=.
@@ -84,9 +75,6 @@ Section semtypes.
         rewrite IHHτ2. by iDestruct "H1" as "%"; subst.
   Qed.
 End semtypes.
-
-Notation "∀ A1 .. An , C" :=
-  (lty2_forall (λ A1, .. (lty2_forall (λ An, C%lty2)) ..)) : lty_scope.
 
 (** ** Properties of the type inrpretation w.r.t. the substitutions *)
 Section interp_ren.
@@ -190,7 +178,7 @@ Section env_typed.
   (** Substitution [vs] is well-typed w.r.t. [Γ] *)
   Definition env_ltyped2 (Γ : gmap string (lty2 Σ))
     (vs : gmap string (val*val)) : iProp Σ :=
-    (⌜ ∀ x, is_Some (Γ !! x) ↔ is_Some (vs !! x) ⌝ ∧ (* TODO why not equality of `dom`s? *)
+    (⌜ ∀ x, is_Some (Γ !! x) ↔ is_Some (vs !! x) ⌝ ∧
     [∗ map] i ↦ Avv ∈ map_zip Γ vs, lty2_car Avv.1 Avv.2.1 Avv.2.2)%I.
 
   Notation "⟦ Γ ⟧*" := (env_ltyped2 Γ).

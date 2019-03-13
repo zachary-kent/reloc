@@ -113,6 +113,11 @@ Section semtypes.
   Definition lty2_exists (C : lty2 Σ → lty2 Σ) : lty2 Σ := Lty2 (λ w1 w2,
     ∃ A, C A w1 w2)%I.
 
+  Definition lty2_forall (C : lty2 Σ → lty2 Σ) : lty2 Σ := Lty2 (λ w1 w2,
+    □ ∀ A : lty2 Σ, (lty2_arr lty2_unit (C A))%lty2 w1 w2)%I.
+
+  Definition lty2_true : lty2 Σ := Lty2 (λ w1 w2, True)%I.
+
   (** The lty2 constructors are non-expansive *)
   Global Instance lty2_prod_ne n : Proper (dist n ==> dist n ==> dist n) lty2_prod.
   Proof. solve_proper. Qed.
@@ -147,6 +152,8 @@ Infix "+" := lty2_sum : lty_scope.
 Notation "'ref' A" := (lty2_ref A) : lty_scope.
 Notation "∃ A1 .. An , C" :=
   (lty2_exists (λ A1, .. (lty2_exists (λ An, C%lty2)) ..)) : lty_scope.
+Notation "∀ A1 .. An , C" :=
+  (lty2_forall (λ A1, .. (lty2_forall (λ An, C%lty2)) ..)) : lty_scope.
 
 Section semtypes_properties.
   Context `{relocG Σ}.
