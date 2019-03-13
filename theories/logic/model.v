@@ -245,8 +245,8 @@ Section monadic.
   Lemma refines_bind K K' E A A' e e' :
     (REL e << e' @ E : A) -∗
     (∀ v v', A v v' -∗
-      (REL fill K (of_val v) << fill K' (of_val v') : A')) -∗
-    (REL fill K e << fill K' e' @ E : A').
+      REL fill K (of_val v) << fill K' (of_val v') : A') -∗
+    REL fill K e << fill K' e' @ E : A'.
   Proof.
     iIntros "Hm Hf".
     rewrite refines_eq /refines_def.
