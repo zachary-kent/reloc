@@ -9,7 +9,7 @@ From reloc.prelude Require Import ctx_subst.
 
 Section rules.
   Context `{relocG Σ}.
-  Implicit Types A : lty2 Σ.
+  Implicit Types A : lrel Σ.
   Implicit Types e t : expr.
   Implicit Types v w : val.
 
@@ -262,7 +262,7 @@ Section rules.
   Qed.
 
   Lemma refines_fork e e' :
-    (REL e << e' : ()%lty2) -∗
+    (REL e << e' : ()%lrel) -∗
     REL Fork e << Fork e' : ().
   Proof.
     rewrite refines_eq /refines_def.
@@ -282,7 +282,7 @@ Section rules.
     AsRecV v' f' x' eb' →
     □(∀ v1 v2, A v1 v2 -∗
       REL App v (of_val v1) << App v' (of_val v2) : A') -∗
-    REL v << v' : (A → A')%lty2.
+    REL v << v' : (A → A')%lrel.
   Proof.
     rewrite /AsRecV. iIntros (-> ->) "#H".
     iApply refines_spec_ctx. iDestruct 1 as (ρ) "#Hs".

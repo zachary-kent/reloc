@@ -5,7 +5,7 @@ Ahmed, D. Dreyer, A. Rossberg.
 Those are mostly "generative ADTs". *)
 From iris.proofmode Require Import tactics.
 From iris.heap_lang.lib Require Export par.
-From reloc Require Export proofmode prelude.bijections.
+From reloc Require Export reloc prelude.bijections.
 From reloc.lib Require Export counter lock.
 From reloc.typing Require Export interp soundness.
 
@@ -29,7 +29,7 @@ Definition nameGen2 : expr :=
 Section namegen_refinement.
   Context `{relocG Σ, PrePBijG loc nat Σ}.
 
-  Program Definition ngR (γ : gname) : lty2 Σ := Lty2 (λ v1 v2,
+  Program Definition ngR (γ : gname) : lrel Σ := LRel (λ v1 v2,
    ∃ (l : loc) (n : nat), ⌜v1 = #l%V⌝ ∗ ⌜v2 = #n⌝
                          ∗ inBij γ l n)%I.
 
@@ -41,7 +41,7 @@ Section namegen_refinement.
                         end)%I.
 
   Lemma nameGen_ref1 :
-    REL nameGen1 << nameGen2 : ∃ α, (() → α) * (α → α → lty2_bool).
+    REL nameGen1 << nameGen2 : ∃ α, (() → α) * (α → α → lrel_bool).
   Proof.
     unlock nameGen1 nameGen2.
     rel_alloc_r c as "Hc".
@@ -151,15 +151,15 @@ Definition cell2 : expr :=
 Section cell_refinement.
   Context `{relocG Σ, lockG Σ}.
 
-  Definition lockR (R : lty2 Σ) (r1 r2 r3 r : loc) : iProp Σ :=
+  Definition lockR (R : lrel Σ) (r1 r2 r3 r : loc) : iProp Σ :=
     (∃ (a b c : val), r ↦ₛ a ∗ r2 ↦ b ∗ r3 ↦ c ∗
      ( (r1 ↦ #true ∗ R c a)
      ∨ (r1 ↦ #false ∗ R b a)))%I.
 
-  Definition cellInt (R : lty2 Σ) (r1 r2 r3 l r : loc) : iProp Σ :=
+  Definition cellInt (R : lrel Σ) (r1 r2 r3 l r : loc) : iProp Σ :=
     (∃ γ N, is_lock N γ #l (lockR R r1 r2 r3 r))%I.
 
-  Program Definition cellR (R : lty2 Σ) : lty2 Σ := Lty2 (λ v1 v2,
+  Program Definition cellR (R : lrel Σ) : lrel Σ := LRel (λ v1 v2,
     ∃ r1 r2 r3 l r : loc, ⌜v1 = (#r1, #r2, #r3, #l)%V⌝ ∗ ⌜v2 = #r⌝
      ∗ cellInt R r1 r2 r3 l r)%I.
 

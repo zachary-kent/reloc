@@ -2,7 +2,7 @@
 (** Compatibility lemmas for the logical relation *)
 From iris.heap_lang Require Import proofmode.
 From reloc.logic Require Import model.
-From reloc Require Export proofmode.
+From reloc.logic Require Export rules derived compatibility proofmode.tactics.
 From reloc.typing Require Export interp.
 
 From iris.proofmode Require Export tactics.
@@ -10,7 +10,7 @@ From Autosubst Require Import Autosubst.
 
 Section fundamental.
   Context `{relocG Σ}.
-  Implicit Types Δ : listC (lty2C Σ).
+  Implicit Types Δ : listC (lrelC Σ).
   Hint Resolve to_of_val.
 
   Local Ltac intro_clause := progress (iIntros (vs) "#Hvs /=").
@@ -132,19 +132,19 @@ Section fundamental.
   Proof.
     iIntros "IH".
     intro_clause.
-    iApply refines_fork; first solve_ndisj.
+    iApply refines_fork.
     by iApply "IH".
   Qed.
 
   Lemma bin_log_related_tlam Δ Γ (e e' : expr) τ :
-    (∀ (A : lty2 Σ),
+    (∀ (A : lrel Σ),
       □ ({(A::Δ);⤉Γ} ⊨ e ≤log≤ e' : τ)) -∗
     {Δ;Γ} ⊨ (Λ: e) ≤log≤ (Λ: e') : TForall τ.
   Proof.
     iIntros "#H".
    intro_clause.
     iApply refines_spec_ctx. iDestruct 1 as (ρ) "#Hs".
-    value_case. rewrite /lty2_forall /lty2_car /=.
+    value_case. rewrite /lrel_forall /lrel_car /=.
     iModIntro. iModIntro. iIntros (A) "!>". iIntros (? ?) "_".
     rel_pure_l. rel_pure_r.
     iDestruct ("H" $! A) as "#H1".
@@ -165,7 +165,7 @@ Section fundamental.
     by rewrite -interp_subst.
   Qed.
 
-  Lemma bin_log_related_tapp (τi : lty2 Σ) Δ Γ e e' τ :
+  Lemma bin_log_related_tapp (τi : lrel Σ) Δ Γ e e' τ :
     ({Δ;Γ} ⊨ e ≤log≤ e' : TForall τ) -∗
     {τi::Δ;⤉Γ} ⊨ (TApp e) ≤log≤ (TApp e') : τ.
   Proof.
@@ -202,7 +202,7 @@ Section fundamental.
     {Δ;Γ} ⊨ (e1;; e2) ≤log≤ (e1';; e2') : τ2.
   Proof.
     iIntros "He1 He2".
-    iApply (bin_log_related_seq lty2_true _ _ _ _ _ _ τ1.[ren (+1)] with "[He1] He2").
+    iApply (bin_log_related_seq lrel_true _ _ _ _ _ _ τ1.[ren (+1)] with "[He1] He2").
     intro_clause.
     rewrite interp_ren -(interp_ren_up [] Δ τ1).
     by iApply "He1".
@@ -422,8 +422,8 @@ Section fundamental.
     iIntros "IH".
     intro_clause.
     rel_bind_ap e e' "IH" v v' "IH".
-    iEval (rewrite lty_rec_unfold /lty2_car /=) in "IH".
-    change (lty2_rec _) with (interp (TRec τ) Δ).
+    iEval (rewrite lty_rec_unfold /lrel_car /=) in "IH".
+    change (lrel_rec _) with (interp (TRec τ) Δ).
     rel_rec_l. rel_rec_r.
     value_case. by rewrite -interp_subst.
   Qed.
@@ -437,8 +437,8 @@ Section fundamental.
     rel_bind_ap e e' "IH" v v' "IH".
     value_case.
     iModIntro.
-    iEval (rewrite lty_rec_unfold /lty2_car /=).
-    change (lty2_rec _) with (interp (TRec τ) Δ).
+    iEval (rewrite lty_rec_unfold /lrel_car /=).
+    change (lrel_rec _) with (interp (TRec τ) Δ).
     by rewrite -interp_subst.
   Qed.
 
@@ -454,7 +454,7 @@ Section fundamental.
     by rewrite interp_subst.
   Qed.
 
-  Lemma bin_log_related_pack (τi : lty2 Σ) Δ Γ e e' τ :
+  Lemma bin_log_related_pack (τi : lrel Σ) Δ Γ e e' τ :
     ({τi::Δ;⤉Γ} ⊨ e ≤log≤ e' : τ) -∗
     {Δ;Γ} ⊨ e ≤log≤ e' : TExists τ.
   Proof.
@@ -469,7 +469,7 @@ Section fundamental.
 
   Lemma bin_log_related_unpack Δ Γ x e1 e1' e2 e2' τ τ2 :
     ({Δ;Γ} ⊨ e1 ≤log≤ e1' : TExists τ) -∗
-    (∀ τi : lty2 Σ,
+    (∀ τi : lrel Σ,
       {τi::Δ;<[x:=τ]>(⤉Γ)} ⊨
         e2 ≤log≤ e2' : (subst (ren (+1)) τ2)) -∗
     {Δ;Γ} ⊨ (unpack: x := e1 in e2) ≤log≤ (unpack: x := e1' in e2') : τ2.

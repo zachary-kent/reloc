@@ -11,8 +11,8 @@ From Autosubst Require Import Autosubst.
 Section semtypes.
   Context `{relocG Σ}.
 
-  Program Definition ctx_lookup (x : var) : listC (lty2C Σ) -n> (lty2C Σ)
-    := λne Δ, (from_option id lty2_true (Δ !! x))%I.
+  Program Definition ctx_lookup (x : var) : listC (lrelC Σ) -n> (lrelC Σ)
+    := λne Δ, (from_option id lrel_true (Δ !! x))%I.
   Next Obligation.
     intros x n Δ Δ' HΔ.
     destruct (Δ !! x) as [P|] eqn:HP; cbn in *.
@@ -25,24 +25,24 @@ Section semtypes.
       rewrite HP in HP'. inversion HP'.
   Qed.
 
-  Program Fixpoint interp (τ : type) : listC (lty2C Σ) -n> lty2C Σ :=
-    match τ as _ return listC (lty2C Σ) -n> lty2C Σ with
-    | TUnit => λne _, lty2_unit
-    | TNat => λne _, lty2_int
-    | TBool => λne _, lty2_bool
-    | TProd τ1 τ2 => λne Δ, lty2_prod (interp τ1 Δ) (interp τ2 Δ)
-    | TSum τ1 τ2 => λne Δ, lty2_sum (interp τ1 Δ) (interp τ2 Δ)
-    | TArrow τ1 τ2 => λne Δ, lty2_arr (interp τ1 Δ) (interp τ2 Δ)
-    | TRec τ' => λne Δ, lty2_rec (λne τ, interp τ' (τ::Δ))
+  Program Fixpoint interp (τ : type) : listC (lrelC Σ) -n> lrelC Σ :=
+    match τ as _ return listC (lrelC Σ) -n> lrelC Σ with
+    | TUnit => λne _, lrel_unit
+    | TNat => λne _, lrel_int
+    | TBool => λne _, lrel_bool
+    | TProd τ1 τ2 => λne Δ, lrel_prod (interp τ1 Δ) (interp τ2 Δ)
+    | TSum τ1 τ2 => λne Δ, lrel_sum (interp τ1 Δ) (interp τ2 Δ)
+    | TArrow τ1 τ2 => λne Δ, lrel_arr (interp τ1 Δ) (interp τ2 Δ)
+    | TRec τ' => λne Δ, lrel_rec (λne τ, interp τ' (τ::Δ))
     | TVar x => ctx_lookup x
-    | TForall τ' => λne Δ, lty2_forall (λ τ, interp τ' (τ::Δ))
-    | TExists τ' => λne Δ, lty2_exists (λ τ, interp τ' (τ::Δ))
-    | Tref τ => λne Δ, lty2_ref (interp τ Δ)
+    | TForall τ' => λne Δ, lrel_forall (λ τ, interp τ' (τ::Δ))
+    | TExists τ' => λne Δ, lrel_exists (λ τ, interp τ' (τ::Δ))
+    | Tref τ => λne Δ, lrel_ref (interp τ Δ)
     end.
   Solve Obligations with (intros I τ τ' n Δ Δ' HΔ' ??; solve_proper).
   Next Obligation.
     intros I τ τ' n Δ Δ' HΔ' ??.
-    apply lty2_rec_ne=> X /=.
+    apply lrel_rec_ne=> X /=.
     apply I. by f_equiv.
   Defined.
 
@@ -79,17 +79,17 @@ End semtypes.
 (** ** Properties of the type inrpretation w.r.t. the substitutions *)
 Section interp_ren.
   Context `{relocG Σ}.
-  Implicit Types Δ : list (lty2 Σ).
+  Implicit Types Δ : list (lrel Σ).
 
-  (* TODO: why do I need to unfold lty2_car here? *)
-  Lemma interp_ren_up (Δ1 Δ2 : list (lty2 Σ)) τ τi :
+  (* TODO: why do I need to unfold lrel_car here? *)
+  Lemma interp_ren_up (Δ1 Δ2 : list (lrel Σ)) τ τi :
     interp τ (Δ1 ++ Δ2) ≡ interp (τ.[upn (length Δ1) (ren (+1)%nat)]) (Δ1 ++ τi :: Δ2).
   Proof.
     revert Δ1 Δ2. induction τ => Δ1 Δ2; simpl; eauto;
     try by
-      (intros ? ?; unfold lty2_car; simpl; properness; repeat f_equiv=>//).
+      (intros ? ?; unfold lrel_car; simpl; properness; repeat f_equiv=>//).
     - apply fixpoint_proper=> τ' w1 w2 /=.
-      unfold lty2_car. simpl.
+      unfold lrel_car. simpl.
       properness; auto. apply (IHτ (_ :: _)).
     - intros v1 v2; simpl.
       rewrite iter_up. case_decide; simpl; properness.
@@ -99,11 +99,11 @@ Section interp_ren.
       assert ((length Δ1 + S (x - length Δ1) - length Δ1) = S (x - length Δ1))%nat as Hwat.
       { lia. }
       rewrite Hwat. simpl. done.
-    - intros v1 v2; unfold lty2_car; simpl;
+    - intros v1 v2; unfold lrel_car; simpl;
         simpl; properness; auto.
-      rewrite /lty2_car /=. properness; auto.
+      rewrite /lrel_car /=. properness; auto.
       apply refines_proper=> //. apply (IHτ (_ :: _)).
-    - intros ??; unfold lty2_car; simpl; properness; auto. apply (IHτ (_ :: _)).
+    - intros ??; unfold lrel_car; simpl; properness; auto. apply (IHτ (_ :: _)).
   Qed.
 
   Lemma interp_ren A Δ (Γ : gmap string type) :
@@ -115,37 +115,37 @@ Section interp_ren.
     symmetry. apply (interp_ren_up []).
   Qed.
 
-  Lemma interp_weaken (Δ1 Π Δ2 : list (lty2 Σ)) τ :
+  Lemma interp_weaken (Δ1 Π Δ2 : list (lrel Σ)) τ :
     interp (τ.[upn (length Δ1) (ren (+ length Π))]) (Δ1 ++ Π ++ Δ2)
     ≡ interp τ (Δ1 ++ Δ2).
   Proof.
     revert Δ1 Π Δ2. induction τ=> Δ1 Π Δ2; simpl; eauto;
     try by
-      (intros ? ?; simpl; unfold lty2_car; simpl; repeat f_equiv =>//).
+      (intros ? ?; simpl; unfold lrel_car; simpl; repeat f_equiv =>//).
     - apply fixpoint_proper=> τi ?? /=.
-      unfold lty2_car; simpl.
+      unfold lrel_car; simpl.
       properness; auto. apply (IHτ (_ :: _)).
     - intros ??; simpl; properness; auto.
       rewrite iter_up; case_decide; properness; simpl.
       { by rewrite !lookup_app_l. }
       rewrite !lookup_app_r ;[| lia ..]. do 3 f_equiv. lia.
-    - intros ??; simpl; unfold lty2_car; simpl;
+    - intros ??; simpl; unfold lrel_car; simpl;
       properness; auto.
-      rewrite /lty2_car /=. properness; auto.
+      rewrite /lrel_car /=. properness; auto.
       apply refines_proper=> //. apply (IHτ (_ :: _)).
-    - intros ??; unfold lty2_car; simpl; properness; auto.
+    - intros ??; unfold lrel_car; simpl; properness; auto.
         by apply (IHτ (_ :: _)).
   Qed.
 
-  Lemma interp_subst_up (Δ1 Δ2 : list (lty2 Σ)) τ τ' :
+  Lemma interp_subst_up (Δ1 Δ2 : list (lrel Σ)) τ τ' :
     interp τ (Δ1 ++ interp τ' Δ2 :: Δ2)
     ≡ interp (τ.[upn (length Δ1) (τ' .: ids)]) (Δ1 ++ Δ2).
   Proof.
     revert Δ1 Δ2; induction τ=> Δ1 Δ2; simpl; eauto;
     try by
-      (intros ? ?; unfold lty2_car; simpl; properness; repeat f_equiv=>//).
+      (intros ? ?; unfold lrel_car; simpl; properness; repeat f_equiv=>//).
     - apply fixpoint_proper=> τi ?? /=.
-      unfold lty2_car. simpl.
+      unfold lrel_car. simpl.
       properness; auto. apply (IHτ (_ :: _)).
     - intros w1 w2; simpl.
       rewrite iter_up; case_decide; simpl; properness.
@@ -157,11 +157,11 @@ Section interp_ren.
         etrans; last by apply HW.
         asimpl. reflexivity. }
       rewrite !lookup_app_r; [|lia ..]. repeat f_equiv. lia.
-    - intros ??. unfold lty2_car; simpl;
+    - intros ??. unfold lrel_car; simpl;
       properness; auto.
-      rewrite /lty2_car /=. properness; auto.
+      rewrite /lrel_car /=. properness; auto.
       apply refines_proper=>//. apply (IHτ (_ :: _)).
-    - intros ??; unfold lty2_car; simpl; properness; auto. apply (IHτ (_ :: _)).
+    - intros ??; unfold lrel_car; simpl; properness; auto. apply (IHτ (_ :: _)).
   Qed.
 
   Lemma interp_subst Δ2 τ τ' :
@@ -172,14 +172,14 @@ End interp_ren.
 (** * Interpretation of the environments *)
 Section env_typed.
   Context `{relocG Σ}.
-  Implicit Types A B : lty2 Σ.
-  Implicit Types Γ : gmap string (lty2 Σ).
+  Implicit Types A B : lrel Σ.
+  Implicit Types Γ : gmap string (lrel Σ).
 
   (** Substitution [vs] is well-typed w.r.t. [Γ] *)
-  Definition env_ltyped2 (Γ : gmap string (lty2 Σ))
+  Definition env_ltyped2 (Γ : gmap string (lrel Σ))
     (vs : gmap string (val*val)) : iProp Σ :=
     (⌜ ∀ x, is_Some (Γ !! x) ↔ is_Some (vs !! x) ⌝ ∧
-    [∗ map] i ↦ Avv ∈ map_zip Γ vs, lty2_car Avv.1 Avv.2.1 Avv.2.2)%I.
+    [∗ map] i ↦ Avv ∈ map_zip Γ vs, lrel_car Avv.1 Avv.2.1 Avv.2.2)%I.
 
   Notation "⟦ Γ ⟧*" := (env_ltyped2 Γ).
 
@@ -253,7 +253,7 @@ Section bin_log_related.
   Context `{relocG Σ}.
 
   Definition bin_log_related (E : coPset)
-             (Δ : list (lty2 Σ)) (Γ : stringmap type)
+             (Δ : list (lrel Σ)) (Γ : stringmap type)
              (e e' : expr) (τ : type) : iProp Σ :=
     (∀ vs, ⟦ (λ τ, interp τ Δ) <$> Γ ⟧* vs -∗
            REL (subst_map (fst <$> vs) e)

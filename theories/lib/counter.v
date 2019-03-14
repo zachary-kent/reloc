@@ -1,4 +1,4 @@
-From reloc Require Export proofmode.
+From reloc Require Export reloc.
 From reloc.typing Require Export types interp.
 From reloc.logic Require Import compatibility.
 From reloc.lib Require Import lock.
@@ -147,7 +147,7 @@ Section CG_Counter.
 
   Lemma FG_CG_increment_refinement l cnt cnt' :
     inv counterN (counter_inv l cnt cnt') -∗
-    REL FG_increment #cnt << CG_increment #cnt' #l : lty2_int.
+    REL FG_increment #cnt << CG_increment #cnt' #l : lrel_int.
   Proof.
     iIntros "#Hinv".
     rel_apply_l
@@ -172,7 +172,7 @@ Section CG_Counter.
 
   Lemma counter_read_refinement l cnt cnt' :
     inv counterN (counter_inv l cnt cnt') -∗
-    REL counter_read #cnt << counter_read #cnt' : lty2_int.
+    REL counter_read #cnt << counter_read #cnt' : lrel_int.
   Proof.
     iIntros "#Hinv".
     rel_apply_l
@@ -194,7 +194,7 @@ Section CG_Counter.
   Qed.
 
   Lemma FG_CG_counter_refinement :
-    REL FG_counter << CG_counter : () → (() → lty2_int) * (() → lty2_int).
+    REL FG_counter << CG_counter : () → (() → lrel_int) * (() → lrel_int).
   Proof.
     unfold FG_counter, CG_counter. unlock.
     iApply refines_arrow_val.

@@ -1,7 +1,7 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Semantic typeability and equivalences for fixed point combinators. *)
 From iris.proofmode Require Import tactics.
-From reloc Require Export proofmode.
+From reloc Require Export reloc.
 
 Definition bot : val := rec: "bot" <> := "bot" #().
 

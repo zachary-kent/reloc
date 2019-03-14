@@ -3,7 +3,7 @@
 From stdpp Require Import sets.
 From iris.algebra Require Export auth gset excl.
 From iris.base_logic Require Import auth.
-From reloc Require Import proofmode lib.lock lib.counter.
+From reloc Require Import reloc lib.lock lib.counter.
 From iris.heap_lang.lib Require Import ticket_lock.
 
 (* A different `acquire` funciton to showcase the atomic rule for FG_increment *)
@@ -13,8 +13,8 @@ Definition acquire : val := λ: "lk",
 (* A different `release` function to showcase the rule for wkincr *)
 Definition release : val := λ: "lk", wkincr (Fst "lk").
 
-Definition lty2_lock `{relocG Σ} : lty2 Σ :=
-  lty2_exists (λ A, (() → A) * (A → ()) * (A → ()))%lty2.
+Definition lrel_lock `{relocG Σ} : lrel Σ :=
+  lrel_exists (λ A, (() → A) * (A → ()) * (A → ()))%lrel.
 Definition lockT : type :=
   TExists (TProd (TProd (TUnit → TVar 0)
                         (TVar 0 → TUnit))
@@ -83,7 +83,7 @@ Section refinement.
 
   Definition N := relocN.@"locked".
 
-  Definition lockInt : lty2 Σ := Lty2 (λ v1 v2,
+  Definition lockInt : lrel Σ := LRel (λ v1 v2,
     ∃ (lo ln : loc) (γ : gname) (l' : loc),
         ⌜v1 = (#lo, #ln)%V⌝ ∗ ⌜v2 = #l'⌝
       ∗ inv N (lockInv lo ln γ l'))%I.

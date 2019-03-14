@@ -1,6 +1,6 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Lists, their semantics types, and operations on them *)
-From reloc Require Import proofmode.
+From reloc Require Import reloc.
 From reloc.typing Require Import types interp.
 
 Notation CONS h t := (SOME (Pair h t)).
@@ -14,8 +14,8 @@ Fixpoint is_list (hd : val) (xs : list val) : Prop :=
   | x :: xs => ∃ hd', hd = CONSV x hd' ∧ is_list hd' xs
   end.
 
-Program Definition lty_list `{relocG Σ} (A : lty2 Σ) : lty2 Σ :=
-  lty2_rec (λne B, () + (A * B))%lty2.
+Program Definition lty_list `{relocG Σ} (A : lrel Σ) : lrel Σ :=
+  lrel_rec (λne B, () + (A * B))%lrel.
 Next Obligation. solve_proper. Qed.
 
 Definition nth : val := rec: "nth" "l" "n" :=
@@ -31,26 +31,26 @@ Lemma lty_list_nil `{relocG Σ} A :
 Proof.
   unfold lty_list.
   rewrite lty_rec_unfold /=.
-  unfold lty2_rec1 , lty2_car. (* TODO so much unfolding *)
+  unfold lrel_rec1 , lrel_car. (* TODO so much unfolding *)
   simpl. iNext.
   iExists _,_. iLeft. repeat iSplit; eauto.
 Qed.
 
-Lemma lty_list_cons `{relocG Σ} (A : lty2 Σ) v1 v2 ls1 ls2 :
+Lemma lty_list_cons `{relocG Σ} (A : lrel Σ) v1 v2 ls1 ls2 :
   A v1 v2 -∗
   lty_list A ls1 ls2 -∗
   lty_list A (CONSV v1 ls1) (CONSV v2 ls2).
 Proof.
   iIntros "#HA #Hls".
   rewrite {2}/lty_list lty_rec_unfold /=.
-  rewrite /lty2_rec1 {3}/lty2_car.
+  rewrite /lrel_rec1 {3}/lrel_car.
   iNext. simpl. iExists _, _.
   iRight. repeat iSplit; eauto.
-  rewrite {1}/lty2_prod /lty2_car /=.
+  rewrite {1}/lrel_prod /lrel_car /=.
   iExists _,_,_,_. repeat iSplit; eauto.
 Qed.
 
-Lemma refines_nth_l `{relocG Σ} (A : lty2 Σ) K v w ls (n: nat) t :
+Lemma refines_nth_l `{relocG Σ} (A : lrel Σ) K v w ls (n: nat) t :
   is_list v ls →
   ls !! n = Some w →
   (REL fill K (of_val w) << t : A) -∗
@@ -72,7 +72,7 @@ Proof.
       iApply "IH"; eauto.
 Qed.
 
-Lemma refines_nth_r `{relocG Σ} (A : lty2 Σ) K v w ls (n: nat) e :
+Lemma refines_nth_r `{relocG Σ} (A : lrel Σ) K v w ls (n: nat) e :
   is_list v ls →
   ls !! n = Some w →
   (REL e << fill K (of_val w) : A) -∗
@@ -95,5 +95,5 @@ Proof.
 Qed.
 
 Lemma nth_int_typed `{relocG Σ} :
-  REL nth << nth : lty_list lty2_int → lty2_int → lty2_int.
+  REL nth << nth : lty_list lrel_int → lrel_int → lrel_int.
 Proof. admit. Admitted.

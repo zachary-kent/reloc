@@ -8,15 +8,14 @@ insert something into the table, we can show that the dynamic check in
 the lookup function in `symbol2` is redundant. *)
 From iris.proofmode Require Import tactics.
 From iris.algebra Require Import auth.
-From reloc Require Import proofmode.
+From reloc Require Import reloc.
 From reloc.lib Require Import lock list.
-From reloc.typing Require Import interp soundness.
 
 (** * Symbol table *)
-Definition lty_symbol `{relocG Σ} : lty2 Σ :=
-  ∃ α, (α → α → lty2_bool)    (* equality check *)
-     * (lty2_int → α)          (* insert *)
-     * (α → lty2_int).         (* lookup *)
+Definition lty_symbol `{relocG Σ} : lrel Σ :=
+  ∃ α, (α → α → lrel_bool)    (* equality check *)
+     * (lrel_int → α)          (* insert *)
+     * (α → lrel_int).         (* lookup *)
 
 Definition eqKey : val := λ: "n" "m", "n" = "m".
 Definition symbol1 : val := λ: <>,
@@ -100,14 +99,14 @@ Section rules.
     iApply inc_size'; by iFrame.
   Qed.
 
-  Definition tableR : lty2 Σ := Lty2 (λ v1 v2,
+  Definition tableR : lrel Σ := LRel (λ v1 v2,
     (∃ n : nat, ⌜v1 = #n⌝ ∗ ⌜v2 = #n⌝ ∗ own γ (◯ (n : mnat))))%I.
 
   Definition table_inv (size1 size2 tbl1 tbl2 : loc) : iProp Σ :=
     (∃ (n : nat) (ls : val), own γ (● (n : mnat))
                            ∗ size1 ↦{1/2} #n ∗ size2 ↦ₛ{1/2} #n
                            ∗ tbl1 ↦{1/2} ls ∗ tbl2 ↦ₛ{1/2} ls
-                           ∗ lty_list lty2_int ls ls)%I.
+                           ∗ lty_list lrel_int ls ls)%I.
 
   Definition lok_inv (size1 size2 tbl1 tbl2 l : loc) : iProp Σ :=
     (∃ (n : nat) (ls : val), size1 ↦{1/2} #n ∗ size2 ↦ₛ{1/2} #n
@@ -119,7 +118,7 @@ Section proof.
   Context `{!relocG Σ, !msizeG Σ, !lockG Σ}.
 
   Lemma eqKey_refinement γ :
-    REL eqKey << eqKey : tableR γ → tableR γ → lty2_bool.
+    REL eqKey << eqKey : tableR γ → tableR γ → lrel_bool.
   Proof.
     unlock eqKey.
     iApply refines_arrow_val.
@@ -141,7 +140,7 @@ Section proof.
       (λ: "n",
         let: "m" := ! #size2 in
          if: "n" ≤ "m" then (nth ! #tbl2) (! #size2 - "n") else #0)%V :
-      (tableR γ → lty2_int).
+      (tableR γ → lrel_int).
   Proof.
     iIntros "#Hinv".
     unlock. iApply refines_arrow_val.
@@ -180,7 +179,7 @@ Section proof.
         let: "m" := ! #size1 in
          if: "n" ≤ "m" then (nth ! #tbl1) (! #size1 - "n") else #0)%V
     <<
-      (λ: "n", (nth ! #tbl2) (! #size2 - "n"))%V : (tableR γ → lty2_int).
+      (λ: "n", (nth ! #tbl2) (! #size2 - "n"))%V : (tableR γ → lrel_int).
   Proof.
     iIntros "#Hinv".
     unlock.

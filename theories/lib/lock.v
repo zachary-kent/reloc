@@ -1,6 +1,6 @@
 From iris.algebra Require Import excl.
 From reloc.typing Require Import types interp fundamental.
-From reloc Require Export proofmode.
+From reloc Require Export reloc.
 
 Definition newlock : val := λ: <>, ref #false.
 Definition acquire : val := rec: "acquire" "x" :=

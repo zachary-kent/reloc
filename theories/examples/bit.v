@@ -1,5 +1,5 @@
 From iris.proofmode Require Import tactics.
-From reloc Require Import proofmode.
+From reloc Require Import reloc.
 From reloc.typing Require Import types interp fundamental.
 From reloc.typing Require Import soundness.
 
@@ -30,7 +30,7 @@ Section bit_refinement.
     end.
 
   (* This is the graph of the `bitf` function *)
-  Definition bitτi : lty2 Σ := Lty2 (λ v1 v2,
+  Definition bitτi : lrel Σ := LRel (λ v1 v2,
     (∃ b : bool, ⌜v1 = #b⌝ ∗ ⌜v2 = #(bitf b)⌝))%I.
 
   Lemma bit_refinement Δ :

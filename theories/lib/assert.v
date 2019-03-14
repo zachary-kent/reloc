@@ -1,7 +1,7 @@
 From iris.heap_lang Require Export lang.
 From iris.proofmode Require Import tactics.
 From iris.heap_lang.lib Require Export assert.
-From reloc Require Import proofmode.
+From reloc Require Import reloc.
 Set Default Proof Using "Type".
 
 Definition assert : val :=

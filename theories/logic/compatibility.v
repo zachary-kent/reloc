@@ -58,7 +58,7 @@ Section compatibility.
     - iExists #(); eauto.
   Qed.
 
-  Lemma refines_exists (A : lty2 Σ) e e' (C : lty2 Σ → lty2 Σ) :
+  Lemma refines_exists (A : lrel Σ) e e' (C : lrel Σ → lrel Σ) :
     (REL e << e' : C A) -∗
     REL e << e' : ∃ A, C A.
   Proof.

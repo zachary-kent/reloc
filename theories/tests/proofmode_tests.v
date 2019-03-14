@@ -5,7 +5,7 @@ From iris.heap_lang Require Import lang notation.
 Section test.
 Context `{relocG Σ}.
 
-Definition EqI : lty2 Σ := Lty2 (λ v1 v2, ⌜v1 = v2⌝)%I.
+Definition EqI : lrel Σ := LRel (λ v1 v2, ⌜v1 = v2⌝)%I.
 (* Pure reductions *)
 Lemma test1 A P t :
   ▷ P -∗
