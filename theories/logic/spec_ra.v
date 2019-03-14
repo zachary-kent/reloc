@@ -21,12 +21,7 @@ Class relocG Σ := RelocG {
   relocG_cfgG :> cfgSG Σ;
 }.
 
-Fixpoint to_tpool_go (i : nat) (tp : list expr) : tpoolUR :=
-  match tp with
-  | [] => ∅
-  | e :: tp => <[i:=Excl e]>(to_tpool_go (S i) tp)
-  end.
-Definition to_tpool : list expr → tpoolUR := to_tpool_go 0.
+Definition to_tpool (tp : list expr) : tpoolUR := Excl <$> (map_seq 0 tp).
 
 Section definitionsS.
   Context `{cfgSG Σ, invG Σ}.
@@ -75,16 +70,14 @@ Section conversions.
   Lemma to_tpool_valid es : ✓ to_tpool es.
   Proof.
     rewrite /to_tpool. move: 0.
-    induction es as [|e es]=> n /= //. by apply insert_valid.
+    induction es as [|e es]=> n /= //.
+    rewrite fmap_insert. by apply insert_valid.
   Qed.
 
   Lemma tpool_lookup tp j : to_tpool tp !! j = Excl <$> tp !! j.
   Proof.
-    cut (∀ i, to_tpool_go i tp !! (i + j) = Excl <$> tp !! j).
-    { intros help. apply (help 0%nat). }
-    revert j. induction tp as [|e tp IH]=> //= -[|j] i /=.
-    - by rewrite Nat.add_0_r lookup_insert.
-    - by rewrite -Nat.add_succ_comm lookup_insert_ne; last lia.
+    unfold to_tpool. rewrite lookup_fmap.
+    by rewrite lookup_map_seq_0.
   Qed.
   Lemma tpool_lookup_Some tp j e : to_tpool tp !! j = Excl' e → tp !! j = Some e.
   Proof. rewrite tpool_lookup fmap_Some. naive_solver. Qed.

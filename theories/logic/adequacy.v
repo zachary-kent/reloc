@@ -47,6 +47,7 @@ Proof.
     iSpecialize ("Hrel" with "Hcfg").
     iApply ("Hrel" $! 0%nat []).
     rewrite tpool_mapsto_eq /tpool_mapsto_def. iFrame.
+    by rewrite /to_tpool /= insert_empty map_fmap_singleton //.
   - iIntros (v).
     iDestruct 1 as (v') "[Hj Hinterp]".
     rewrite HA.
