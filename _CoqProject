@@ -36,3 +36,4 @@ theories/examples/bit.v
 theories/examples/or.v
 theories/examples/generative.v
 theories/examples/symbol.v
+theories/examples/ticket_lock.v

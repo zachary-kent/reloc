@@ -89,6 +89,7 @@ Ltac rel_values :=
   iStartProof;
   iApply refines_ret;
   eauto with iFrame;
+  (* TODO: check that we have actually succeeded in solving the previous conditions, or add rel_pure_l/r beforehand *)
   rel_finish.
 
 Tactic Notation "rel_apply_l" open_constr(lem) :=
