@@ -6,13 +6,12 @@ In this example we implement a symbol lookup table, where a symbol is
 an abstract data type. Because the only way to obtain a symbol is to
 insert something into the table, we can show that the dynamic check in
 the lookup function in `symbol2` is redundant. *)
-From iris.proofmode Require Import tactics.
 From iris.algebra Require Import auth.
 From reloc Require Import reloc.
 From reloc.lib Require Import lock list.
 
 (** * Symbol table *)
-Definition lty_symbol `{relocG Σ} : lrel Σ :=
+Definition lrel_symbol `{relocG Σ} : lrel Σ :=
   ∃ α, (α → α → lrel_bool)    (* equality check *)
      * (lrel_int → α)          (* insert *)
      * (α → lrel_int).         (* lookup *)
@@ -50,7 +49,7 @@ Definition symbol2 : val := λ: <>,
 Class msizeG Σ := MSizeG { msize_inG :> inG Σ (authR mnatUR) }.
 Definition msizeΣ : gFunctors := #[GFunctor (authR mnatUR)].
 
-Instance subG_mcounterΣ {Σ} : subG msizeΣ Σ → msizeG Σ.
+Instance subG_msizeΣ {Σ} : subG msizeΣ Σ → msizeG Σ.
 Proof. solve_inG. Qed.
 
 Section rules.
@@ -106,7 +105,7 @@ Section rules.
     (∃ (n : nat) (ls : val), own γ (● (n : mnat))
                            ∗ size1 ↦{1/2} #n ∗ size2 ↦ₛ{1/2} #n
                            ∗ tbl1 ↦{1/2} ls ∗ tbl2 ↦ₛ{1/2} ls
-                           ∗ lty_list lrel_int ls ls)%I.
+                           ∗ lrel_list lrel_int ls ls)%I.
 
   Definition lok_inv (size1 size2 tbl1 tbl2 l : loc) : iProp Σ :=
     (∃ (n : nat) (ls : val), size1 ↦{1/2} #n ∗ size2 ↦ₛ{1/2} #n
@@ -217,18 +216,11 @@ Section proof.
     - rel_values.
   Qed.
 
-  Definition symbolτ : type :=
-    TExists (TProd (TProd (TArrow (TVar 0) (TArrow (TVar 0) TBool))
-                          (TArrow TNat (TVar 0)))
-                   (TArrow (TVar 0) TNat))%nat.
-  Lemma refinement1 Δ :
-    {Δ;∅} ⊨ symbol1 ≤log≤ symbol2 : TArrow TUnit symbolτ.
+  Lemma refinement1 :
+    REL symbol1 << symbol2 : () → lrel_symbol.
   Proof.
     unlock symbol1 symbol2.
-    iIntros (vs) "Hvs". rewrite fmap_empty.
-    rewrite env_ltyped2_empty_inv. iDestruct "Hvs" as %->.
-    rewrite !fmap_empty !subst_map_empty.
-    iApply refines_arrow_val. fold interp.
+    iApply refines_arrow_val.
     iAlways. iIntros (? ?) "[% %]"; simplify_eq/=.
     rel_let_l. rel_let_r.
     rel_alloc_l size1 as "[Hs1 Hs1']"; repeat rel_pure_l.
@@ -237,7 +229,7 @@ Section proof.
     rel_alloc_r tbl2 as "[Htbl2 Htbl2']"; repeat rel_pure_r.
     iMod (own_alloc (● (0%nat : mnat))) as (γ) "Ha"; first done.
     iMod (inv_alloc sizeN _ (table_inv γ size1 size2 tbl1 tbl2) with "[Hs1 Hs2 Htbl1 Htbl2 Ha]") as "#Hinv".
-    { iNext. iExists _,_. iFrame. iApply lty_list_nil. }
+    { iNext. iExists _,_. iFrame. iApply lrel_list_nil. }
     rel_apply_r refines_newlock_r.
     iIntros (l2) "Hl2". rel_pure_r. rel_pure_r.
     pose (N:=(relocN.@"lock1")).
@@ -293,7 +285,7 @@ Section proof.
       iDestruct "Htbl2" as "[Htbl2 Htbl2']".
       iMod ("Hcl" with "[Ha Hs1 Hs2 Htbl1 Htbl2]") as "_".
       { iNext. iExists _,_. iFrame.
-        iApply lty_list_cons; eauto. }
+        iApply lrel_list_cons; eauto. }
       rel_apply_l (refines_release_l with "Hl1 Hlk [-]"); auto.
       { iExists _,_. by iFrame. }
       iNext. do 2 rel_pure_l. rel_values.
@@ -304,14 +296,11 @@ Section proof.
       unlock. iApply "H". (* TODO how to avoid this? *)
   Qed.
 
-  Lemma refinement2 Δ :
-    {Δ;∅} ⊨ symbol2 ≤log≤ symbol1 : TArrow TUnit symbolτ.
+  Lemma refinement2 :
+    REL symbol2 << symbol1 : () → lrel_symbol.
   Proof.
     unlock symbol1 symbol2.
-    iIntros (vs) "Hvs". rewrite fmap_empty.
-    rewrite env_ltyped2_empty_inv. iDestruct "Hvs" as %->.
-    rewrite !fmap_empty !subst_map_empty.
-    iApply refines_arrow_val. fold interp.
+    iApply refines_arrow_val.
     iAlways. iIntros (? ?) "[% %]"; simplify_eq/=.
     rel_let_l. rel_let_r.
     rel_alloc_l size1 as "[Hs1 Hs1']"; repeat rel_pure_l.
@@ -320,7 +309,7 @@ Section proof.
     rel_alloc_r tbl2 as "[Htbl2 Htbl2']"; repeat rel_pure_r.
     iMod (own_alloc (● (0%nat : mnat))) as (γ) "Ha"; first done.
     iMod (inv_alloc sizeN _ (table_inv γ size1 size2 tbl1 tbl2) with "[Hs1 Hs2 Htbl1 Htbl2 Ha]") as "#Hinv".
-    { iNext. iExists _,_. iFrame. iApply lty_list_nil. }
+    { iNext. iExists _,_. iFrame. iApply lrel_list_nil. }
     rel_apply_r refines_newlock_r.
     iIntros (l2) "Hl2". rel_pure_r. rel_pure_r.
     pose (N:=(relocN.@"lock1")).
@@ -376,7 +365,7 @@ Section proof.
       iDestruct "Htbl2" as "[Htbl2 Htbl2']".
       iMod ("Hcl" with "[Ha Hs1 Hs2 Htbl1 Htbl2]") as "_".
       { iNext. iExists _,_. iFrame.
-        iApply lty_list_cons; eauto. }
+        iApply lrel_list_cons; eauto. }
       rel_apply_l (refines_release_l with "Hl1 Hlk [-]"); auto.
       { iExists _,_. by iFrame. }
       iNext. do 2 rel_pure_l. rel_values.
@@ -387,3 +376,25 @@ Section proof.
       unlock. iApply "H". (* TODO how to avoid this? *)
   Qed.
 End proof.
+
+Definition symbolτ : type :=
+  TExists (TProd (TProd (TArrow (TVar 0) (TArrow (TVar 0) TBool))
+                        (TArrow TNat (TVar 0)))
+                        (TArrow (TVar 0) TNat))%nat.
+
+Theorem symbol_ctx_refinement1 :
+  ∅ ⊨ symbol1 ≤ctx≤ symbol2 :
+    TArrow TUnit symbolτ.
+Proof.
+  pose (Σ := #[relocΣ;msizeΣ;lockΣ]).
+  eapply (refines_sound Σ).
+  iIntros (? Δ). iApply refinement1.
+Qed.
+
+Theorem symbol_ctx_refinement2 :
+  ∅ ⊨ symbol2 ≤ctx≤ symbol1 : TArrow TUnit symbolτ.
+Proof.
+  pose (Σ := #[relocΣ;msizeΣ;lockΣ]).
+  eapply (refines_sound Σ).
+  iIntros (? Δ). iApply refinement2.
+Qed.

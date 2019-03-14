@@ -68,3 +68,15 @@ Proof.
   iApply (bin_log_related_under_typed_ctx with "[]"); eauto.
   iAlways. iIntros (?). iApply Hlog.
 Qed.
+
+Lemma refines_sound Σ `{relocPreG Σ} e e' τ :
+  (∀ `{relocG Σ} Δ, REL e << e' : (interp τ Δ)) →
+  ∅ ⊨ e ≤ctx≤ e' : τ.
+Proof.
+  intros Hlog. eapply logrel_ctxequiv. apply _.
+  iIntros (? Δ vs).
+  rewrite fmap_empty env_ltyped2_empty_inv.
+  iIntros (->).
+  rewrite !fmap_empty !subst_map_empty.
+  iApply Hlog.
+Qed.

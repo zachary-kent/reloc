@@ -1,13 +1,10 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Examples from "State-Dependent Represenation Independence" by A.
 Ahmed, D. Dreyer, A. Rossberg.
-
 Those are mostly "generative ADTs". *)
-From iris.proofmode Require Import tactics.
-From iris.heap_lang.lib Require Export par.
-From reloc Require Export reloc prelude.bijections.
+From reloc Require Export reloc.
+From reloc.prelude Require Import bijections.
 From reloc.lib Require Export counter lock.
-From reloc.typing Require Export interp soundness.
 
 (** Using references for name generation *)
 (* ∃ α. (1 → α) × (α → α → 2)                     *)
@@ -27,7 +24,7 @@ Definition nameGen2 : expr :=
   ,λ: "y" "z", "y" = "z").
 
 Section namegen_refinement.
-  Context `{relocG Σ, PrePBijG loc nat Σ}.
+  Context `{!relocG Σ, !pBijPreG loc nat Σ}.
 
   Program Definition ngR (γ : gname) : lrel Σ := LRel (λ v1 v2,
    ∃ (l : loc) (n : nat), ⌜v1 = #l%V⌝ ∗ ⌜v2 = #n⌝
@@ -76,14 +73,14 @@ Section namegen_refinement.
       iMod (bij_alloc_alt _ _ γ _ l' (S n) with "HB") as "[HB #Hl'n]"; auto.
       iMod ("Hcl" with "[-]").
       { iNext.
-        replace (Z.of_nat n + 1) with (Z.of_nat (n + 1)); last lia.
+        replace (Z.of_nat n + 1)%Z with (Z.of_nat (n + 1)); last lia.
         iExists _,_; iFrame "Hc HB".
         rewrite big_sepS_insert; last by naive_solver.
         iFrame. iSplit; first (iPureIntro; lia).
         iApply (big_sepS_mono _ _ L with "HL").
         intros [l x] Hlx. apply bi.sep_mono_r, bi.pure_mono. lia. }
       rel_values. iModIntro.
-      replace (Z.of_nat n + 1) with (Z.of_nat (S n)); last lia.
+      replace (Z.of_nat n + 1)%Z with (Z.of_nat (S n)); last lia.
       iExists l', (S n)%nat; eauto.
     - (* Name comparison *)
       rel_pure_l. rel_pure_r.
@@ -113,6 +110,16 @@ Section namegen_refinement.
         inversion 1; simplify_eq/=.
   Qed.
 End namegen_refinement.
+
+Lemma nameGen_ctx_refinement :
+  ∅ ⊨ nameGen1 ≤ctx≤ nameGen2 : nameGenTy.
+Proof.
+  pose (Σ := #[relocΣ;pBijΣ loc nat]).
+  eapply (refines_sound Σ).
+  iIntros (? Δ).
+  iApply nameGen_ref1.
+Qed.
+
 
 (** A type of cells -- basically an abstract type of references. *)
 (* ∀ α, ∃ β, (α → β) × (β → α) × (β → α → ())  *)
@@ -250,3 +257,11 @@ Section cell_refinement.
     Qed.
 End cell_refinement.
 
+Lemma cell_ctx_refinement :
+  ∅ ⊨ cell2 ≤ctx≤ cell1 : cellτ.
+Proof.
+  pose (Σ := #[relocΣ;lockΣ]).
+  eapply (refines_sound Σ).
+  iIntros (? Δ).
+  iApply cell2_cell1_refinement.
+Qed.

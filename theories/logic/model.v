@@ -18,8 +18,8 @@ Record lrel Σ := LRel {
 }.
 Arguments LRel {_} _%I {_}.
 Arguments lrel_car {_} _ _ _ : simpl never.
-Bind Scope lty_scope with lrel.
-Delimit Scope lty_scope with lrel.
+Bind Scope lrel_scope with lrel.
+Delimit Scope lrel_scope with lrel.
 Existing Instance lrel_persistent.
 
 (* The COFE structure on semantic types *)
@@ -139,21 +139,21 @@ Section semtypes.
     apply lrel_car_ne; eauto.
   Qed.
 
-  Lemma lty_rec_unfold (C : lrelC Σ -n> lrelC Σ) : lrel_rec C ≡ lrel_rec1 C (lrel_rec C).
+  Lemma lrel_rec_unfold (C : lrelC Σ -n> lrelC Σ) : lrel_rec C ≡ lrel_rec1 C (lrel_rec C).
   Proof. apply fixpoint_unfold. Qed.
 
 End semtypes.
 
 (** Nice notations *)
-Notation "()" := lrel_unit : lty_scope.
-Infix "→" := lrel_arr : lty_scope.
-Infix "*" := lrel_prod : lty_scope.
-Infix "+" := lrel_sum : lty_scope.
-Notation "'ref' A" := (lrel_ref A) : lty_scope.
+Notation "()" := lrel_unit : lrel_scope.
+Infix "→" := lrel_arr : lrel_scope.
+Infix "*" := lrel_prod : lrel_scope.
+Infix "+" := lrel_sum : lrel_scope.
+Notation "'ref' A" := (lrel_ref A) : lrel_scope.
 Notation "∃ A1 .. An , C" :=
-  (lrel_exists (λ A1, .. (lrel_exists (λ An, C%lrel)) ..)) : lty_scope.
+  (lrel_exists (λ A1, .. (lrel_exists (λ An, C%lrel)) ..)) : lrel_scope.
 Notation "∀ A1 .. An , C" :=
-  (lrel_forall (λ A1, .. (lrel_forall (λ An, C%lrel)) ..)) : lty_scope.
+  (lrel_forall (λ A1, .. (lrel_forall (λ An, C%lrel)) ..)) : lrel_scope.
 
 Section semtypes_properties.
   Context `{relocG Σ}.

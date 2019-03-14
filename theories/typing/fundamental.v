@@ -422,7 +422,7 @@ Section fundamental.
     iIntros "IH".
     intro_clause.
     rel_bind_ap e e' "IH" v v' "IH".
-    iEval (rewrite lty_rec_unfold /lrel_car /=) in "IH".
+    iEval (rewrite lrel_rec_unfold /lrel_car /=) in "IH".
     change (lrel_rec _) with (interp (TRec τ) Δ).
     rel_rec_l. rel_rec_r.
     value_case. by rewrite -interp_subst.
@@ -437,7 +437,7 @@ Section fundamental.
     rel_bind_ap e e' "IH" v v' "IH".
     value_case.
     iModIntro.
-    iEval (rewrite lty_rec_unfold /lrel_car /=).
+    iEval (rewrite lrel_rec_unfold /lrel_car /=).
     change (lrel_rec _) with (interp (TRec τ) Δ).
     by rewrite -interp_subst.
   Qed.

@@ -43,14 +43,17 @@ Proof.
 Qed.
 
 Definition bijUR := gsetUR (A * B).
-Class PrePBijG Σ := prePBijG
-{ prePBijG_inG :> authG Σ bijUR }.
-Class PBijG Σ := pBijG
-{ PBijG_inG :> authG Σ bijUR
-; PBijG_name : gname }.
+Class pBijPreG Σ := PBijPreG
+{ pBijPreG_inG :> authG Σ bijUR }.
+Class pBijG Σ := PBijG
+{ pBijG_inG :> authG Σ bijUR
+; pBijG_name : gname }.
+Definition pBijΣ : gFunctors := #[ authΣ bijUR ].
+Global Instance subG_pBijΣ {Σ} : subG pBijΣ Σ → pBijPreG Σ.
+Proof. solve_inG. Qed.
 
 Section logic.
-  Context `{PrePBijG Σ}.
+  Context `{pBijPreG Σ}.
 
   Definition BIJ_def γ (L : bijUR) : iProp Σ :=
     (own γ (● L) ∗ ⌜bijective L⌝)%I.

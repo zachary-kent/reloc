@@ -24,14 +24,20 @@ Class tlockG Σ :=
   tlock_G :> authG Σ (gset_disjUR nat).
 Definition tlockΣ : gFunctors :=
   #[ authΣ (gset_disjUR nat) ].
+Instance subG_tlockΣ {Σ} : subG tlockΣ Σ → tlockG Σ.
+Proof. solve_inG. Qed.
 
 Definition lockPool := gset ((loc * loc * gname) * loc).
 Definition lockPoolR := gsetUR ((loc * loc * gname) * loc).
 
 Class lockPoolG Σ :=
   lockPool_inG :> authG Σ lockPoolR.
+Definition lockPoolΣ := #[ authΣ lockPoolR ].
+Instance subG_lockPoolΣ {Σ} : subG lockPoolΣ Σ → lockPoolG Σ.
+Proof. solve_inG. Qed.
+
 Section refinement.
-  Context `{relocG Σ, tlockG Σ, lockPoolG Σ}.
+  Context `{!relocG Σ, !tlockG Σ, !lockPoolG Σ}.
 
   (** * Basic abstractions around the concrete RA *)
 
@@ -362,3 +368,13 @@ Section refinement.
   Qed.
 
 End refinement.
+
+Lemma ticket_lock_ctx_refinement :
+  ∅ ⊨   (newlock, acquire, release)
+  ≤ctx≤ (reloc.lib.lock.newlock, reloc.lib.lock.acquire, reloc.lib.lock.release)
+  : lockT.
+Proof.
+  pose (Σ := #[relocΣ;tlockΣ;lockPoolΣ]).
+  eapply (refines_sound Σ).
+  iIntros (? Δ). iApply (ticket_lock_refinement Δ).
+Qed.

@@ -1,8 +1,7 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** (In)equational theory of erratic choice operator (`or`). *)
-From iris.proofmode Require Import tactics.
-From iris.heap_lang.lib Require Export par.
 From reloc Require Export reloc lib.Y (* for bot *).
+Set Default Proof Using "Type".
 
 (** (Binary) non-determinism can be simluated with concurrency. In
 this file we derive the algebraic laws for parallel "or"/demonic
@@ -196,3 +195,4 @@ Section rules.
 
 End rules.
 
+(* TODO: write out the contextual refinements *)

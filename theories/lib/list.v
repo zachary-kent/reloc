@@ -1,7 +1,7 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Lists, their semantics types, and operations on them *)
 From reloc Require Import reloc.
-From reloc.typing Require Import types interp.
+Set Default Proof Using "Type".
 
 Notation CONS h t := (SOME (Pair h t)).
 Notation CONSV h t := (SOMEV (PairV h t)).
@@ -14,7 +14,7 @@ Fixpoint is_list (hd : val) (xs : list val) : Prop :=
   | x :: xs => ∃ hd', hd = CONSV x hd' ∧ is_list hd' xs
   end.
 
-Program Definition lty_list `{relocG Σ} (A : lrel Σ) : lrel Σ :=
+Program Definition lrel_list `{relocG Σ} (A : lrel Σ) : lrel Σ :=
   lrel_rec (λne B, () + (A * B))%lrel.
 Next Obligation. solve_proper. Qed.
 
@@ -26,23 +26,23 @@ Definition nth : val := rec: "nth" "l" "n" :=
                  else "nth" (Snd "xs") ("n" - #1)
   end.
 
-Lemma lty_list_nil `{relocG Σ} A :
-  lty_list A NILV NILV.
+Lemma lrel_list_nil `{relocG Σ} A :
+  lrel_list A NILV NILV.
 Proof.
-  unfold lty_list.
-  rewrite lty_rec_unfold /=.
+  unfold lrel_list.
+  rewrite lrel_rec_unfold /=.
   unfold lrel_rec1 , lrel_car. (* TODO so much unfolding *)
   simpl. iNext.
   iExists _,_. iLeft. repeat iSplit; eauto.
 Qed.
 
-Lemma lty_list_cons `{relocG Σ} (A : lrel Σ) v1 v2 ls1 ls2 :
+Lemma lrel_list_cons `{relocG Σ} (A : lrel Σ) v1 v2 ls1 ls2 :
   A v1 v2 -∗
-  lty_list A ls1 ls2 -∗
-  lty_list A (CONSV v1 ls1) (CONSV v2 ls2).
+  lrel_list A ls1 ls2 -∗
+  lrel_list A (CONSV v1 ls1) (CONSV v2 ls2).
 Proof.
   iIntros "#HA #Hls".
-  rewrite {2}/lty_list lty_rec_unfold /=.
+  rewrite {2}/lrel_list lrel_rec_unfold /=.
   rewrite /lrel_rec1 {3}/lrel_car.
   iNext. simpl. iExists _, _.
   iRight. repeat iSplit; eauto.
@@ -95,5 +95,5 @@ Proof.
 Qed.
 
 Lemma nth_int_typed `{relocG Σ} :
-  REL nth << nth : lty_list lrel_int → lrel_int → lrel_int.
+  REL nth << nth : lrel_list lrel_int → lrel_int → lrel_int.
 Proof. admit. Admitted.

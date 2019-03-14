@@ -1,8 +1,6 @@
 From reloc Require Export reloc.
-From reloc.typing Require Export types interp.
-From reloc.logic Require Import compatibility.
 From reloc.lib Require Import lock.
-From reloc.typing Require Import soundness.
+Set Default Proof Using "Type".
 
 Definition CG_increment : val := λ: "x" "l",
   acquire "l";;
@@ -230,7 +228,6 @@ Theorem counter_ctx_refinement :
   ∅ ⊨ FG_counter ≤ctx≤ CG_counter :
          TArrow TUnit (TProd (TArrow TUnit TNat) (TArrow TUnit TNat)).
 Proof.
-  eapply (logrel_ctxequiv relocΣ).
-  iIntros (? Δ vs) "#Hvs".
-  iApply FG_CG_counter_refinement.
+  eapply (refines_sound relocΣ).
+  iIntros (? Δ). iApply FG_CG_counter_refinement.
 Qed.
