@@ -1,3 +1,5 @@
+(* ReLoC -- Relational logic for fine-grained concurrency *)
+(** A simple bit module *)
 From iris.proofmode Require Import tactics.
 From reloc Require Import reloc.
 Set Default Proof Using "Type".

@@ -142,11 +142,9 @@ Section fundamental.
     {Δ;Γ} ⊨ (Λ: e) ≤log≤ (Λ: e') : TForall τ.
   Proof.
     iIntros "#H".
-   intro_clause.
-    iApply refines_spec_ctx. iDestruct 1 as (ρ) "#Hs".
-    value_case. rewrite /lrel_forall /lrel_car /=.
-    iModIntro. iModIntro. iIntros (A) "!>". iIntros (? ?) "_".
-    rel_pure_l. rel_pure_r.
+    intro_clause. rel_pure_l. rel_pure_r.
+    iApply refines_forall.
+    iModIntro. iIntros (A).
     iDestruct ("H" $! A) as "#H1".
     iApply "H1".
     by rewrite (interp_ren A Δ Γ).

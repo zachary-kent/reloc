@@ -68,5 +68,15 @@ Section compatibility.
     iModIntro. iExists A. done.
   Qed.
 
+  Lemma refines_forall e e' (C : lrel Σ → lrel Σ) :
+    □ (∀ A, REL e << e' : C A) -∗
+    REL (λ: <>, e)%V << (λ: <>, e')%V : ∀ A, C A.
+  Proof.
+    iIntros "#H".
+    rel_values. iModIntro.
+    iIntros (A ? ?) "_ !#".
+    rel_rec_l. rel_rec_r. iApply "H".
+  Qed.
+
 End compatibility.
 

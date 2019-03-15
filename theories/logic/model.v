@@ -114,7 +114,7 @@ Section semtypes.
     ∃ A, C A w1 w2)%I.
 
   Definition lrel_forall (C : lrel Σ → lrel Σ) : lrel Σ := LRel (λ w1 w2,
-    □ ∀ A : lrel Σ, (lrel_arr lrel_unit (C A))%lrel w1 w2)%I.
+    ∀ A : lrel Σ, (lrel_arr lrel_unit (C A))%lrel w1 w2)%I.
 
   Definition lrel_true : lrel Σ := LRel (λ w1 w2, True)%I.
 

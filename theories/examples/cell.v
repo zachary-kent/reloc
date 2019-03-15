@@ -59,22 +59,10 @@ Section cell_refinement.
   Lemma cell2_cell1_refinement :
     REL cell2 << cell1 : ∀ α, ∃ β, (α → β) * (β → α) * (β → α → ()).
   Proof.
-    (* TODO: this uuugly *)
-    pose (τ := (TExists (TProd (TProd (TArrow (TVar 1) (TVar 0))
-                                 (TArrow (TVar 0) (TVar 1)))
-                                 (TArrow (TVar 0) (TArrow (TVar 1) TUnit))))%nat).
-    iPoseProof (bin_log_related_tlam [] ∅ _ _ τ) as "H".
-    iSpecialize ("H" with "[]"); last first.
-    { rewrite /bin_log_related.
-      iSpecialize ("H" $! ∅ with "[]").
-      - rewrite fmap_empty. iApply env_ltyped2_empty.
-      - rewrite !fmap_empty !subst_map_empty.
-        iSimpl in "H". iApply "H". }
-    iIntros (R) "!#".
-    iApply (bin_log_related_pack (cellR R)).
-    iIntros (vs) "Hvs". rewrite !fmap_empty env_ltyped2_empty_inv.
-    iDestruct "Hvs" as %->. rewrite !fmap_empty !subst_map_empty.
-    iSimpl. repeat iApply refines_pair.
+    unfold cell1, cell2. rel_pure_l. rel_pure_r.
+    iApply refines_forall. iAlways. iIntros (R).
+    iApply (refines_exists (cellR R)).
+    repeat iApply refines_pair.
     - (* New cell *)
       rel_pure_l. rel_pure_r.
       iApply refines_arrow_val.
