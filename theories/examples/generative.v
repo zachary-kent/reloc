@@ -40,7 +40,7 @@ Section namegen_refinement.
   Lemma nameGen_ref1 :
     REL nameGen1 << nameGen2 : ∃ α, (() → α) * (α → α → lrel_bool).
   Proof.
-    unlock nameGen1 nameGen2.
+    unfold nameGen1, nameGen2.
     rel_alloc_r c as "Hc".
     iMod alloc_empty_bij as (γ) "HB".
     pose (N:=relocN.@"ng").
@@ -173,7 +173,6 @@ Section cell_refinement.
   Lemma cell2_cell1_refinement :
     REL cell2 << cell1 : ∀ α, ∃ β, (α → β) * (β → α) * (β → α → ()).
   Proof.
-    unlock cell2 cell1.
     (* TODO: this uuugly *)
     pose (τ := (TExists (TProd (TProd (TArrow (TVar 1) (TVar 0))
                                  (TArrow (TVar 0) (TVar 1)))

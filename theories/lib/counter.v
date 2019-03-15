@@ -194,7 +194,7 @@ Section CG_Counter.
   Lemma FG_CG_counter_refinement :
     REL FG_counter << CG_counter : () → (() → lrel_int) * (() → lrel_int).
   Proof.
-    unfold FG_counter, CG_counter. unlock.
+    unfold FG_counter, CG_counter.
     iApply refines_arrow_val.
     iAlways. iIntros (? ?) "_"; simplify_eq/=.
     rel_rec_l. rel_rec_r.

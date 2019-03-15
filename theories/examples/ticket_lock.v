@@ -105,16 +105,13 @@ Section refinement.
   Lemma newlock_refinement :
     REL newlock << reloc.lib.lock.newlock : () → lockInt.
   Proof.
-    unlock newlock.
-    iApply refines_arrow_val.
-    { by unlock reloc.lib.lock.newlock. }
+    iApply refines_arrow_val; [done|done|].
     iAlways. iIntros (? ?) "/= [% %]"; simplify_eq.
     (* Reducing to a value on the LHS *)
-    repeat rel_pure_l.
+    rel_rec_l.
     rel_alloc_l ln as "Hln".
     rel_alloc_l lo as "Hlo".
     (* Reducing to a value on the RHS *)
-    repeat rel_pure_r.
     rel_apply_r refines_newlock_r.
     iIntros (l') "Hl'".
     (* Establishing the invariant *)
@@ -136,7 +133,6 @@ Section refinement.
     iIntros "#Hinv Hticket".
     rel_rec_l.
     iLöb as "IH".
-    unlock {2}wait_loop.
     repeat rel_pure_l.
     rel_load_l_atomic.
     openI.
@@ -151,7 +147,7 @@ Section refinement.
       closeI. rel_values.
     - iMod ("Hcl" with "[-Hticket]") as "_".
       { iNext. iExists _,_,_; by iFrame. }
-      rel_pure_l. unlock wait_loop. by iApply "IH".
+      rel_rec_l. by iApply "IH".
   Qed.
 
   (** Logically atomic spec for `acquire`.
@@ -169,7 +165,7 @@ Section refinement.
     -∗ (REL fill K (acquire (#lo, #ln)%V) << t : A).
   Proof.
     iIntros "HP #H".
-    rewrite /acquire. unlock. simpl.
+    rewrite /acquire.
     repeat rel_pure_l.
     rel_apply_l (FG_increment_atomic_l (fun n : nat => ∃ o : nat, lo ↦ #o ∗ issuedTickets γ n ∗ R o)%I P%I with "HP").
     iAlways.
@@ -195,8 +191,7 @@ Section refinement.
       clear o o'.
       repeat rel_pure_l.
       iLöb as "IH".
-      unlock wait_loop. simpl.
-      repeat rel_pure_l.
+      rel_rec_l. repeat rel_pure_l.
       rel_load_l_atomic.
       iMod "H2" as (o n') "(Hlo & Hln & Hissued & HR & Hrest)". iModIntro.
       iExists _. iFrame. iNext. iIntros "Hlo".
@@ -215,9 +210,7 @@ Section refinement.
   Lemma acquire_refinement :
     REL acquire << reloc.lib.lock.acquire : lockInt → ().
   Proof.
-    iApply refines_arrow_val;
-      [ by unlock acquire
-      | by unlock reloc.lib.lock.acquire |].
+    iApply refines_arrow_val; [done|done|].
     iAlways. iIntros (? ?) "/= #Hl".
     iDestruct "Hl" as (lo ln γ l') "(% & % & Hin)". simplify_eq/=.
     rel_apply_l (acquire_l_logatomic
@@ -250,12 +243,10 @@ Section refinement.
   Lemma acquire_refinement_direct :
     REL acquire << reloc.lib.lock.acquire : lockInt → ().
   Proof.
-    unlock acquire; simpl.
-    iApply refines_arrow_val.
-    { by unlock reloc.lib.lock.acquire. }
+    iApply refines_arrow_val; [done|done|].
     iAlways. iIntros (? ?) "/= #Hl".
     iDestruct "Hl" as (lo ln γ l') "(% & % & Hin)". simplify_eq.
-    rel_let_l. repeat rel_proj_l.
+    rel_rec_l. repeat rel_proj_l.
     rel_apply_l (FG_increment_atomic_l (issuedTickets γ)%I True%I); first done.
     iAlways.
     openI.
@@ -280,8 +271,7 @@ Section refinement.
     (x ↦ #(n+1) -∗ REL fill K (of_val #()) << t : A) -∗
     (REL fill K (wkincr #x) << t : A).
   Proof.
-    iIntros "Hx Hlog".
-    unlock wkincr. rel_rec_l.
+    iIntros "Hx Hlog". rel_rec_l.
     rel_load_l. rel_op_l. rel_store_l.
     by iApply "Hlog".
   Qed.
@@ -301,7 +291,6 @@ Section refinement.
     -∗ (REL fill K (wkincr #x) << t : A).
   Proof.
     iIntros "HR2 #H".
-    unlock wkincr.
     rel_rec_l.
     iPoseProof "H" as "H2".
     rel_load_l_atomic.
@@ -320,12 +309,10 @@ Section refinement.
   Lemma release_refinement :
     REL release << reloc.lib.lock.release : lockInt → ().
   Proof.
-    unlock release.
-    iApply refines_arrow_val; eauto.
-    { by unlock reloc.lib.lock.release. }
+    iApply refines_arrow_val; [done|done|].
     iAlways. iIntros (? ?) "/= #Hl".
     iDestruct "Hl" as (lo ln γ l') "(% & % & Hin)". simplify_eq.
-    rel_let_l. rel_proj_l.
+    rel_rec_l. rel_proj_l.
     pose (R := fun (o : nat) =>
                  (∃ (n : nat) (b : bool), ln ↦ #n
                  ∗ issuedTickets γ n ∗ l' ↦ₛ #b
@@ -359,8 +346,7 @@ Section refinement.
         (reloc.lib.lock.newlock, reloc.lib.lock.acquire, reloc.lib.lock.release)
     : interp lockT Δ.
   Proof.
-    simpl.
-    iApply (refines_exists lockInt).
+    simpl. iApply (refines_exists lockInt).
     repeat iApply refines_pair.
     - by iApply newlock_refinement.
     - by iApply acquire_refinement_direct.

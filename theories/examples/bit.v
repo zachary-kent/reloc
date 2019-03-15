@@ -40,7 +40,7 @@ Section bit_refinement.
     iApply (refines_exists bitτi).
     progress repeat iApply refines_pair.
     - rel_values.
-    - unfold flip_nat. rel_pure_l. unlock. (* TODO: can we make the tactics do unlocking? *)
+    - unfold flip_nat. rel_pure_l.
       iApply refines_arrow_val.
       iIntros "!#" (v1 v2) "/=".
       iIntros ([b [? ?]]); simplify_eq/=.

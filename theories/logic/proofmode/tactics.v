@@ -562,12 +562,12 @@ Tactic Notation "rel_fork_r" ident(i) "as" constr(H) :=
  *)
 Tactic Notation "rel_rec_l" :=
   let H := fresh in
-  assert (H := AsRecV_recv_locked);
+  assert (H := AsRecV_recv);
   rel_pure_l (App _ _);
   clear H.
 Tactic Notation "rel_rec_r" :=
   let H := fresh in
-  assert (H := AsRecV_recv_locked);
+  assert (H := AsRecV_recv);
   rel_pure_r (App _ _);
   clear H.
 

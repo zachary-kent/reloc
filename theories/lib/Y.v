@@ -32,7 +32,7 @@ Section contents.
   Lemma Y_semtype A :
     REL Y << Y : (A → A) → A.
   Proof.
-    unlock Y.
+    unfold Y.
     iApply refines_arrow.
     iAlways. iIntros (f1 f2) "#Hff".
     rel_let_l. rel_let_r.
@@ -47,7 +47,7 @@ Section contents.
   Lemma FIX_semtype A :
     REL F << F : (A → A) → A.
   Proof.
-    unlock F.
+    unfold F.
     iApply refines_arrow.
     iAlways. iIntros (f1 f2) "#Hff".
     iLöb as "IH".
@@ -60,7 +60,7 @@ Section contents.
   Lemma KNOT_Y A :
     REL Knot << Y : (A → A) → A.
   Proof.
-    unlock Y Knot.
+    unfold Y, Knot.
     iApply refines_arrow.
     iAlways. iIntros (f1 f2) "#Hff".
     rel_let_l. rel_let_r.
@@ -77,7 +77,7 @@ Section contents.
   Lemma Y_KNOT A :
     REL Y << Knot : (A → A) → A.
   Proof.
-    unlock Y Knot.
+    unfold Y, Knot.
     iApply refines_arrow.
     iAlways. iIntros (f1 f2) "#Hff".
     rel_let_l. rel_let_r.
@@ -95,7 +95,7 @@ Section contents.
   Lemma FIX_Y A :
     REL F << Y : (A → A) → A.
   Proof.
-    unlock Y F.
+    unfold Y, F.
     iApply refines_arrow.
     iAlways. iIntros (f1 f2) "#Hff".
     rel_pure_r. rel_pure_r. rel_pure_r.
@@ -108,7 +108,7 @@ Section contents.
   Lemma Y_FIX A :
     REL Y << F : (A → A) → A.
   Proof.
-    unlock Y F.
+    unfold Y, F.
     iApply refines_arrow.
     iAlways. iIntros (f1 f2) "#Hff".
     rel_pure_l. rel_pure_l. rel_pure_l.

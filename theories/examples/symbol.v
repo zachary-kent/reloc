@@ -119,7 +119,7 @@ Section proof.
   Lemma eqKey_refinement γ :
     REL eqKey << eqKey : tableR γ → tableR γ → lrel_bool.
   Proof.
-    unlock eqKey.
+    unfold eqKey.
     iApply refines_arrow_val.
     iAlways. iIntros (k1 k2) "/= #Hk".
     iDestruct "Hk" as (n) "(% & % & #Hn)"; simplify_eq.
@@ -142,7 +142,7 @@ Section proof.
       (tableR γ → lrel_int).
   Proof.
     iIntros "#Hinv".
-    unlock. iApply refines_arrow_val.
+    iApply refines_arrow_val.
     iAlways. iIntros (k1 k2) "/= #Hk".
     iDestruct "Hk" as (n) "(% & % & #Hn)"; simplify_eq.
     rel_let_l. rel_let_r.
@@ -181,7 +181,6 @@ Section proof.
       (λ: "n", (nth ! #tbl2) (! #size2 - "n"))%V : (tableR γ → lrel_int).
   Proof.
     iIntros "#Hinv".
-    unlock.
     iApply refines_arrow_val.
     iAlways. iIntros (k1 k2) "#Hk /=".
     iDestruct "Hk" as (n) "(% & % & #Hn)"; simplify_eq.
@@ -219,10 +218,9 @@ Section proof.
   Lemma refinement1 :
     REL symbol1 << symbol2 : () → lrel_symbol.
   Proof.
-    unlock symbol1 symbol2.
-    iApply refines_arrow_val.
+    iApply refines_arrow_val; [done|done|].
     iAlways. iIntros (? ?) "[% %]"; simplify_eq/=.
-    rel_let_l. rel_let_r.
+    rel_rec_l. rel_rec_r.
     rel_alloc_l size1 as "[Hs1 Hs1']"; repeat rel_pure_l.
     rel_alloc_r size2 as "[Hs2 Hs2']"; repeat rel_pure_r.
     rel_alloc_l tbl1 as "[Htbl1 Htbl1']"; repeat rel_pure_l.
@@ -292,17 +290,15 @@ Section proof.
       iExists m'. eauto.
     (* Lookup *)
     - rel_pure_l. rel_pure_r.
-      iPoseProof (lookup_refinement1 with "Hinv") as "H".
-      unlock. iApply "H". (* TODO how to avoid this? *)
+      iApply (lookup_refinement1 with "Hinv").
   Qed.
 
   Lemma refinement2 :
     REL symbol2 << symbol1 : () → lrel_symbol.
   Proof.
-    unlock symbol1 symbol2.
-    iApply refines_arrow_val.
+    iApply refines_arrow_val; [done|done|].
     iAlways. iIntros (? ?) "[% %]"; simplify_eq/=.
-    rel_let_l. rel_let_r.
+    rel_rec_l. rel_rec_r.
     rel_alloc_l size1 as "[Hs1 Hs1']"; repeat rel_pure_l.
     rel_alloc_r size2 as "[Hs2 Hs2']"; repeat rel_pure_r.
     rel_alloc_l tbl1 as "[Htbl1 Htbl1']"; repeat rel_pure_l.
@@ -372,8 +368,7 @@ Section proof.
       iExists m'. eauto.
     (* Lookup *)
     - rel_pure_l. rel_pure_r.
-      iPoseProof (lookup_refinement2 with "Hinv") as "H".
-      unlock. iApply "H". (* TODO how to avoid this? *)
+      iApply (lookup_refinement2 with "Hinv").
   Qed.
 End proof.
 

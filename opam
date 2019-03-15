@@ -1,0 +1,14 @@
+opam-version: "1.2"
+name: "coq-reloc"
+maintainer: "Ralf Jung <jung@mpi-sws.org>"
+authors: "Dan Frumin, Robbert Krebbers"
+homepage: "http://iris-project.org/"
+bug-reports: "https://gitlab.mpi-sws.org/dfrumin/reloc/issues"
+dev-repo: "https://gitlab.mpi-sws.org/dfrumin/reloc.git"
+build: [make "-j%{jobs}%"]
+install: [make "install"]
+remove: ["rm" "-rf" "%{lib}%/coq/user-contrib/reloc"]
+depends: [
+  "coq-iris" { (= "dev.2019-03-15.0.33ee70bf") | (= "dev") }
+  "coq-autosubst" { = "dev.coq86" }
+]
