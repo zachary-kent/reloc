@@ -42,6 +42,17 @@ Section compatibility.
     by iApply "Hff".
   Qed.
 
+  Lemma refines_seq A e1 e2 e1' e2' B :
+    (REL e1 << e1' : A) -∗
+    (REL e2 << e2' : B) -∗
+    REL (e1;; e2) << (e1';; e2') : B.
+  Proof.
+    iIntros "IH1 IH2".
+    rel_bind_ap e1 e1' "IH1" v v' "#Hvv".
+    repeat rel_pure_l. repeat rel_pure_r.
+    done.
+  Qed.
+
   Lemma refines_fork e e' E :
     ↑relocN ⊆ E →
     (REL e << e' @ E : ()) -∗

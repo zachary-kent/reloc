@@ -184,14 +184,10 @@ Section fundamental.
   Proof.
     iIntros "He1 He2".
     intro_clause.
-    rel_bind_l (_ e1).
-    rel_bind_r (_ e1').
-    iApply (refines_bind _ _ _ (interp τ1 (R :: Δ)) with "[He1] [He2]").
+    iApply (refines_seq (interp τ1 (R::Δ)) with "[He1]").
     - iApply ("He1" with "[Hvs]").
       by rewrite interp_ren.
-    - iIntros (? ?) "? /=".
-      repeat rel_pure_l. repeat rel_pure_r.
-      by iApply "He2".
+    - by iApply "He2".
   Qed.
 
   Lemma bin_log_related_seq' Δ Γ e1 e2 e1' e2' τ1 τ2 :
