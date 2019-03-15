@@ -20,7 +20,6 @@ Definition bitτ : type :=
                          (TArrow (TVar 0) (TVar 0)))
                          (TArrow (TVar 0) (TBool))))%nat.
 
-
 Section bit_refinement.
   Context `{relocG Σ}.
 
@@ -35,7 +34,7 @@ Section bit_refinement.
     (∃ b : bool, ⌜v1 = #b⌝ ∗ ⌜v2 = #(bitf b)⌝))%I.
 
   Lemma bit_refinement Δ :
-    REL bit_bool << bit_nat : (interp bitτ Δ).
+    REL bit_bool << bit_nat : interp bitτ Δ.
   Proof.
     unfold bit_bool, bit_nat.
     unfold bitτ. simpl.

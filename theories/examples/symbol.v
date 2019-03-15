@@ -178,7 +178,7 @@ Section proof.
         let: "m" := ! #size1 in
          if: "n" ≤ "m" then (nth ! #tbl1) (! #size1 - "n") else #0)%V
     <<
-      (λ: "n", (nth ! #tbl2) (! #size2 - "n"))%V : (tableR γ → lrel_int).
+      (λ: "n", (nth ! #tbl2) (! #size2 - "n"))%V : tableR γ → lrel_int.
   Proof.
     iIntros "#Hinv".
     iApply refines_arrow_val.
@@ -378,8 +378,7 @@ Definition symbolτ : type :=
                         (TArrow (TVar 0) TNat))%nat.
 
 Theorem symbol_ctx_refinement1 :
-  ∅ ⊨ symbol1 ≤ctx≤ symbol2 :
-    TArrow TUnit symbolτ.
+  ∅ ⊨ symbol1 ≤ctx≤ symbol2 : TArrow TUnit symbolτ.
 Proof.
   pose (Σ := #[relocΣ;msizeΣ;lockΣ]).
   eapply (refines_sound Σ).

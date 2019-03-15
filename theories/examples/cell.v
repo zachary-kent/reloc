@@ -13,18 +13,17 @@ Definition cellτ : type :=
 (** We show that the canonical implementation `cell1` is equivalent to
 an implementation using two alternating slots *)
 
-(* TODO: should these be values? *)
-Definition cell1 : expr :=
+Definition cell1 : val :=
   (Λ: (λ: "x", ref "x", λ: "r", !"r", λ: "r" "x", "r" <- "x")).
 
-Definition cell2 : expr :=
+Definition cell2 : val :=
   Λ: ( λ: "x",
        let: "r1" := ref #false in
        let: "r2" := ref "x" in
        let: "r3" := ref "x" in
        let: "lk" := newlock #() in
        ("r1", "r2", "r3", "lk")
-     ,  λ: "r", let: "l" := (Snd "r") in
+     ,  λ: "r", let: "l" := Snd "r" in
                 acquire "l";;
                 let: "v" :=
                    if: !(Fst (Fst (Fst "r")))
@@ -32,20 +31,20 @@ Definition cell2 : expr :=
                    else !(Snd (Fst (Fst "r"))) in
                 release "l";;
                 "v"
-     , λ: "r" "x", let: "l" := (Snd "r") in
+     , λ: "r" "x", let: "l" := Snd "r" in
                    acquire "l";;
                    (if: !(Fst (Fst (Fst "r")))
-                    then (Snd (Fst (Fst "r"))) <- "x";;
-                         (Fst (Fst (Fst "r"))) <- #false
-                    else (Snd (Fst "r")) <- "x";;
-                         (Fst (Fst (Fst "r"))) <- #true);;
+                    then Snd (Fst (Fst "r")) <- "x";;
+                         Fst (Fst (Fst "r")) <- #false
+                    else Snd (Fst "r") <- "x";;
+                         Fst (Fst (Fst "r")) <- #true);;
                    release "l").
 
 Section cell_refinement.
   Context `{relocG Σ, lockG Σ}.
 
   Definition lockR (R : lrel Σ) (r1 r2 r3 r : loc) : iProp Σ :=
-    (∃ (a b c : val), r ↦ₛ a ∗ r2 ↦ b ∗ r3 ↦ c ∗
+    (∃ a b c : val, r ↦ₛ a ∗ r2 ↦ b ∗ r3 ↦ c ∗
      ( (r1 ↦ #true ∗ R c a)
      ∨ (r1 ↦ #false ∗ R b a)))%I.
 
@@ -59,8 +58,8 @@ Section cell_refinement.
   Lemma cell2_cell1_refinement :
     REL cell2 << cell1 : ∀ α, ∃ β, (α → β) * (β → α) * (β → α → ()).
   Proof.
-    unfold cell1, cell2. rel_pure_l. rel_pure_r.
-    iApply refines_forall. iAlways. iIntros (R).
+    unfold cell1, cell2.
+    iApply refines_forall. iIntros "!#" (R).
     iApply (refines_exists (cellR R)).
     repeat iApply refines_pair.
     - (* New cell *)
