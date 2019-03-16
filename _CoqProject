@@ -41,3 +41,4 @@ theories/examples/ticket_lock.v
 theories/examples/stack/CG_stack.v
 theories/examples/stack/FG_stack.v
 theories/examples/stack/refinement.v
+theories/examples/various.v
