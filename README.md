@@ -35,6 +35,25 @@ Install the developement versions of [Iris](https://gitlab.mpi-sws.org/iris/iris
 
 Run `make` and `make install`.
 
+## Examples
+
+We have formalized a variety of different examples in ReLoC. Hopefully
+they can illustrate the usage of the logic.
+
+- `lib`
+  + `Y.v` - symbolic execution rules and refinements for different fixed point combinators
+  + `lock.v` - symbolic execution rules for a simple spin lock
+  + `counter.v` - symbolic execution rules and refinements for two different counters
+  + `list.v` - rules for the recursive type of lists
+- `examples`
+  + `bit.v` - "representation independence example" for a simple bit interface
+  + `or.v` - expressing non-determinism with concurrency
+  + `symbol.v` and `namegen.v` - generative ADTs for symbol and name generation
+  + `stack/refinement.v` - Treiber stack refines sequential stack
+  + `cell.v` - higher-order cell objects
+  + `ticket_lock.v` - ticket lock refines spin lock
+  + `various.v` - lots of examples with higher-order functions with local state, in the style of "The effects of higher-order state and control on local relational reasoning" paper
+
 ## Differences with the old version
 
 This version (ReLoC v2) is build directly on top of heap_lang of [Iris](https://gitlab.mpi-sws.org/iris/iris/), instead of having an ad-hoc object language.
