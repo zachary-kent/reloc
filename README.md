@@ -5,7 +5,7 @@ It consists of the formalization of all the logical rules, tactics, and examples
 
 ## Usage guide
 
-See the small ReLoC (docs/guide.md)[docs/guide.md] and the Iris (ProofGuide.md)[https://gitlab.mpi-sws.org/iris/iris/blob/master/ProofGuide.md].
+See the small ReLoC [docs/guide.md](docs/guide.md) and the Iris [ProofGuide.md](https://gitlab.mpi-sws.org/iris/iris/blob/master/ProofGuide.md).
 
 ## Building
 
