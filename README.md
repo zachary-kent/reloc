@@ -1,1 +1,55 @@
-This is ReLoC v2, built on top of heap_lang.
+# ReLoC
+
+This is the Coq developement of [ReLoC](https://cs.ru.nl/~dfrumin/reloc/).
+It consists of the formalization of all the logical rules, tactics, and examples.
+
+## Usage guide
+
+See the small ReLoC (docs/guide.md)[docs/guide.md] and the Iris (ProofGuide.md)[https://gitlab.mpi-sws.org/iris/iris/blob/master/ProofGuide.md].
+
+## Building
+
+### OPAM
+
+Make sure that you have Iris OPAM repository enabled:
+
+    opam repo add iris-dev https://gitlab.mpi-sws.org/iris/opam.git
+
+Then install the ReLoC developement as usual:
+
+    opam install .
+
+### Guix
+
+Just run
+
+    guix package -f guix.scm
+
+to build and install ReLoC. Alternatively, to get a developement environment use e.g.
+
+    guix environment -l guix.scm
+
+### Manually
+
+Install the developement versions of [Iris](https://gitlab.mpi-sws.org/iris/iris/), [std++](https://gitlab.mpi-sws.org/iris/stdpp), and a [coq86-devel](https://github.com/uds-psl/autosubst/tree/coq86-devel) branch of Autosubst.
+
+Run `make` and `make install`.
+
+## Differences with the old version
+
+This version (ReLoC v2) is build directly on top of heap_lang of [Iris](https://gitlab.mpi-sws.org/iris/iris/), instead of having an ad-hoc object language.
+It should be easy to port the existing programs to heap_lang.
+The main differences is the absence of `Pack` and `Fold` constructors (the existential types are given transparently, and for recursive types you only need an unfolding function `rec_unfold`, see e.g. `examples/stack/CG_stack.v`).
+
+On the level of logic, the main proposition is now of the form
+
+    REL e1 << e2 @ E : A
+
+We found it beneficial to get rid of the typing environments Γ and Δ, because usually we want to reason about closed programs at the top level anyway.
+The type `A` is now not a syntactic construction, but a relation `A : lrel Σ` in logic over the type of values.
+The syntax for the `REL` proposition was also adjusted to match the syntax of `WP` more closely.
+
+The old logical judgment `{Δ;Γ;E} ⊧ e1 ≤log≤ e2 : τ` is redefined on top of the `REL` proposition.
+See the files `typing/interp.v` and `typing/soundness.v`.
+
+For more information see the [guide](docs/guide.md).
