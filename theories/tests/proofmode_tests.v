@@ -13,8 +13,6 @@ Lemma test1 A P t :
   REL (#2 + #2) << (λ: <>, t) #() : A.
 Proof.
   iIntros "HP Ht".
-  rel_bind_l #2. Undo.
-  rel_pure_l (_ + _)%E. Undo.
   rel_pure_l. repeat rel_pure_r.
   by iApply "Ht".
 Qed.
