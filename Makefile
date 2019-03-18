@@ -8,12 +8,12 @@ all: Makefile.coq
 
 clean: Makefile.coq
 	+@make -f Makefile.coq clean
-	find theories $$(test -d tests && echo tests) \( -name "*.d" -o -name "*.vo" -o -name "*.aux" -o -name "*.cache" -o -name "*.glob" -o -name "*.vio" \) -print -delete
+	find theories tests \( -name "*.d" -o -name "*.vo" -o -name "*.aux" -o -name "*.cache" -o -name "*.glob" -o -name "*.vio" \) -print -delete || true
 	rm -f Makefile.coq
 .PHONY: clean
 
 # Create Coq Makefile.
-Makefile.coq: _CoqProject Makefile awk.Makefile
+Makefile.coq: _CoqProject Makefile
 	"$(COQBIN)coq_makefile" -f _CoqProject -o Makefile.coq
 
 # Install build-dependencies
@@ -28,21 +28,19 @@ build-dep: build-dep/opam phony
 	@# constraints.  Otherwise, `opam upgrade` may well update some packages to versions
 	@# that are incompatible with our build requirements.
 	@# To achieve this, we create a fake opam package that has our build-dependencies as
-	@# dependencies, but does not actually install anything.
-	@# Reinstalling is needed with opam 1 in case the pin already exists, but the builddep
-	@# package changed.
-	@BUILD_DEP_PACKAGE="$$(egrep "^name:" build-dep/opam | sed 's/^name: *"\(.*\)" */\1/')" && \
-	  echo "# Pinning build-dep package." && \
-	  opam pin add -k path $(OPAMFLAGS) "$$BUILD_DEP_PACKAGE".dev build-dep && \
-	  ((! opam --version | grep "^1\." > /dev/null) || ( \
-	    echo "# Reinstalling build-dep package." && \
-	    opam reinstall $(OPAMFLAGS) "$$BUILD_DEP_PACKAGE" \
-	  ))
+	@# dependencies, but does not actually install anything itself.
+	@echo "# Pinning build-dep package." && \
+	  if opam --version | grep "^1\." -q; then \
+	    BUILD_DEP_PACKAGE="$$(egrep "^name:" build-dep/opam | sed 's/^name: *"\(.*\)" */\1/')" && \
+	    opam pin add -k path $(OPAMFLAGS) "$$BUILD_DEP_PACKAGE".dev build-dep && \
+	    opam reinstall $(OPAMFLAGS) "$$BUILD_DEP_PACKAGE"; \
+	  else \
+	    opam install $(OPAMFLAGS) build-dep/; \
+	  fi
 
 # Some files that do *not* need to be forwarded to Makefile.coq
 Makefile: ;
 _CoqProject: ;
-awk.Makefile: ;
 opam: ;
 
 # Phony wildcard targets
