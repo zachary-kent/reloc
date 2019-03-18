@@ -89,5 +89,24 @@ Section compatibility.
     rel_rec_l. rel_rec_r. iApply "H".
   Qed.
 
+  Lemma refines_store e1 e2 e1' e2' A :
+    (REL e1 << e1' : ref A) -∗
+    (REL e2 << e2' : A) -∗
+    REL e1 <- e2 << e1' <- e2' : ().
+  Proof.
+    iIntros "IH1 IH2".
+    rel_bind_ap e2 e2' "IH2" w w' "IH2".
+    rel_bind_ap e1 e1' "IH1" v v' "IH1".
+    iDestruct "IH1" as (l l') "(% & % & Hinv)"; simplify_eq/=.
+    rel_store_l_atomic.
+    iInv (relocN .@ "ref" .@ (l,l')) as (v v') "[Hv1 [>Hv2 #Hv]]" "Hclose".
+    iModIntro. iExists _; iFrame "Hv1".
+    iNext. iIntros "Hw1".
+    rel_store_r.
+    iMod ("Hclose" with "[Hw1 Hv2 IH2]").
+    { iNext; iExists _, _; simpl; iFrame. }
+    value_case.
+  Qed.
+
 End compatibility.
 

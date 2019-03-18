@@ -278,17 +278,9 @@ Section fundamental.
   Proof.
     iIntros "IH1 IH2".
     intro_clause.
-    rel_bind_ap e2 e2' "IH2" w w' "IH2".
-    rel_bind_ap e1 e1' "IH1" v v' "IH1".
-    iDestruct "IH1" as (l l') "(% & % & Hinv)"; simplify_eq/=.
-    rel_store_l_atomic.
-    iInv (relocN .@ "ref" .@ (l,l')) as (v v') "[Hv1 [>Hv2 #Hv]]" "Hclose".
-    iModIntro. iExists _; iFrame "Hv1".
-    iNext. iIntros "Hw1".
-    rel_store_r.
-    iMod ("Hclose" with "[Hw1 Hv2 IH2]").
-    { iNext; iExists _, _; simpl; iFrame. }
-    value_case.
+    iApply (refines_store with "[IH1] [IH2]").
+    - by iApply "IH1".
+    - by iApply "IH2".
   Qed.
 
   Lemma bin_log_related_CAS Δ Γ e1 e2 e3 e1' e2' e3' τ
