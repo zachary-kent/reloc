@@ -15,3 +15,11 @@ build-dep/
 Makefile.coq
 Makefile.coq.conf
 *.crashcoqide
+docs/*.cp*
+docs/*.pdf
+docs/*.dvi
+docs/*.html
+docs/*.info
+docs/*.toc
+docs/*.log
+docs/*.fn*
