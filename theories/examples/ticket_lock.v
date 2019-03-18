@@ -14,11 +14,7 @@ Definition acquire : val := λ: "lk",
 Definition release : val := λ: "lk", wkincr (Fst "lk").
 
 Definition lrel_lock `{relocG Σ} : lrel Σ :=
-  lrel_exists (λ A, (() → A) * (A → ()) * (A → ()))%lrel.
-Definition lockT : type :=
-  TExists (TProd (TProd (TUnit → TVar 0)
-                        (TVar 0 → TUnit))
-                 (TVar 0 → TUnit))%nat.
+  ∃ A, (() → A) * (A → ()) * (A → ()).
 
 Class tlockG Σ :=
   tlock_G :> authG Σ (gset_disjUR nat).
@@ -340,11 +336,11 @@ Section refinement.
       rel_values.
   Qed.
 
-  Lemma ticket_lock_refinement Δ :
+  Lemma ticket_lock_refinement :
     REL (newlock, acquire, release)
         <<
         (reloc.lib.lock.newlock, reloc.lib.lock.acquire, reloc.lib.lock.release)
-    : interp lockT Δ.
+    : lrel_lock.
   Proof.
     simpl. iApply (refines_exists lockInt).
     repeat iApply refines_pair.
@@ -355,6 +351,12 @@ Section refinement.
 
 End refinement.
 
+Open Scope nat.
+Definition lockT : type :=
+  ∃: (TUnit → TVar 0)
+   * (TVar 0 → TUnit)
+   * (TVar 0 → TUnit).
+
 Lemma ticket_lock_ctx_refinement :
   ∅ ⊨   (newlock, acquire, release)
   ≤ctx≤ (reloc.lib.lock.newlock, reloc.lib.lock.acquire, reloc.lib.lock.release)
@@ -362,5 +364,5 @@ Lemma ticket_lock_ctx_refinement :
 Proof.
   pose (Σ := #[relocΣ;tlockΣ;lockPoolΣ]).
   eapply (refines_sound Σ).
-  iIntros (? Δ). iApply (ticket_lock_refinement Δ).
+  iIntros (? Δ). iApply ticket_lock_refinement.
 Qed.

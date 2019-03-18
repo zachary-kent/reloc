@@ -10,8 +10,9 @@ version uses integers. *)
 (* ∃ α. (1 → α) × (α → α → 2)                     *)
 (*       ^ new name  ^                            *)
 (*                   | compare names for equality *)
-Definition nameGenTy : type := TExists (TProd (TArrow TUnit (TVar 0))
-                                              (TArrow (TVar 0) (TArrow (TVar 0) TBool)))%nat.
+Definition nameGenTy : type :=
+  ∃: (TUnit → TVar 0%nat)
+   * (TVar 0%nat → TVar 0%nat → TBool).
 
 (* TODO: cannot be a value *)
 Definition nameGen1 : expr :=

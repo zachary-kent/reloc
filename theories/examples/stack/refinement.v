@@ -227,12 +227,12 @@ Section proof.
 
 End proof.
 
+Open Scope nat.
 Theorem stack_ctx_refinement :
   ∅ ⊨ FG_stack ≤ctx≤ CG_stack :
-    TForall $ TExists $ TProd (TProd
-                                 (TArrow TUnit (TVar 0))
-                                 (TArrow (TVar 0) (TSum TUnit (TVar 1))))
-                                 (TArrow (TVar 0) (TArrow (TVar 1) TUnit)).
+    ∀: ∃: (TUnit → TVar 0)
+         * (TVar 0 → TUnit + TVar 1)
+         * (TVar 0 → TVar 1 → TUnit).
 Proof.
   eapply (refines_sound relocΣ).
   iIntros (? ?).

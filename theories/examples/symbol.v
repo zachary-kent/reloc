@@ -372,13 +372,14 @@ Section proof.
   Qed.
 End proof.
 
+Open Scope nat.
 Definition symbolτ : type :=
-  TExists (TProd (TProd (TArrow (TVar 0) (TArrow (TVar 0) TBool))
-                        (TArrow TNat (TVar 0)))
-                        (TArrow (TVar 0) TNat))%nat.
+  ∃: (TVar 0 → TVar 0 → TBool)
+   * (TNat → TVar 0)
+   * (TVar 0 → TNat).
 
 Theorem symbol_ctx_refinement1 :
-  ∅ ⊨ symbol1 ≤ctx≤ symbol2 : TArrow TUnit symbolτ.
+  ∅ ⊨ symbol1 ≤ctx≤ symbol2 : TUnit → symbolτ.
 Proof.
   pose (Σ := #[relocΣ;msizeΣ;lockΣ]).
   eapply (refines_sound Σ).
@@ -386,7 +387,7 @@ Proof.
 Qed.
 
 Theorem symbol_ctx_refinement2 :
-  ∅ ⊨ symbol2 ≤ctx≤ symbol1 : TArrow TUnit symbolτ.
+  ∅ ⊨ symbol2 ≤ctx≤ symbol1 : TUnit → symbolτ.
 Proof.
   pose (Σ := #[relocΣ;msizeΣ;lockΣ]).
   eapply (refines_sound Σ).

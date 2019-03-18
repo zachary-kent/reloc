@@ -16,9 +16,7 @@ Definition bit_nat : expr :=
   (#1, flip_nat, (λ: "b", "b" = #1)).
 
 Definition bitτ : type :=
-  (TExists (TProd (TProd (TVar 0)
-                         (TArrow (TVar 0) (TVar 0)))
-                         (TArrow (TVar 0) (TBool))))%nat.
+  ∃: (TVar 0)%nat * (TVar 0%nat → TVar 0%nat) * (TVar 0%nat → TBool).
 
 Section bit_refinement.
   Context `{relocG Σ}.

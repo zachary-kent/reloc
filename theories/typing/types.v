@@ -51,24 +51,24 @@ Fixpoint binop_bool_res_type (op : bin_op) : option type :=
   | _ => None
   end.
 
-Delimit Scope FType_scope with F.
+Delimit Scope FType_scope with ty.
 Bind Scope FType_scope with type.
-Infix "×" := TProd (at level 80) : FType_scope.
-Notation "(×)" := TProd (only parsing) : FType_scope.
+Infix "*" := TProd : FType_scope.
+Notation "(*)" := TProd (only parsing) : FType_scope.
 Infix "+" := TSum : FType_scope.
 Notation "(+)" := TSum (only parsing) : FType_scope.
 Infix "→" := TArrow : FType_scope.
 Notation "(→)" := TArrow (only parsing) : FType_scope.
 Notation "μ: τ" :=
-  (TRec τ%F)
+  (TRec τ%ty)
   (at level 100, τ at level 200) : FType_scope.
 Notation "∀: τ" :=
-  (TForall τ%F)
+  (TForall τ%ty)
   (at level 100, τ at level 200) : FType_scope.
 Notation "∃: τ" :=
-  (TExists τ%F)
+  (TExists τ%ty)
   (at level 100, τ at level 200) : FType_scope.
-Notation "'ref' τ" := (Tref τ%F) (at level 30, right associativity): FType_scope.
+Notation "'ref' τ" := (Tref τ%ty) (at level 30, right associativity): FType_scope.
 
 (** * Typing judgements *)
 Reserved Notation "Γ ⊢ₜ e : τ" (at level 74, e, τ at next level).

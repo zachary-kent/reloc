@@ -59,7 +59,7 @@ Section fundamental.
   Qed.
 
   Lemma bin_log_related_fst Δ Γ e e' τ1 τ2 :
-    ({Δ;Γ} ⊨ e ≤log≤ e' : TProd τ1 τ2) -∗
+    ({Δ;Γ} ⊨ e ≤log≤ e' : τ1 * τ2) -∗
     {Δ;Γ} ⊨ Fst e ≤log≤ Fst e' : τ1.
   Proof.
     iIntros "IH".
@@ -70,7 +70,7 @@ Section fundamental.
   Qed.
 
   Lemma bin_log_related_snd Δ Γ e e' τ1 τ2 :
-    ({Δ;Γ} ⊨ e ≤log≤ e' : TProd τ1 τ2) -∗
+    ({Δ;Γ} ⊨ e ≤log≤ e' : τ1 * τ2) -∗
     {Δ;Γ} ⊨ Snd e ≤log≤ Snd e' : τ2.
   Proof.
     iIntros "IH".
@@ -81,7 +81,7 @@ Section fundamental.
   Qed.
 
   Lemma bin_log_related_app Δ Γ e1 e2 e1' e2' τ1 τ2 :
-    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : TArrow τ1 τ2) -∗
+    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : τ1 → τ2) -∗
     ({Δ;Γ} ⊨ e2 ≤log≤ e2' : τ1) -∗
     {Δ;Γ} ⊨ App e1 e2 ≤log≤ App e1' e2' :  τ2.
   Proof.
@@ -92,10 +92,9 @@ Section fundamental.
     - by iApply "IH2".
   Qed.
 
-  (* TODO horrible horrible *)
   Lemma bin_log_related_rec Δ (Γ : stringmap type) (f x : binder) (e e' : expr) τ1 τ2 :
     □ ({Δ;<[f:=TArrow τ1 τ2]>(<[x:=τ1]>Γ)} ⊨ e ≤log≤ e' : τ2) -∗
-    {Δ;Γ} ⊨ Rec f x e ≤log≤ Rec f x e' : TArrow τ1 τ2.
+    {Δ;Γ} ⊨ Rec f x e ≤log≤ Rec f x e' : τ1 → τ2.
   Proof.
     iIntros "#Ht".
     intro_clause.
@@ -139,7 +138,7 @@ Section fundamental.
   Lemma bin_log_related_tlam Δ Γ (e e' : expr) τ :
     (∀ (A : lrel Σ),
       □ ({(A::Δ);⤉Γ} ⊨ e ≤log≤ e' : τ)) -∗
-    {Δ;Γ} ⊨ (Λ: e) ≤log≤ (Λ: e') : TForall τ.
+    {Δ;Γ} ⊨ (Λ: e) ≤log≤ (Λ: e') : ∀: τ.
   Proof.
     iIntros "#H".
     intro_clause. rel_pure_l. rel_pure_r.
@@ -151,7 +150,7 @@ Section fundamental.
   Qed.
 
   Lemma bin_log_related_tapp' Δ Γ e e' τ τ' :
-    ({Δ;Γ} ⊨ e ≤log≤ e' : TForall τ) -∗
+    ({Δ;Γ} ⊨ e ≤log≤ e' : ∀: τ) -∗
     {Δ;Γ} ⊨ (TApp e) ≤log≤ (TApp e') : τ.[τ'/].
   Proof.
     iIntros "IH".
@@ -164,7 +163,7 @@ Section fundamental.
   Qed.
 
   Lemma bin_log_related_tapp (τi : lrel Σ) Δ Γ e e' τ :
-    ({Δ;Γ} ⊨ e ≤log≤ e' : TForall τ) -∗
+    ({Δ;Γ} ⊨ e ≤log≤ e' : ∀: τ) -∗
     {τi::Δ;⤉Γ} ⊨ (TApp e) ≤log≤ (TApp e') : τ.
   Proof.
     iIntros "IH". intro_clause.
@@ -204,7 +203,7 @@ Section fundamental.
 
   Lemma bin_log_related_injl Δ Γ e e' τ1 τ2 :
     ({Δ;Γ} ⊨ e ≤log≤ e' : τ1) -∗
-    {Δ;Γ} ⊨ InjL e ≤log≤ InjL e' : (TSum τ1 τ2).
+    {Δ;Γ} ⊨ InjL e ≤log≤ InjL e' : τ1 + τ2.
   Proof.
     iIntros "IH".
     intro_clause.
@@ -214,7 +213,7 @@ Section fundamental.
 
   Lemma bin_log_related_injr Δ Γ e e' τ1 τ2 :
     ({Δ;Γ} ⊨ e ≤log≤ e' : τ2) -∗
-    {Δ;Γ} ⊨ InjR e ≤log≤ InjR e' : TSum τ1 τ2.
+    {Δ;Γ} ⊨ InjR e ≤log≤ InjR e' : τ1 + τ2.
   Proof.
     iIntros "IH".
     intro_clause.
@@ -223,9 +222,9 @@ Section fundamental.
   Qed.
 
   Lemma bin_log_related_case Δ Γ e0 e1 e2 e0' e1' e2' τ1 τ2 τ3 :
-    ({Δ;Γ} ⊨ e0 ≤log≤ e0' : TSum τ1 τ2) -∗
-    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : TArrow τ1 τ3) -∗
-    ({Δ;Γ} ⊨ e2 ≤log≤ e2' : TArrow τ2 τ3) -∗
+    ({Δ;Γ} ⊨ e0 ≤log≤ e0' : τ1 + τ2) -∗
+    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : τ1 → τ3) -∗
+    ({Δ;Γ} ⊨ e2 ≤log≤ e2' : τ2 → τ3) -∗
     {Δ;Γ} ⊨ Case e0 e1 e2 ≤log≤ Case e0' e1' e2' : τ3.
   Proof.
     iIntros "IH1 IH2 IH3".
@@ -273,7 +272,7 @@ Section fundamental.
   Qed.
 
   Lemma bin_log_related_store Δ Γ e1 e2 e1' e2' τ :
-    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : (Tref τ)) -∗
+    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : Tref τ) -∗
     ({Δ;Γ} ⊨ e2 ≤log≤ e2' : τ) -∗
     {Δ;Γ} ⊨ Store e1 e2 ≤log≤ Store e1' e2' : TUnit.
   Proof.
@@ -410,7 +409,7 @@ Section fundamental.
   Qed.
 
   Lemma bin_log_related_unfold Δ Γ e e' τ :
-    ({Δ;Γ} ⊨ e ≤log≤ e' : TRec τ) -∗
+    ({Δ;Γ} ⊨ e ≤log≤ e' : μ: τ) -∗
     {Δ;Γ} ⊨ rec_unfold e ≤log≤ rec_unfold e' : τ.[(TRec τ)/].
   Proof.
     iIntros "IH".
@@ -424,7 +423,7 @@ Section fundamental.
 
   Lemma bin_log_related_fold Δ Γ e e' τ :
     ({Δ;Γ} ⊨ e ≤log≤ e' : τ.[(TRec τ)/]) -∗
-    {Δ;Γ} ⊨ e ≤log≤ e' : TRec τ.
+    {Δ;Γ} ⊨ e ≤log≤ e' : μ: τ.
   Proof.
     iIntros "IH".
     intro_clause.
@@ -438,7 +437,7 @@ Section fundamental.
 
   Lemma bin_log_related_pack' Δ Γ e e' (τ τ' : type) :
     ({Δ;Γ} ⊨ e ≤log≤ e' : τ.[τ'/]) -∗
-    {Δ;Γ} ⊨ e ≤log≤ e' : TExists τ.
+    {Δ;Γ} ⊨ e ≤log≤ e' : ∃: τ.
   Proof.
     iIntros "IH".
     intro_clause.
@@ -450,7 +449,7 @@ Section fundamental.
 
   Lemma bin_log_related_pack (τi : lrel Σ) Δ Γ e e' τ :
     ({τi::Δ;⤉Γ} ⊨ e ≤log≤ e' : τ) -∗
-    {Δ;Γ} ⊨ e ≤log≤ e' : TExists τ.
+    {Δ;Γ} ⊨ e ≤log≤ e' : ∃: τ.
   Proof.
     iIntros "IH".
     intro_clause.
@@ -462,7 +461,7 @@ Section fundamental.
   Qed.
 
   Lemma bin_log_related_unpack Δ Γ x e1 e1' e2 e2' τ τ2 :
-    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : TExists τ) -∗
+    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : ∃: τ) -∗
     (∀ τi : lrel Σ,
       {τi::Δ;<[x:=τ]>(⤉Γ)} ⊨
         e2 ≤log≤ e2' : (subst (ren (+1)) τ2)) -∗
