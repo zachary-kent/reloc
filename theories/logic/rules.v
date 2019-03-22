@@ -109,6 +109,38 @@ Section rules.
     by iApply "Hlog".
   Qed.
 
+  Lemma refines_newproph_r E K t A
+    (Hmasked : nclose specN ⊆ E) :
+    (∀ (p : proph_id), REL t << fill K (of_val #p) @ E : A)%I
+    -∗ REL t << fill K NewProph @ E : A.
+  Proof.
+    iIntros "Hlog".
+    pose (Φ := (fun w => ∃ (p : proph_id), ⌜w = (# p)⌝ : iProp Σ)%I).
+    iApply (refines_step_r Φ); simpl; auto.
+    { cbv[Φ].
+      iIntros (ρ j K') "#Hs Hj /=".
+      iMod (step_newproph with "[$Hs $Hj]") as (p) "Hj". done.
+      iModIntro. iExists _. iFrame. iExists _. iFrame. eauto. }
+    iIntros (v') "He'". iDestruct "He'" as (p) "%". subst.
+    by iApply "Hlog".
+  Qed.
+
+  Lemma refines_resolveproph_r E K t (p : proph_id) w A
+    (Hmasked : nclose specN ⊆ E) :
+    (REL t << fill K (of_val #()) @ E : A)%I
+    -∗ REL t << fill K (ResolveProph #p (of_val w)) @ E : A.
+  Proof.
+    iIntros "Hlog".
+    pose (Φ := (fun w => ⌜w = #()⌝ : iProp Σ)%I).
+    iApply (refines_step_r Φ); simpl; auto.
+    { cbv[Φ].
+      iIntros (ρ j K') "#Hs Hj /=".
+      iMod (step_resolveproph with "[$Hs $Hj]") as "Hj". done.
+      iModIntro. iExists _. iFrame. eauto. }
+    iIntros (v') "He'". iDestruct "He'" as %->.
+    by iApply "Hlog".
+  Qed.
+
   Lemma refines_alloc_r E K e v t A
     (Hmasked : nclose specN ⊆ E) :
     IntoVal e v →

@@ -95,6 +95,47 @@ Section rules.
       { apply list_lookup_insert. apply lookup_lt_is_Some; eauto. }
   Qed.
 
+  (** Prophecy variables (at this point those are just noops) *)
+  Lemma step_newproph E ρ j K :
+    nclose specN ⊆ E →
+    spec_ctx ρ ∗ j ⤇ fill K NewProph ={E}=∗
+    ∃ (p : proph_id), j ⤇ fill K #p.
+  Proof.
+    iIntros (?) "[#Hinv Hj]".
+    rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def /=.
+    iInv specN as (tp σ) ">[Hown %]" "Hclose".
+    iDestruct (own_valid_2 with "Hown Hj")
+      as %[[?%tpool_singleton_included' _]%prod_included _]%auth_valid_discrete_2.
+    destruct (exist_fresh (used_proph_id σ)) as [p Hp].
+    iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
+    { by eapply auth_update, prod_local_update_1,
+         singleton_local_update, (exclusive_local_update _ (Excl (fill K #p))). }
+    iExists p. iFrame. iApply "Hclose". iNext.
+    iExists (<[j:=fill K #p]> tp), (state_upd_used_proph_id ({[ p ]} ∪) σ).
+    rewrite to_tpool_insert'; last eauto. iFrame. iPureIntro.
+    eapply rtc_r, step_insert_no_fork; eauto. econstructor; eauto.
+  Qed.
+
+  Lemma step_resolveproph E ρ j K (p : proph_id) w :
+    nclose specN ⊆ E →
+    spec_ctx ρ ∗ j ⤇ fill K (ResolveProph #p (of_val w)) ={E}=∗
+    j ⤇ fill K #().
+  Proof.
+    iIntros (?) "[#Hinv Hj]".
+    rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def /=.
+    iInv specN as (tp σ) ">[Hown %]" "Hclose".
+    iDestruct (own_valid_2 with "Hown Hj")
+      as %[[?%tpool_singleton_included' _]%prod_included _]%auth_valid_discrete_2.
+    iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
+    { by eapply auth_update, prod_local_update_1,
+         singleton_local_update, (exclusive_local_update _ (Excl (fill K #()))). }
+    iFrame. iApply "Hclose". iNext.
+    iExists (<[j:=fill K #()]> tp), σ.
+    rewrite to_tpool_insert'; last eauto. iFrame. iPureIntro.
+    eapply rtc_r, step_insert_no_fork; eauto.
+    eapply (ResolveProphS #p _ (of_val w)); eauto.
+  Qed.
+
   (** Alloc, load, and store *)
   Lemma step_alloc E ρ j K e v :
     IntoVal e v →
