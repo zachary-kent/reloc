@@ -30,8 +30,10 @@
   #:use-module (gnu packages coq)
   #:use-module ((guix licenses) #:prefix license:))
 
-(define stdpp-commit "f948024480ee7ab247be51cef058d21e36e3df24")
-(define iris-commit "2d1c83520d8c2656d1868dfa6d7e8a95fe3c6c4c")
+(define stdpp-commit "700545bb31db8c5268a6813bebaf0e4115d229d9")
+(define stdpp-sha256 (base32 "0i469sk69qb0bjxjaykralc3fr2zw2241dy350slydkas90xmjwk")) ;; sha256 hash of the specific std++ checkout
+(define iris-commit "9936cb1238afbd21e2202ecdb72c844b3c572f80")
+(define iris-sha256 (base32 "0jqk71197irjx0mpdmhb7bdlgyhjim172arjqal8chm3miwiag7f")) ;; sha256 hash of the specific std++ checkout
 (define %source-dir (dirname (current-filename)))
 
 (define-public coq-stdpp
@@ -47,8 +49,7 @@
                      (url "https://gitlab.mpi-sws.org/iris/stdpp.git")
                      (commit commit)))
                (file-name (git-file-name name version))
-               (sha256
-                (base32 "08myrcbxag16vr9axys7cvxqlgnpb5bxn9q7cmr3j84m31rn4s39"))))
+               (sha256 stdpp-sha256)))
       (build-system gnu-build-system)
       (native-inputs
        `( ;; need for egrep for tests
@@ -87,8 +88,7 @@
                      (url "https://gitlab.mpi-sws.org/iris/iris.git")
                      (commit commit)))
                (file-name (git-file-name name version))
-               (sha256
-                (base32 "1hlihcds432h367k8dijqsbzycf4lczdm0pw2p2xpwizagqwjv9b"))))
+               (sha256 iris-sha256)))
       (build-system gnu-build-system)
       (native-inputs
        `(;; need for egrep for tests

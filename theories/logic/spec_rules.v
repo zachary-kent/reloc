@@ -132,8 +132,7 @@ Section rules.
     iFrame. iApply "Hclose". iNext.
     iExists (<[j:=fill K #()]> tp), σ.
     rewrite to_tpool_insert'; last eauto. iFrame. iPureIntro.
-    eapply rtc_r, step_insert_no_fork; eauto.
-    eapply (ResolveProphS #p _ (of_val w)); eauto.
+    eapply rtc_r, step_insert_no_fork; eauto. econstructor; eauto.
   Qed.
 
   (** Alloc, load, and store *)
