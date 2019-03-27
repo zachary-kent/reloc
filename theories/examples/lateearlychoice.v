@@ -63,10 +63,10 @@ Section proof.
       iMod ("Hcl" with "[Hy]") as "_"; eauto with iFrame.
   Qed.
 
-  Definition val_to_bool (v : option val) : bool :=
-    match v with
-    | Some (LitV (LitBool b)) => b
-    | _                       => true
+  Definition val_to_bool (vs : list val) : bool :=
+    match vs with
+    | LitV (LitBool b)::_ => b
+    | _                   => true
     end.
 
   Lemma late'_early_choice :
@@ -91,7 +91,7 @@ Section proof.
     rel_bind_l (resolve_proph: _ to: _)%E.
     iApply refines_wp_l.
     iApply (wp_resolve_proph with "Hp"). iNext.
-    iIntros (->). iSimpl. repeat rel_pure_l.
+    iIntros (vs') "[-> H]". iSimpl. repeat rel_pure_l.
     rel_values.
   Qed.
 
