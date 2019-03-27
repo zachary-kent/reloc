@@ -567,6 +567,27 @@ Tactic Notation "rel_newproph_l" :=
 
 (** ResolveProph *)
 (* TODO: implement this lol *)
+Lemma tac_rel_resolveproph_r `{relocG Σ} K' ℶ E (p :proph_id) w e t A :
+  t = fill K' (ResolveProph #p (of_val w)) →
+  nclose specN ⊆ E →
+  envs_entails ℶ (refines E e (fill K' #()) A) →
+  envs_entails ℶ (refines E e t A).
+Proof.
+  intros ???. subst t.
+  rewrite -refines_resolveproph_r //.
+Qed.
+
+Tactic Notation "rel_resolveproph_r" :=
+  iStartProof;
+  first
+    [rel_reshape_cont_r ltac:(fun K e' =>
+       eapply (tac_rel_resolveproph_r K);
+       [reflexivity  (** t = K'[resolveproph] *)
+       |idtac..])
+    |fail 1 "rel_resolveproph_r: cannot find 'ResolveProph'"];
+  [solve_ndisj || fail "rel_resolveproph_r: cannot prove 'nclose specN ⊆ ?'"
+  |rel_finish  (** new goal *)].
+
 
 (** Fork *)
 Lemma tac_rel_fork_l `{relocG Σ} K ℶ E e' eres e t A :

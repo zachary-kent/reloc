@@ -148,7 +148,7 @@ Section proofs.
       iDestruct "H" as "[Hcl|Hcl]"; rel_load_r; repeat rel_pure_r.
       + rel_apply_r (refines_rand_r b). repeat rel_pure_r.
         rel_store_r. repeat rel_pure_r.
-        rel_apply_r refines_resolveproph_r. repeat rel_pure_r.
+        rel_resolveproph_r. repeat rel_pure_r.
         rel_apply_r (refines_release_r with "Hlk"). iIntros "Hlk".
         repeat rel_pure_r. iMod ("Hclose" with "[-]") as "_".
         { eauto with iFrame. }
@@ -281,7 +281,7 @@ Section proofs.
           iIntros "Hlk". repeat rel_pure_r. rel_load_r.
           repeat rel_pure_r. rel_apply_r (refines_rand_r b).
           repeat rel_pure_r. rel_store_r.
-          repeat rel_pure_r. rel_apply_r refines_resolveproph_r.
+          repeat rel_pure_r. rel_resolveproph_r.
           repeat rel_pure_r. rel_apply_r (refines_release_r with "Hlk").
           iIntros "Hlk". repeat rel_pure_r.
           iMod ("Hclose" with "[-]") as "_".

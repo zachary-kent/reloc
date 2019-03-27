@@ -123,8 +123,7 @@ Section proof.
     rel_apply_l refines_rand_l.
     iNext. iIntros (b). repeat rel_pure_l.
     rel_apply_r (refines_rand_r b).
-    repeat rel_pure_r.
-    rel_apply_r refines_resolveproph_r.
+    repeat rel_pure_r. rel_resolveproph_r.
     repeat rel_pure_r. rel_values.
   Qed.
 
