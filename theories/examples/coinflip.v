@@ -41,6 +41,8 @@ Definition coin2 : expr :=
 Section proofs.
   Context `{!relocG Σ, !lockG Σ}.
 
+  Definition coinN := nroot.@"coins".
+
   Definition I (cl ce : loc) (p : proph_id) :=
     (∃ vs : list val, proph p vs ∗
     (cl ↦ NONEV ∗ ce ↦ₛ #(val_to_bool vs)
@@ -55,7 +57,7 @@ Section proofs.
     rel_rec_l. rel_pure_l. rel_alloc_l cl as "Hcl".
     do 2 rel_pure_l. rel_newproph_l vs p as "Hp".
     do 2 rel_pure_l.
-    rel_apply_l (refines_newlock_l (nroot.@"coins") (I cl ce p) with "[-]").
+    rel_apply_l (refines_newlock_l coinN (I cl ce p) with "[-]").
     { iExists vs. iFrame. iRight. iExists false. iFrame. }
     clear vs.
     iNext. iIntros (lk γ) "#Hlk /=". do 2 rel_pure_l.
@@ -100,4 +102,78 @@ Section proofs.
         iNext. rel_values.
   Qed.
 
+  (* this part is easier *)
+  Lemma coin_eager_lazy_refinement :
+    REL coin1 << coin2 : (() → lrel_bool) * (() → ()).
+  Proof.
+    unfold coin1, coin2.
+    rel_rec_l. rel_alloc_l ce as "Hce". do 2 rel_pure_l.
+
+    rel_rec_r. rel_pure_r. rel_alloc_r cl as "Hcl".
+    do 2 rel_pure_r. rel_newproph_r p.
+    do 2 rel_pure_r.
+    rel_apply_r refines_newlock_r. iIntros (lk) "Hlk".
+    do 2 rel_pure_r.
+    iMod (inv_alloc coinN _
+           (∃ (b : bool), lk ↦ₛ #false
+                        ∗ ce ↦ #b
+                        ∗ (cl ↦ₛ NONEV ∨ cl ↦ₛ SOMEV #b))%I
+            with "[-]") as "#Hinv".
+    { iNext. iExists false. iFrame. }
+    iApply refines_pair.
+    - rel_rec_l. repeat rel_pure_l.
+      rel_rec_r. repeat rel_pure_r.
+      iApply refines_arrow. iModIntro. iIntros (??) "_".
+      rel_pure_l. rel_pure_r.
+      rel_load_l_atomic. iInv coinN as (b) "(Hlk & Hce & H)" "Hclose".
+      iModIntro. iExists _. iFrame. iNext. iIntros "Hce".
+      rel_apply_r (refines_acquire_r with "Hlk"). iIntros "Hlk".
+      repeat rel_pure_r.
+      iDestruct "H" as "[Hcl|Hcl]"; rel_load_r; repeat rel_pure_r.
+      + rel_apply_r (refines_rand_r b). repeat rel_pure_r.
+        rel_store_r. repeat rel_pure_r.
+        rel_apply_r refines_resolveproph_r. repeat rel_pure_r.
+        rel_apply_r (refines_release_r with "Hlk"). iIntros "Hlk".
+        repeat rel_pure_r. iMod ("Hclose" with "[-]") as "_".
+        { eauto with iFrame. }
+        rel_values.
+      + rel_apply_r (refines_release_r with "Hlk"). iIntros "Hlk".
+        repeat rel_pure_r. iMod ("Hclose" with "[-]") as "_".
+        { eauto with iFrame. }
+        rel_values.
+    - rel_rec_l. repeat rel_pure_l.
+      rel_rec_r. repeat rel_pure_r.
+      iApply refines_arrow. iModIntro. iIntros (??) "_".
+      rel_pure_l. rel_pure_r.
+      rel_apply_l refines_rand_l. iNext. iIntros (b).
+      rel_store_l_atomic. iInv coinN as (b') "(Hlk & Hce & H)" "Hclose".
+      iModIntro. iExists _. iFrame. iNext. iIntros "Hce".
+      rel_apply_r (refines_acquire_r with "Hlk"). iIntros "Hlk".
+      repeat rel_pure_r.
+      iDestruct "H" as "[Hcl|Hcl]"; rel_store_r; repeat rel_pure_r.
+      + rel_apply_r (refines_release_r with "Hlk"). iIntros "Hlk".
+        repeat rel_pure_r. iMod ("Hclose" with "[-]") as "_".
+        { eauto with iFrame. }
+        rel_values.
+      + rel_apply_r (refines_release_r with "Hlk"). iIntros "Hlk".
+        repeat rel_pure_r. iMod ("Hclose" with "[-]") as "_".
+        { eauto with iFrame. }
+        rel_values.
+  Qed.
+
 End proofs.
+
+Theorem coin_lazy_eager_ctx_refinement :
+  ∅ ⊨ coin2 ≤ctx≤ coin1 : (TUnit → TBool) * (TUnit → TUnit).
+Proof.
+  eapply (refines_sound #[relocΣ; lockΣ]).
+  iIntros (? Δ). iApply coin_lazy_eager_refinement.
+Qed.
+
+Theorem coin_eager_lazy_ctx_refinement :
+  ∅ ⊨ coin1 ≤ctx≤ coin2 : (TUnit → TBool) * (TUnit → TUnit).
+Proof.
+  eapply (refines_sound #[relocΣ; lockΣ]).
+  iIntros (? Δ). iApply coin_eager_lazy_refinement.
+Qed.
+
