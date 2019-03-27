@@ -76,11 +76,9 @@ Section proof.
     iApply refines_arrow_val.
     iModIntro. iIntros (x x') "#Hxx".
     rel_rec_l. rel_rec_r.
-    rel_bind_l NewProph. iApply refines_wp_l.
-    iApply wp_new_proph; first done.
-    iNext. iIntros (v p) "Hp /=".
+    rel_newproph_l vs p as "Hp".
     repeat rel_pure_l.
-    rel_apply_r (refines_rand_r (val_to_bool v)).
+    rel_apply_r (refines_rand_r (val_to_bool vs)).
     repeat rel_pure_r.
     iApply (refines_seq lrel_unit).
     { iApply refines_store.
@@ -88,11 +86,9 @@ Section proof.
       - rel_values. }
     rel_apply_l refines_rand_l.
     iNext. iIntros (b). repeat rel_pure_l.
-    rel_bind_l (resolve_proph: _ to: _)%E.
-    iApply refines_wp_l.
-    iApply (wp_resolve_proph with "Hp"). iNext.
-    iIntros (vs') "[-> H]". iSimpl. repeat rel_pure_l.
-    rel_values.
+    rel_apply_l refines_resolveproph_l. iModIntro.
+    iExists _; iFrame. iNext. iIntros (vs' ->) "H".
+    repeat rel_pure_l. rel_values.
   Qed.
 
   Lemma early_late_choice :
@@ -119,8 +115,7 @@ Section proof.
     iApply refines_arrow_val.
     iModIntro. iIntros (x x') "#Hxx".
     rel_rec_l. rel_rec_r.
-    rel_apply_r refines_newproph_r.
-    iIntros (p). repeat rel_pure_r.
+    rel_newproph_r p. repeat rel_pure_r.
     iApply (refines_seq lrel_unit with "[Hxx]").
     { iApply refines_store.
       - iApply refines_ret. iApply "Hxx".

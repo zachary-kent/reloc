@@ -352,6 +352,33 @@ Section rules.
     iApply (wp_alloc _ _ v); auto.
   Qed.
 
+  Lemma refines_newproph_l K E t A :
+    (|={⊤,E}=> ▷ (∀ (vs : list val) (p : proph_id),
+           proph p vs -∗
+           REL fill K (of_val #p) << t @ E : A))%I
+    -∗ REL fill K NewProph << t : A.
+  Proof.
+    iIntros "Hlog".
+    iApply refines_atomic_l; auto.
+    iMod "Hlog". iModIntro.
+    iApply wp_new_proph=>//.
+  Qed.
+
+  Lemma refines_resolveproph_l K E (p : proph_id) w t A :
+    (|={⊤,E}=> ∃ vs,
+           ▷ (proph p vs) ∗
+           ▷ (∀ (vs' : list val), ⌜vs = w::vs'⌝ -∗
+                  proph p vs' -∗
+                  REL fill K (of_val #()) << t @ E : A))%I
+    -∗ REL fill K (ResolveProph #p w) << t : A.
+  Proof.
+    iIntros "Hlog".
+    iApply refines_atomic_l; auto.
+    iMod "Hlog" as (vs) "[>Hp Hlog]". iModIntro.
+    iApply (wp_resolve_proph with "Hp") =>//.
+    iNext. iIntros (vs'). by rewrite -bi.wand_curry.
+  Qed.
+
   Lemma refines_load_l K E l q t A :
     (|={⊤,E}=> ∃ v',
       ▷(l ↦{q} v') ∗

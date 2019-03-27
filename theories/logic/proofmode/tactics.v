@@ -506,6 +506,67 @@ Tactic Notation "rel_cas_suc_r" :=
   |reflexivity
   |rel_finish  (** new goal *)].
 
+(** NewProph *)
+Tactic Notation "rel_newproph_l_atomic" := rel_apply_l refines_newproph_l.
+
+Lemma tac_rel_newproph_l_simpl `{relocG Σ} K ℶ1 ℶ2 e t A :
+  e = fill K NewProph →
+  MaybeIntoLaterNEnvs 1 ℶ1 ℶ2 →
+  (envs_entails ℶ2 (∀ (vs : list val) (p : proph_id),
+     (proph p vs -∗ refines ⊤ (fill K (of_val #p)) t A))) →
+  envs_entails ℶ1 (refines ⊤ e t A).
+Proof.
+  rewrite envs_entails_eq. intros ???; subst.
+  rewrite into_laterN_env_sound /=.
+  rewrite -(refines_newproph_l _ ⊤); eauto.
+  rewrite -fupd_intro.
+  by apply bi.later_mono.
+Qed.
+
+Tactic Notation "rel_newproph_l" ident(p) ident(vs) "as" constr(H) :=
+  iStartProof;
+  first
+    [rel_reshape_cont_l ltac:(fun K e' =>
+       eapply (tac_rel_newproph_l_simpl K);
+       [reflexivity (** e = fill K (NewProph e') *)
+       |idtac..])
+    |fail 1 "rel_newproph_l: cannot find 'NewProph'"];
+  [iSolveTC                      (** IntoLaters *)
+  |iIntros (p vs) H; rel_finish  (** new goal *)].
+
+Lemma tac_rel_newproph_r `{relocG Σ} K' ℶ E e t A :
+  t = fill K' NewProph →
+  nclose specN ⊆ E →
+  envs_entails ℶ (∀ (p : proph_id), refines E e (fill K' #p) A) →
+  envs_entails ℶ (refines E e t A).
+Proof.
+  intros ???. subst t.
+  rewrite -refines_newproph_r //.
+Qed.
+
+Tactic Notation "rel_newproph_r" ident(p) :=
+  iStartProof;
+  first
+    [rel_reshape_cont_r ltac:(fun K e' =>
+       eapply (tac_rel_newproph_r K);
+       [reflexivity  (** t = K'[newproph] *)
+       |idtac..])
+    |fail 1 "rel_newproph_r: cannot find 'NewProph'"];
+  [solve_ndisj || fail "rel_newproph_r: cannot prove 'nclose specN ⊆ ?'"
+  |iIntros (p); rel_finish  (** new goal *)].
+
+Tactic Notation "rel_newproph_r" :=
+  let p := fresh in
+  rel_newproph_r p.
+
+Tactic Notation "rel_newproph_l" :=
+  let p := fresh in
+  let vs := fresh in
+  let H := iFresh "H" in
+  rel_newproph_l p vs as H.
+
+(** ResolveProph *)
+(* TODO: implement this lol *)
 
 (** Fork *)
 Lemma tac_rel_fork_l `{relocG Σ} K ℶ E e' eres e t A :
