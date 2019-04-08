@@ -68,7 +68,7 @@ Notation "∀: τ" :=
 Notation "∃: τ" :=
   (TExists τ%ty)
   (at level 100, τ at level 200) : FType_scope.
-Notation "'ref' τ" := (Tref τ%ty) (at level 30, right associativity): FType_scope.
+Notation "'ref' τ" := (Tref τ%ty) (at level 10, τ at next level, right associativity): FType_scope.
 
 (** * Typing judgements *)
 Reserved Notation "Γ ⊢ₜ e : τ" (at level 74, e, τ at next level).

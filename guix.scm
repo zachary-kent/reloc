@@ -32,8 +32,8 @@
 
 (define stdpp-commit "d98ab4e4adf80e34f2b38d95e125fa6d128e09e7")
 (define stdpp-sha256 (base32 "09dsdja35ls25h4dd842wiadhjjilazfl5kywn2vgrav4vzi3s5m")) ;; sha256 hash of the specific std++ checkout
-(define iris-commit "0495f1197f506ee13dacc242ebefda2f880951c9")
-(define iris-sha256 (base32 "185vjm2sir3765g2c0f9d62mpv8dvl34sblqdh71x2g8cz0hiwzc")) ;; sha256 hash of the specific std++ checkout
+(define iris-commit "4760ad334dba7d4b683700e52ecb444b944daeed")
+(define iris-sha256 (base32 "0cxhjzbsl21w0vnl3ks826mba115xyg3bbxznirp42cwh4x24yxn")) ;; sha256 hash of the specific std++ checkout
 (define %source-dir (dirname (current-filename)))
 
 (define-public coq-stdpp
