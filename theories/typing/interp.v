@@ -178,16 +178,16 @@ Section env_typed.
   (** Substitution [vs] is well-typed w.r.t. [Γ] *)
   Definition env_ltyped2 (Γ : gmap string (lrel Σ))
     (vs : gmap string (val*val)) : iProp Σ :=
-    (⌜ ∀ x, is_Some (Γ !! x) ↔ is_Some (vs !! x) ⌝ ∧
-    [∗ map] i ↦ Avv ∈ map_zip Γ vs, lrel_car Avv.1 Avv.2.1 Avv.2.2)%I.
+    ([∗ map] i ↦ A;vv ∈ Γ;vs, lrel_car A vv.1 vv.2)%I.
 
   Notation "⟦ Γ ⟧*" := (env_ltyped2 Γ).
 
+  (* TODO: make a separate instance for big_sepM2 *)
   Global Instance env_ltyped2_ne n :
     Proper (dist n ==> (=) ==> dist n) env_ltyped2.
   Proof.
     intros Γ Γ' HΓ ? vvs ->.
-    rewrite /env_ltyped2.
+    rewrite /env_ltyped2 /big_sepM2.
     f_equiv.
     - f_equiv.
       split;
@@ -206,11 +206,8 @@ Section env_typed.
     Γ !! x = Some A →
     ⟦ Γ ⟧* vs -∗ ∃ v1 v2, ⌜ vs !! x = Some (v1,v2) ⌝ ∧ A v1 v2.
   Proof.
-    iIntros (HΓx) "[Hlookup HΓ]". iDestruct "Hlookup" as %Hlookup.
-    destruct (proj1 (Hlookup x)) as [v Hx]; eauto.
-    iExists v.1,v.2. iSplit; first by destruct v.
-    iApply (big_sepM_lookup _ _ x (A,v) with "HΓ").
-    by rewrite map_lookup_zip_with HΓx /= Hx.
+    intros ?. rewrite /env_ltyped2 big_sepM2_lookup_1 //.
+    iDestruct 1 as ([v1 v2] ?) "H". eauto with iFrame.
   Qed.
 
   Lemma env_ltyped2_insert Γ vs x A v1 v2 :
@@ -218,29 +215,18 @@ Section env_typed.
     ⟦ (binder_insert x A Γ) ⟧* (binder_insert x (v1,v2) vs).
   Proof.
     destruct x as [|x]=> /=; first by auto.
-    iIntros "#HA [Hlookup #HΓ]". iDestruct "Hlookup" as %Hlookup. iSplit.
-    - iPureIntro=> y. rewrite !lookup_insert_is_Some'. naive_solver.
-    - rewrite -map_insert_zip_with. by iApply big_sepM_insert_2.
+    rewrite /env_ltyped2. iIntros "HA HΓ".
+    (* TODO! WTF? *)
+    iApply (big_sepM2_insert_2 with "[HA] [HΓ]"). done. done.
   Qed.
 
   Lemma env_ltyped2_empty :
     ⟦ ∅ ⟧* ∅.
-  Proof.
-    iSplit.
-    - iPureIntro=> y. rewrite !lookup_empty -!not_eq_None_Some. by naive_solver.
-    - by rewrite map_zip_with_empty.
-  Qed.
+  Proof. apply big_sepM2_empty'. Qed.
 
   Lemma env_ltyped2_empty_inv vs :
     ⟦ ∅ ⟧* vs -∗ ⌜vs = ∅⌝.
-  Proof.
-    iIntros "[H1 H2]". iDestruct "H1" as %coo.
-    iPureIntro. apply map_eq=>x. specialize (coo x).
-    revert coo. rewrite !lookup_empty /=.
-    destruct (vs !! x); eauto.
-    intros ?. exfalso. eapply is_Some_None. apply coo.
-    eauto.
-  Qed.
+  Proof. apply big_sepM2_empty_r. Qed.
 
   Global Instance env_ltyped2_persistent Γ vs : Persistent (⟦ Γ ⟧* vs).
   Proof. apply _. Qed.
