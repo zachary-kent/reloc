@@ -44,3 +44,5 @@ theories/examples/stack/refinement.v
 theories/examples/various.v
 theories/examples/lateearlychoice.v
 theories/examples/coinflip.v
+
+theories/examples/par.v
