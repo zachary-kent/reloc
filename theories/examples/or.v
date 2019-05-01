@@ -24,6 +24,11 @@ Definition or : val := λ: "e1" "e2",
   then "e1" #()
   else "e2" #().
 
+Notation "e1 ⊕ e2" := (or (λ: <>, e1)%E (λ: <>, e2)%E)
+                        (at level 60) : expr_scope.
+Notation "e1 ⊕ e2" := (or (λ: <>, e1)%V (λ: <>, e2)%V)
+                        (at level 60) : val_scope.
+
 Section rules.
   Context `{relocG Σ}.
 
@@ -33,10 +38,10 @@ Section rules.
   Definition orN := nroot .@ "orN".
   Ltac close_inv := iNext; (iLeft + iRight); by iFrame.
 
-  Lemma or_refines_l K (v1 v2 : val) t A :
-    ((REL fill K (v1 #()) << t : A)
-     ∧ (REL fill K (v2 #()) << t : A)) -∗
-    REL fill K (or v1 v2) << t : A.
+  Lemma or_refines_l K (e1 e2 : expr) t A :
+    ((REL fill K e1 << t : A)
+     ∧ (REL fill K e2 << t : A)) -∗
+    REL fill K (e1 ⊕ e2)%V << t : A.
   Proof.
     iIntros "H".
     rel_rec_l. repeat rel_pure_l.
@@ -59,10 +64,10 @@ Section rules.
   Qed.
 
   (** Symbolic execution rule for the RHS *)
-  Lemma or_refines_r K (v1 v2 : val) e A :
-    ((REL e << fill K (v1 #()) : A)
-     ∨ (REL e << fill K (v2 #()) : A)) -∗
-    REL e << fill K (or v1 v2) : A.
+  Lemma or_refines_r K (e1 e2 : expr) e A :
+    ((REL e << fill K e1 : A)
+     ∨ (REL e << fill K e2 : A)) -∗
+    REL e << fill K (e1 ⊕ e2)%V : A.
   Proof.
     iIntros "H".
     rel_rec_r. repeat rel_pure_r.
@@ -82,115 +87,205 @@ Section rules.
 
   (** Compatibility rule *)
   Lemma or_compatible e1 e2 e1' e2' A :
-    (REL e1 << e1' : () → A) -∗
-    (REL e2 << e2' : () → A) -∗
-    REL or e1 e2 << or e1' e2' : A.
+    (REL e1 << e1' : A) -∗
+    (REL e2 << e2' : A) -∗
+    REL (e1 ⊕ e2)%V << (e1' ⊕ e2')%V : A.
   Proof.
     iIntros "H1 H2".
-    rel_bind_l e2. rel_bind_r e2'.
-    iApply (refines_bind with "H2").
-    iIntros (v2 v2') "#Hv2".
-    rel_bind_l e1. rel_bind_r e1'.
-    iApply (refines_bind with "H1").
-    iIntros (v1 v1') "#Hv1". iSimpl.
     rel_apply_l or_refines_l. iSplit.
-    - rel_apply_r or_refines_r. iLeft.
-      iApply refines_app.
-      + iApply refines_ret. by iApply "Hv1".
-      + rel_values.
-    - rel_apply_r or_refines_r. iRight.
-      iApply refines_app.
-      + iApply refines_ret. by iApply "Hv2".
-      + rel_values.
+    - rel_apply_r or_refines_r. eauto with iFrame.
+    - rel_apply_r or_refines_r. eauto with iFrame.
   Qed.
 
   (** Choice on the RHS *)
-  Lemma or_choice_1_r (v1 v1' v2 : val) A :
-    (REL v1 << v1' : () → A) -∗
-    REL v1 #() << or v1' v2 : A.
+  Lemma or_choice_1_r (e1 e1' e2 : val) A :
+    (REL e1 << e1' : A) -∗
+    REL e1 << (e1' ⊕ e2)%V : A. (* TODO: in the value scope *)
   Proof.
     iIntros "H".
-    rel_apply_r or_refines_r. iLeft.
-    iApply (refines_app with "H").
-    rel_values.
+    rel_apply_r or_refines_r. iLeft. eauto.
   Qed.
 
   (** Idempotence *)
-  Lemma or_idemp_r (v v' : val) A :
-    (REL v << v' : () → A) -∗
-    REL v #() << or v' v' : A.
+  Lemma or_idemp_r (e e' : expr) A :
+    (REL e << e' : A) -∗
+    REL e << (e' ⊕ e')%V : A.
   Proof.
     iIntros "H".
-    rel_apply_r or_refines_r. iLeft.
-    iApply (refines_app with "H").
-    rel_values.
+    rel_apply_r or_refines_r. by iLeft.
   Qed.
 
-  Lemma or_idemp_l (v v' : val) A :
-    (REL v << v' : () → A) -∗
-    REL or v v << v' #() : A.
+  Lemma or_idemp_l (e e' : expr) A :
+    (REL e << e' : A) -∗
+    REL (e ⊕ e)%V << e' : A.
   Proof.
     iIntros "H".
     rel_apply_l or_refines_l.
-    iSplit; iApply (refines_app with "H"); rel_values.
+    iSplit; eauto.
   Qed.
 
   (** Commutativity *)
-  Lemma or_comm (v1 v2 v1' v2' : val) A :
-    (REL v1 << v1' : () → A) -∗
-    (REL v2 << v2' : () → A) -∗
-    REL or v1 v2 << or v2' v1' : A.
+  Lemma or_comm e1 e2 e1' e2' A :
+    (REL e1 << e1' : A) -∗
+    (REL e2 << e2' : A) -∗
+    REL (e1 ⊕ e2)%V << (e2' ⊕ e1')%V : A.
   Proof.
     iIntros "H1 H2".
     rel_apply_l or_refines_l. iSplit.
-    - rel_apply_r or_refines_r. iRight.
-      iApply (refines_app with "H1").
-      rel_values.
-    - rel_apply_r or_refines_r. iLeft.
-      iApply (refines_app with "H2").
-      rel_values.
+    - rel_apply_r or_refines_r. by iRight.
+    - rel_apply_r or_refines_r. by iLeft.
   Qed.
 
   (** Bottom is the unit *)
-  Lemma or_bot_l (v v' : val) A :
-    (REL v << v' : () → A) -∗
-    REL or v bot << v' #() : A.
+  Lemma or_bot_l e e' A :
+    (REL e << e' : A) -∗
+    REL (e ⊕ bot #())%V << e' : A.
   Proof.
     iIntros "H".
-    rel_apply_l or_refines_l. iSplit.
-    - iApply (refines_app with "H"). rel_values.
-    - rel_apply_l bot_l.
+    rel_apply_l or_refines_l. iSplit; first done.
+    rel_apply_l bot_l.
   Qed.
 
-  Lemma or_bot_r (v v' : val) A :
-    (REL v << v' : () → A) -∗
-    REL v #() << or v' bot : A.
+  Lemma or_bot_r e e' A :
+    (REL e << e' : A) -∗
+    REL e << (e' ⊕ bot #())%V : A.
   Proof.
     iIntros "H".
-    rel_apply_r or_refines_r.
-    iLeft. iApply (refines_app with "H"). rel_values.
+    rel_apply_r or_refines_r. by iLeft.
   Qed.
 
   (** Associativity *)
-  Lemma or_assoc_l (v1 v1' v2 v2' v3 v3' : val) A :
-    (REL v1 << v1' : () → A) -∗
-    (REL v2 << v2' : () → A) -∗
-    (REL v3 << v3' : () → A) -∗
-    REL or v1 (λ: <>, or v2 v3) << or (λ: <>, or v1' v2') v3' : A.
+  Lemma or_assoc_l e1 e2 e3 e1' e2' e3' A :
+    (REL e1 << e1' : A) -∗
+    (REL e2 << e2' : A) -∗
+    (REL e3 << e3' : A) -∗
+    REL (e1 ⊕ (e2 ⊕ e3)%V)%V << ((e1' ⊕ e2')%V ⊕ e3')%V : A.
   Proof.
     iIntros "H1 H2 H3".
-    rel_pure_l. (* TODO: should we write a value lambda instead? *)
-    rel_pure_r.
-    rel_apply_l or_refines_l.
-    iSplit; last (rel_pure_l; rel_apply_l or_refines_l; iSplit).
-    - rel_apply_r or_refines_r. iLeft. rel_pure_r.
-      rel_apply_r or_refines_r. iLeft.
-      iApply (refines_app with "H1"). rel_values.
-    - rel_apply_r or_refines_r. iLeft. rel_pure_r.
-      rel_apply_r or_refines_r. iRight.
-      iApply (refines_app with "H2"). rel_values.
-    - rel_apply_r or_refines_r. iRight.
-      iApply (refines_app with "H3"). rel_values.
+    repeat (rel_apply_l or_refines_l; iSplit).
+    - rel_apply_r or_refines_r. iLeft.
+      rel_apply_r or_refines_r. by iLeft.
+    - rel_apply_r or_refines_r. iLeft.
+      rel_apply_r or_refines_r. by iRight.
+    - rel_apply_r or_refines_r. by iRight.
+  Qed.
+
+  (** Interaction between OR and sequencing. *)
+  (** Standard in algebraic models of programming. *)
+  Lemma or_seq_1 (f g h f' g' h' : expr) A :
+    (REL f << f' : A) -∗
+    (REL g << g' : A) -∗
+    (REL h << h' : A) -∗
+    REL ((f ⊕ g)%V;; h)
+      << ((f';; h') ⊕ (g';; h'))%V : A.
+  Proof.
+    iIntros "Hf Hg Hh".
+    rel_apply_l or_refines_l; iSplit; simpl.
+    - rel_apply_r or_refines_r.
+      iLeft. iApply (refines_seq with "Hf Hh").
+    - rel_apply_r or_refines_r.
+      iRight. iApply (refines_seq with "Hg Hh").
+  Qed.
+  Lemma or_seq_2 (f g h f' g' h' : expr) A :
+    (REL f << f' : A) -∗
+    (REL g << g' : A) -∗
+    (REL h << h' : A) -∗
+    REL ((f;; h) ⊕ (g;; h))%V
+      << ((f' ⊕ g')%V;; h') : A.
+  Proof.
+    iIntros "Hf Hg Hh".
+    rel_apply_l or_refines_l; iSplit; simpl.
+    - rel_apply_r or_refines_r.
+      iLeft. iApply (refines_seq with "Hf Hh").
+    - rel_apply_r or_refines_r.
+      iRight. iApply (refines_seq with "Hg Hh").
+  Qed.
+
+  (** This is less standard: it holds in Kleene Algebras, but usually
+  this is not required in process algebras, because the terms are
+  _not_ bisimular *)
+  Lemma seq_or_1 (f g h f' g' h' : expr) A :
+    (REL f << f' : A) -∗
+    (REL g << g' : A) -∗
+    (REL h << h' : A) -∗
+    REL ((f;; g) ⊕ (f;; h))%V
+      << (f';; (g' ⊕ h')%V) : A.
+  Proof.
+    iIntros "Hf Hg Hh".
+    rel_apply_l or_refines_l. iSplit.
+    - iApply (refines_seq with "Hf").
+      rel_apply_r or_refines_r. by iLeft.
+    - iApply (refines_seq with "Hf").
+      rel_apply_r or_refines_r. by iRight.
+  Qed.
+
+
+  (** To prove the refinement in the other direction, we instrument
+  our program with prophecies and resolve them when we actually make
+  the choice on the LHS *)
+  Definition to_choice (vs : list val) : bool :=
+    match vs with
+    | LitV (LitInt 0)::_ => true
+    | _ => false
+    end.
+
+  Lemma seq_or_2' (f g h f' g' h' : expr) A :
+    is_closed_expr [] f →
+    is_closed_expr [] g →
+    is_closed_expr [] h →
+    (REL f << f' : A) -∗
+    (REL g << g' : A) -∗
+    (REL h << h' : A) -∗
+    REL (let: "p" := NewProph in
+         f;;
+         (((resolve_proph: "p" to: #0);; g) ⊕
+          ((resolve_proph: "p" to: #1);; h))%E) << (* Here we *have to* use the expr scope, otherwise "p" won't be substituted *)
+      ((f';; g') ⊕ (f';; h'))%V : A.
+  Proof.
+    iIntros (???) "Hf Hg Hh".
+    rel_newproph_l vs p as "Hp". repeat rel_pure_l.
+    (rewrite !(subst_is_closed []) //; try by set_solver); [].
+    rel_apply_r or_refines_r.
+    destruct (to_choice vs) as [|] eqn:Hchoice.
+    - iLeft. iApply (refines_seq with "Hf").
+      repeat rel_pure_l.
+      rel_apply_l or_refines_l. iSplit.
+      + rel_apply_l refines_resolveproph_l. iModIntro. iExists _; iFrame.
+        iNext. iIntros (vs' ->) "Hp". repeat rel_pure_l. done.
+      + rel_apply_l refines_resolveproph_l. iModIntro. iExists _; iFrame.
+        iNext. iIntros (vs' ->) "Hp".
+        simpl in Hchoice. inversion Hchoice.
+    - iRight. iApply (refines_seq with "Hf").
+      repeat rel_pure_l.
+      rel_apply_l or_refines_l. iSplit; last first.
+      + rel_apply_l refines_resolveproph_l. iModIntro. iExists _; iFrame.
+        iNext. iIntros (vs' ->) "Hp". repeat rel_pure_l. done.
+      + rel_apply_l refines_resolveproph_l. iModIntro. iExists _; iFrame.
+        iNext. iIntros (vs' ->) "Hp".
+        simpl in Hchoice. inversion Hchoice.
+  Qed.
+
+  (** We then prove that the non-instrumented program refines the original one *)
+  Lemma seq_or_2_instrument (f g h f' g' h' : expr) A :
+    is_closed_expr [] f' →
+    is_closed_expr [] g' →
+    is_closed_expr [] h' →
+    (REL f << f' : A) -∗
+    (REL g << g' : A) -∗
+    (REL h << h' : A) -∗
+    REL (f;; (g ⊕ h)%V) <<
+    (let: "p" := NewProph in
+         f';;
+         (((resolve_proph: "p" to: #0);; g') ⊕
+          ((resolve_proph: "p" to: #1);; h'))%E) : A.
+  Proof.
+    iIntros (???) "Hf Hg Hh".
+    rel_newproph_r p. repeat rel_pure_r.
+    (rewrite !(subst_is_closed []) //; try by set_solver); [].
+    iApply (refines_seq with "Hf").
+    repeat rel_pure_r. iApply (or_compatible with "[Hg] [Hh]").
+    - rel_resolveproph_r. by repeat rel_pure_r.
+    - rel_resolveproph_r. by repeat rel_pure_r.
   Qed.
 
 End rules.
