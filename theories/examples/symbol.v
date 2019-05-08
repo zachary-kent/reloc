@@ -107,10 +107,10 @@ Section rules.
                            ∗ tbl1 ↦{1/2} ls ∗ tbl2 ↦ₛ{1/2} ls
                            ∗ lrel_list lrel_int ls ls)%I.
 
-  Definition lok_inv (size1 size2 tbl1 tbl2 l : loc) : iProp Σ :=
+  Definition lok_inv (size1 size2 tbl1 tbl2 : loc) (l : val) : iProp Σ :=
     (∃ (n : nat) (ls : val), size1 ↦{1/2} #n ∗ size2 ↦ₛ{1/2} #n
                            ∗ tbl1 ↦{1/2} ls ∗ tbl2 ↦ₛ{1/2} ls
-                           ∗ l ↦ₛ #false)%I.
+                           ∗ is_lock_r l Unlocked_r)%I.
 End rules.
 
 Section proof.

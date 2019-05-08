@@ -73,27 +73,27 @@ Section refinement.
   Opaque ticket issuedTickets.
 
   (** * Invariants and abstracts for them *)
-  Definition lockInv (lo ln : loc) (γ : gname) (l' : loc) : iProp Σ :=
-    (∃ (o n : nat) (b : bool), lo ↦ #o ∗ ln ↦ #n
-   ∗ issuedTickets γ n ∗ l' ↦ₛ #b
-   ∗ if b then ticket γ o else True)%I.
+  Definition lockInv (lo ln : loc) (γ : gname) (l' : val) : iProp Σ :=
+    (∃ (o n : nat) (st : lock_status_r), lo ↦ #o ∗ ln ↦ #n
+   ∗ issuedTickets γ n ∗ is_lock_r l' st
+   ∗ match st with Unlocked_r => True | Locked_r => ticket γ o end)%I.
 
-  Instance ifticket_timeless (b : bool) γ o : Timeless (if b then ticket γ o else True%I).
-  Proof. destruct b; apply _. Qed.
+  Instance ifticket_timeless st γ o :
+    Timeless (match st with Unlocked_r => True | Locked_r => ticket γ o end)%I.
+  Proof. destruct st; apply _. Qed.
   Instance lockInv_timeless lo ln γ l' : Timeless (lockInv lo ln γ l').
   Proof. apply _. Qed.
 
   Definition N := relocN.@"locked".
 
   Definition lockInt : lrel Σ := LRel (λ v1 v2,
-    ∃ (lo ln : loc) (γ : gname) (l' : loc),
-        ⌜v1 = (#lo, #ln)%V⌝ ∗ ⌜v2 = #l'⌝
-      ∗ inv N (lockInv lo ln γ l'))%I.
+    ∃ (lo ln : loc) (γ : gname),
+     ⌜v1 = (#lo, #ln)%V⌝ ∗ inv N (lockInv lo ln γ v2))%I.
 
   (** * Refinement proofs *)
 
   Local Ltac openI :=
-    iInv N as (o n b) ">(Hlo & Hln & Hissued & Hl' & Hbticket)" "Hcl".
+    iInv N as (o n st) ">(Hlo & Hln & Hissued & Hl' & Hbticket)" "Hcl".
   Local Ltac closeI := iMod ("Hcl" with "[-]") as "_";
     first by (iNext; iExists _,_,_; iFrame).
 
@@ -116,15 +116,15 @@ Section refinement.
     { iNext. iExists 0%nat,0%nat,_. by iFrame. }
     rel_pure_l.
     rel_values.
-    iExists _,_,_,_. iFrame "Hinv". eauto.
+    iExists _,_,_. iFrame "Hinv". eauto.
   Qed.
 
   (* Acquiring a lock *)
   (* helper lemma *)
-  Lemma wait_loop_refinement (lo ln : loc) γ (l' : loc) (m : nat) :
-    inv N (lockInv lo ln γ l') -∗
+  Lemma wait_loop_refinement (lo ln : loc) γ lk (m : nat) :
+    inv N (lockInv lo ln γ lk) -∗
     ticket γ m -∗
-    REL wait_loop #m (#lo, #ln)%V << reloc.lib.lock.acquire #l' : ().
+    REL wait_loop #m (#lo, #ln)%V << reloc.lib.lock.acquire lk : ().
   Proof.
     iIntros "#Hinv Hticket".
     rel_rec_l.
@@ -136,7 +136,7 @@ Section refinement.
     iIntros "Hlo". repeat rel_pure_l.
     case_decide; simplify_eq/=; rel_if_l.
     (* Whether the ticket is called out *)
-    - destruct b.
+    - destruct st; last first.
       { iDestruct (ticket_nondup with "Hticket Hbticket") as %[]. }
       rel_apply_r (refines_acquire_r with "Hl'").
       iIntros "Hl'".
@@ -207,27 +207,26 @@ Section refinement.
     REL acquire << reloc.lib.lock.acquire : lockInt → ().
   Proof.
     iApply refines_arrow_val; [done|done|].
-    iAlways. iIntros (? ?) "/= #Hl".
-    iDestruct "Hl" as (lo ln γ l') "(% & % & Hin)". simplify_eq/=.
+    iAlways. iIntros (? lk) "/= #Hl".
+    iDestruct "Hl" as (lo ln γ) "(% & Hin)". simplify_eq/=.
     rel_apply_l (acquire_l_logatomic
-                   (fun o => ∃ (b : bool),
-                             l' ↦ₛ #b ∗
-                             if b then ticket γ o else True)%I
+                   (fun o => ∃ st, is_lock_r lk st ∗
+                             if st then True else ticket γ o)%I
                    True%I γ); first done.
     iAlways.
     openI.
     iModIntro. iExists _,_; iFrame.
     iSplitL "Hbticket Hl'".
     { iExists _. iFrame. }
-    clear b o n.
+    clear st o n.
     iSplit.
     - iIntros (o). iDestruct 1 as (n) "(Hlo & Hln & Hissued & Hrest)".
       iDestruct "Hrest" as (b) "[Hl' Ht]".
       iApply ("Hcl" with "[-]").
       iNext. iExists _,_,_. by iFrame.
     - iIntros (o). iDestruct 1 as (n) "(Hlo & Hln & Hissued & Ht & Hrest)".
-      iIntros "_". iDestruct "Hrest" as (b) "[Hl' Ht']".
-      destruct b.
+      iIntros "_". iDestruct "Hrest" as (st) "[Hl' Ht']".
+      destruct st; last first.
       { iDestruct (ticket_nondup with "Ht Ht'") as %[]. }
       rel_apply_r (refines_acquire_r with "Hl'").
       iIntros "Hl'".
@@ -241,7 +240,7 @@ Section refinement.
   Proof.
     iApply refines_arrow_val; [done|done|].
     iAlways. iIntros (? ?) "/= #Hl".
-    iDestruct "Hl" as (lo ln γ l') "(% & % & Hin)". simplify_eq.
+    iDestruct "Hl" as (lo ln γ) "(% & Hin)". simplify_eq.
     rel_rec_l. repeat rel_proj_l.
     rel_apply_l (FG_increment_atomic_l (issuedTickets γ)%I True%I); first done.
     iAlways.
@@ -306,13 +305,13 @@ Section refinement.
     REL release << reloc.lib.lock.release : lockInt → ().
   Proof.
     iApply refines_arrow_val; [done|done|].
-    iAlways. iIntros (? ?) "/= #Hl".
-    iDestruct "Hl" as (lo ln γ l') "(% & % & Hin)". simplify_eq.
+    iAlways. iIntros (? lk) "/= #Hl".
+    iDestruct "Hl" as (lo ln γ) "(% & Hin)". simplify_eq.
     rel_rec_l. rel_proj_l.
     pose (R := fun (o : nat) =>
-                 (∃ (n : nat) (b : bool), ln ↦ #n
-                 ∗ issuedTickets γ n ∗ l' ↦ₛ #b
-                 ∗ if b then ticket γ o else True)%I).
+                 (∃ (n : nat) st, ln ↦ #n
+                 ∗ issuedTickets γ n ∗ is_lock_r lk st ∗
+                 if st then True else ticket γ o)%I).
     rel_apply_l (wkincr_atomic_l R True%I); first done.
     iAlways.
     openI.

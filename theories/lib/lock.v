@@ -2,6 +2,7 @@ From reloc Require Export reloc.
 From iris.algebra Require Import excl.
 Set Default Proof Using "Type".
 
+
 Definition newlock : val := λ: <>, ref #false.
 Definition acquire : val := rec: "acquire" "x" :=
   if: CAS "x" #false #true
@@ -109,40 +110,50 @@ Section lock_rules_r.
   Context `{relocG Σ}.
   Variable (E : coPset).
 
+  Inductive lock_status_r := Unlocked_r | Locked_r.
+  Global Instance lock_status_r_inhab : Inhabited lock_status_r :=
+    populate Unlocked_r.
+
+  Definition is_lock_r v (st : lock_status_r) :=
+    (∃ lk : loc, ⌜v = #lk⌝ ∗ lk ↦ₛ #(if st then false else true))%I.
+
   Lemma refines_newlock_r K t A
     (Hcl : nclose specN ⊆ E) :
-    (∀ l : loc, l ↦ₛ #false -∗ REL t << fill K (of_val #l) @ E : A) -∗
+    (∀ v, is_lock_r v Unlocked_r -∗ REL t << fill K (of_val v) @ E : A) -∗
     REL t << fill K (newlock #()) @ E : A.
   Proof.
     iIntros "Hlog".
     rel_rec_r.
     rel_alloc_r l as "Hl".
-    iApply ("Hlog" with "Hl").
+    iApply ("Hlog" with "[Hl]").
+    iExists _. by iFrame.
   Qed.
 
-  Lemma refines_acquire_r K l t A
+  Lemma refines_acquire_r K v t A
     (Hcl : nclose specN ⊆ E) :
-    l ↦ₛ #false -∗
-    (l ↦ₛ #true -∗ REL t << fill K (of_val #()) @ E : A) -∗
-    REL t << fill K (acquire #l) @ E : A.
+    is_lock_r v Unlocked_r -∗
+    (is_lock_r v Locked_r -∗ REL t << fill K (of_val #()) @ E : A) -∗
+    REL t << fill K (acquire v) @ E : A.
   Proof.
     iIntros "Hl Hlog".
+    iDestruct "Hl" as (lk ->) "Hl".
     rel_rec_r.
-    rel_cas_suc_r. simpl.
+    rel_cas_suc_r.
     rel_if_r.
-    by iApply "Hlog".
+    iApply "Hlog". iExists _. by iFrame.
   Qed.
 
-  Lemma refines_release_r K l t A (b : bool)
+  Lemma refines_release_r K v t A st
     (Hcl : nclose specN ⊆ E) :
-    l ↦ₛ #b -∗
-    (l ↦ₛ #false -∗ REL t << fill K (of_val #()) @ E : A) -∗
-    REL t << fill K (release #l) @ E : A.
+    is_lock_r v st -∗
+    (is_lock_r v Unlocked_r -∗ REL t << fill K (of_val #()) @ E : A) -∗
+    REL t << fill K (release v) @ E : A.
   Proof.
     iIntros "Hl Hlog".
+    iDestruct "Hl" as (lk ->) "Hl".
     rel_rec_r.
     rel_store_r.
-    by iApply "Hlog".
+    iApply "Hlog". iExists _. by iFrame.
   Qed.
 
 End lock_rules_r.

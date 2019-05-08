@@ -131,7 +131,7 @@ Section proofs.
     rel_apply_r refines_newlock_r. iIntros (lk) "Hlk".
     do 2 rel_pure_r.
     iMod (inv_alloc coinN _
-           (∃ (b : bool), lk ↦ₛ #false
+           (∃ (b : bool), is_lock_r lk Unlocked_r
                         ∗ ce ↦ #b
                         ∗ (cl ↦ₛ NONEV ∨ cl ↦ₛ SOMEV #b))%I
             with "[-]") as "#Hinv".
@@ -252,7 +252,7 @@ Section proofs.
     rel_apply_r refines_newlock_r. iIntros (lk) "Hlk".
 
     iMod (inv_alloc coinN _
-           (lk ↦ₛ #false
+           (is_lock_r lk Unlocked_r
           ∗ (c' ↦ₛ NONEV ∗ c ↦ NONEV
             ∨ ∃ (b : bool), c' ↦ₛ SOMEV #b ∗ c ↦ SOMEV #b))%I
             with "[-]") as "#Hinv".

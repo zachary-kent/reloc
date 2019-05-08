@@ -32,12 +32,12 @@ Definition FG_counter : val := λ: <>,
 Section CG_Counter.
   Context `{relocG Σ}.
 
-  Lemma CG_increment_r K E t A (x l : loc) (n : nat) :
+  Lemma CG_increment_r K E t A (x : loc) (lk : val) (n : nat) :
     nclose specN ⊆ E →
-    (x ↦ₛ # n -∗ l ↦ₛ #false -∗
-    (x ↦ₛ # (n + 1) -∗ l ↦ₛ #false -∗
+    (x ↦ₛ # n -∗ is_lock_r lk Unlocked_r -∗
+    (x ↦ₛ # (n + 1) -∗ is_lock_r lk Unlocked_r -∗
       (REL t << fill K (of_val #n) @ E : A)) -∗
-    REL t << fill K (CG_increment #x #l) @ E : A)%I.
+    REL t << fill K (CG_increment #x lk) @ E : A)%I.
   Proof.
     iIntros (?) "Hx Hl Hlog".
     rel_rec_r.
@@ -140,17 +140,17 @@ Section CG_Counter.
 
   Definition counterN : namespace := nroot .@ "counter".
 
-  Definition counter_inv l cnt cnt' : iProp Σ :=
-    (∃ n : nat, l ↦ₛ #false ∗ cnt ↦ #n ∗ cnt' ↦ₛ #n)%I.
+  Definition counter_inv lk cnt cnt' : iProp Σ :=
+    (∃ n : nat, is_lock_r lk Unlocked_r ∗ cnt ↦ #n ∗ cnt' ↦ₛ #n)%I.
 
-  Lemma FG_CG_increment_refinement l cnt cnt' :
-    inv counterN (counter_inv l cnt cnt') -∗
-    REL FG_increment #cnt << CG_increment #cnt' #l : lrel_int.
+  Lemma FG_CG_increment_refinement lk cnt cnt' :
+    inv counterN (counter_inv lk cnt cnt') -∗
+    REL FG_increment #cnt << CG_increment #cnt' lk : lrel_int.
   Proof.
     iIntros "#Hinv".
     rel_apply_l
       (FG_increment_atomic_l
-              (fun n => (l ↦ₛ #false) ∗ cnt' ↦ₛ #n)%I
+              (fun n => is_lock_r lk Unlocked_r ∗ cnt' ↦ₛ #n)%I
               True%I); first done.
     iAlways. iInv counterN as ">Hcnt" "Hcl". iModIntro.
     iDestruct "Hcnt" as (n) "(Hl & Hcnt & Hcnt')".
@@ -168,14 +168,14 @@ Section CG_Counter.
       rel_values.
   Qed.
 
-  Lemma counter_read_refinement l cnt cnt' :
-    inv counterN (counter_inv l cnt cnt') -∗
+  Lemma counter_read_refinement lk cnt cnt' :
+    inv counterN (counter_inv lk cnt cnt') -∗
     REL counter_read #cnt << counter_read #cnt' : lrel_int.
   Proof.
     iIntros "#Hinv".
     rel_apply_l
       (counter_read_atomic_l
-         (fun n => (l ↦ₛ #false) ∗ cnt' ↦ₛ #n)%I
+         (fun n => is_lock_r lk Unlocked_r ∗ cnt' ↦ₛ #n)%I
          True%I); first done.
     iAlways. iInv counterN as (n) "[>Hl [>Hcnt >Hcnt']]" "Hclose".
     iModIntro.

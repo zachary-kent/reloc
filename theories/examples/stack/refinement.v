@@ -72,7 +72,7 @@ Section proof.
   Definition sinv (A : lrel Σ) stk stk' l' : iProp Σ :=
     (∃ (istk : loc) v,
        stk' ↦ₛ v
-     ∗ l'   ↦ₛ #false
+     ∗ is_lock_r l' Unlocked_r
      ∗ stk  ↦ #istk
      ∗ stack_link A istk v)%I.
 
@@ -86,7 +86,7 @@ Section proof.
     A v v' -∗
     REL (FG_push #st v)
        <<
-        (CG_locked_push (#st', #l)%V v') : ().
+        (CG_locked_push (#st', l)%V v') : ().
   Proof.
     iIntros (?) "#Hinv #Hvv".
     rel_rec_l. iLöb as "IH".
@@ -128,7 +128,7 @@ Section proof.
     inv N (sinv A st st' l) -∗
     REL FG_pop #st
       <<
-        CG_locked_pop (#st', #l)%V : () + A.
+        CG_locked_pop (#st', l)%V : () + A.
   Proof.
     iIntros (?) "#Hinv".
     iLöb as "IH". rel_rec_l.
@@ -184,7 +184,7 @@ Section proof.
   Qed.
 
   Definition stackInt A : lrel Σ := LRel (λ v1 v2,
-    ∃ (l stk stk' : loc), ⌜(v2) = (#stk', #l)%V⌝ ∗ ⌜v1 = #stk⌝
+    ∃ (l : val) (stk stk' : loc), ⌜v2 = (#stk', l)%V⌝ ∗ ⌜v1 = #stk⌝
       ∗ inv (stackN .@ (stk,stk')) (sinv A stk stk' l))%I.
 
   Lemma stack_refinement :
