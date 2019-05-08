@@ -199,6 +199,15 @@ Tactic Notation "rel_pure_r" open_constr(ef) :=
 
 Tactic Notation "rel_pure_r" := rel_pure_r _.
 
+(* TODO: do this in one go, without [repeat]. *)
+Ltac rel_pures_l :=
+  iStartProof;
+  repeat (rel_pure_l _; []). (* The `;[]` makes sure that no side-condition
+                             magically spawns. *)
+Ltac rel_pures_r :=
+  iStartProof;
+  repeat (rel_pure_r _; []).
+
 (** Load *)
 
 Lemma tac_rel_load_l_simp `{relocG Σ} K ℶ1 ℶ2 i1 (l : loc) q v e t eres A :
@@ -243,7 +252,7 @@ Tactic Notation "rel_load_l" :=
   let solve_mapsto _ :=
     let l := match goal with |- _ = Some (_, (?l ↦{_} _)%I) => l end in
     iAssumptionCore || fail "rel_load_l: cannot find" l "↦ ?" in
-  iStartProof;
+  rel_pures_l;
   first
     [rel_reshape_cont_l ltac:(fun K e' =>
        eapply (tac_rel_load_l_simp K); first reflexivity)
@@ -265,7 +274,7 @@ Tactic Notation "rel_load_r" :=
   let solve_mapsto _ :=
     let l := match goal with |- _ = Some (_, (?l ↦ₛ{_} _)%I) => l end in
     iAssumptionCore || fail "rel_load_r: cannot find" l "↦ₛ ?" in
-  iStartProof;
+  rel_pures_r;
   first
     [rel_reshape_cont_r ltac:(fun K e' =>
        eapply (tac_rel_load_r K); first reflexivity)
@@ -322,7 +331,7 @@ Tactic Notation "rel_store_l" :=
   let solve_mapsto _ :=
     let l := match goal with |- _ = Some (_, (?l ↦ _)%I) => l end in
     iAssumptionCore || fail "rel_store_l: cannot find" l "↦ₛ ?" in
-  iStartProof;
+  rel_pures_l;
   first
     [rel_reshape_cont_l ltac:(fun K e' =>
        eapply (tac_rel_store_l_simpl K);
@@ -343,7 +352,7 @@ Tactic Notation "rel_store_r" :=
   let solve_mapsto _ :=
     let l := match goal with |- _ = Some (_, (?l ↦ₛ _)%I) => l end in
     iAssumptionCore || fail "rel_store_r: cannot find" l "↦ₛ ?" in
-  iStartProof;
+  rel_pures_r;
   first
     [rel_reshape_cont_r ltac:(fun K e' =>
        eapply (tac_rel_store_r K);
@@ -375,7 +384,7 @@ Proof.
 Qed.
 
 Tactic Notation "rel_alloc_l" ident(l) "as" constr(H) :=
-  iStartProof;
+  rel_pures_l;
   first
     [rel_reshape_cont_l ltac:(fun K e' =>
        eapply (tac_rel_alloc_l_simpl K);
@@ -398,7 +407,7 @@ Proof.
 Qed.
 
 Tactic Notation "rel_alloc_r" ident(l) "as" constr(H) :=
-  iStartProof;
+  rel_pures_r;
   first
     [rel_reshape_cont_r ltac:(fun K e' =>
        eapply (tac_rel_alloc_r K);
@@ -467,7 +476,7 @@ Tactic Notation "rel_cas_fail_r" :=
   let solve_mapsto _ :=
     let l := match goal with |- _ = Some (_, (?l ↦ₛ _)%I) => l end in
     iAssumptionCore || fail "rel_cas_fail_r: cannot find" l "↦ₛ ?" in
-  iStartProof;
+  rel_pures_r;
   first
     [rel_reshape_cont_r ltac:(fun K e' =>
        eapply (tac_rel_cas_fail_r K);
@@ -488,7 +497,7 @@ Tactic Notation "rel_cas_suc_r" :=
   let solve_mapsto _ :=
     let l := match goal with |- _ = Some (_, (?l ↦ₛ _)%I) => l end in
     iAssumptionCore || fail "rel_cas_suc_r: cannot find" l "↦ₛ ?" in
-  iStartProof;
+  rel_pures_r;
   first
     [rel_reshape_cont_r ltac:(fun K e' =>
        eapply (tac_rel_cas_suc_r K);
@@ -524,7 +533,7 @@ Proof.
 Qed.
 
 Tactic Notation "rel_newproph_l" ident(p) ident(vs) "as" constr(H) :=
-  iStartProof;
+  rel_pures_l;
   first
     [rel_reshape_cont_l ltac:(fun K e' =>
        eapply (tac_rel_newproph_l_simpl K);
@@ -545,7 +554,7 @@ Proof.
 Qed.
 
 Tactic Notation "rel_newproph_r" ident(p) :=
-  iStartProof;
+  rel_pures_r;
   first
     [rel_reshape_cont_r ltac:(fun K e' =>
        eapply (tac_rel_newproph_r K);
@@ -578,7 +587,7 @@ Proof.
 Qed.
 
 Tactic Notation "rel_resolveproph_r" :=
-  iStartProof;
+  rel_pures_r;
   first
     [rel_reshape_cont_r ltac:(fun K e' =>
        eapply (tac_rel_resolveproph_r K);
@@ -602,7 +611,7 @@ Proof.
 Qed.
 
 Tactic Notation "rel_fork_l" :=
-  iStartProof;
+  rel_pures_l;
   first
     [rel_reshape_cont_l ltac:(fun K e' =>
        eapply (tac_rel_fork_l K); first reflexivity)
@@ -625,7 +634,7 @@ Proof.
 Qed.
 
 Tactic Notation "rel_fork_r" ident(i) "as" constr(H) :=
-  iStartProof;
+  rel_pures_r;
   first
     [rel_reshape_cont_r ltac:(fun K e' =>
        eapply (tac_rel_fork_r K); first reflexivity)
