@@ -72,7 +72,7 @@ Section proof.
   Definition sinv (A : lrel Σ) stk stk' l' : iProp Σ :=
     (∃ (istk : loc) v,
        stk' ↦ₛ v
-     ∗ is_lock_r l' Unlocked_r
+     ∗ is_locked_r l' false
      ∗ stk  ↦ #istk
      ∗ stack_link A istk v)%I.
 

@@ -34,8 +34,8 @@ Section CG_Counter.
 
   Lemma CG_increment_r K E t A (x : loc) (lk : val) (n : nat) :
     nclose specN ⊆ E →
-    (x ↦ₛ # n -∗ is_lock_r lk Unlocked_r -∗
-    (x ↦ₛ # (n + 1) -∗ is_lock_r lk Unlocked_r -∗
+    (x ↦ₛ # n -∗ is_locked_r lk false -∗
+    (x ↦ₛ # (n + 1) -∗ is_locked_r lk false -∗
       (REL t << fill K (of_val #n) @ E : A)) -∗
     REL t << fill K (CG_increment #x lk) @ E : A)%I.
   Proof.
@@ -141,7 +141,7 @@ Section CG_Counter.
   Definition counterN : namespace := nroot .@ "counter".
 
   Definition counter_inv lk cnt cnt' : iProp Σ :=
-    (∃ n : nat, is_lock_r lk Unlocked_r ∗ cnt ↦ #n ∗ cnt' ↦ₛ #n)%I.
+    (∃ n : nat, is_locked_r lk false ∗ cnt ↦ #n ∗ cnt' ↦ₛ #n)%I.
 
   Lemma FG_CG_increment_refinement lk cnt cnt' :
     inv counterN (counter_inv lk cnt cnt') -∗
@@ -150,7 +150,7 @@ Section CG_Counter.
     iIntros "#Hinv".
     rel_apply_l
       (FG_increment_atomic_l
-              (fun n => is_lock_r lk Unlocked_r ∗ cnt' ↦ₛ #n)%I
+              (fun n => is_locked_r lk false ∗ cnt' ↦ₛ #n)%I
               True%I); first done.
     iAlways. iInv counterN as ">Hcnt" "Hcl". iModIntro.
     iDestruct "Hcnt" as (n) "(Hl & Hcnt & Hcnt')".
@@ -175,7 +175,7 @@ Section CG_Counter.
     iIntros "#Hinv".
     rel_apply_l
       (counter_read_atomic_l
-         (fun n => is_lock_r lk Unlocked_r ∗ cnt' ↦ₛ #n)%I
+         (fun n => is_locked_r lk false ∗ cnt' ↦ₛ #n)%I
          True%I); first done.
     iAlways. iInv counterN as (n) "[>Hl [>Hcnt >Hcnt']]" "Hclose".
     iModIntro.

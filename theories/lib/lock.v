@@ -110,16 +110,12 @@ Section lock_rules_r.
   Context `{relocG Σ}.
   Variable (E : coPset).
 
-  Inductive lock_status_r := Unlocked_r | Locked_r.
-  Global Instance lock_status_r_inhab : Inhabited lock_status_r :=
-    populate Unlocked_r.
-
-  Definition is_lock_r v (st : lock_status_r) :=
-    (∃ lk : loc, ⌜v = #lk⌝ ∗ lk ↦ₛ #(if st then false else true))%I.
+  Definition is_locked_r v (b : bool) :=
+    (∃ lk : loc, ⌜v = #lk⌝ ∗ lk ↦ₛ #b)%I.
 
   Lemma refines_newlock_r K t A
     (Hcl : nclose specN ⊆ E) :
-    (∀ v, is_lock_r v Unlocked_r -∗ REL t << fill K (of_val v) @ E : A) -∗
+    (∀ v, is_locked_r v false -∗ REL t << fill K (of_val v) @ E : A) -∗
     REL t << fill K (newlock #()) @ E : A.
   Proof.
     iIntros "Hlog".
@@ -131,8 +127,8 @@ Section lock_rules_r.
 
   Lemma refines_acquire_r K v t A
     (Hcl : nclose specN ⊆ E) :
-    is_lock_r v Unlocked_r -∗
-    (is_lock_r v Locked_r -∗ REL t << fill K (of_val #()) @ E : A) -∗
+    is_locked_r v false -∗
+    (is_locked_r v true -∗ REL t << fill K (of_val #()) @ E : A) -∗
     REL t << fill K (acquire v) @ E : A.
   Proof.
     iIntros "Hl Hlog".
@@ -145,8 +141,8 @@ Section lock_rules_r.
 
   Lemma refines_release_r K v t A st
     (Hcl : nclose specN ⊆ E) :
-    is_lock_r v st -∗
-    (is_lock_r v Unlocked_r -∗ REL t << fill K (of_val #()) @ E : A) -∗
+    is_locked_r v st -∗
+    (is_locked_r v false -∗ REL t << fill K (of_val #()) @ E : A) -∗
     REL t << fill K (release v) @ E : A.
   Proof.
     iIntros "Hl Hlog".

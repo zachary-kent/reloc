@@ -74,13 +74,13 @@ Section refinement.
 
   (** * Invariants and abstracts for them *)
   Definition lockInv (lo ln : loc) (γ : gname) (l' : val) : iProp Σ :=
-    (∃ (o n : nat) (st : lock_status_r), lo ↦ #o ∗ ln ↦ #n
-   ∗ issuedTickets γ n ∗ is_lock_r l' st
-   ∗ match st with Unlocked_r => True | Locked_r => ticket γ o end)%I.
+    (∃ (o n : nat) (b : bool), lo ↦ #o ∗ ln ↦ #n
+   ∗ issuedTickets γ n ∗ is_locked_r l' b
+   ∗ if b then ticket γ o else True)%I.
 
-  Instance ifticket_timeless st γ o :
-    Timeless (match st with Unlocked_r => True | Locked_r => ticket γ o end)%I.
-  Proof. destruct st; apply _. Qed.
+  Instance ifticket_timeless (b : bool) γ o :
+    Timeless (if b then ticket γ o else True)%I.
+  Proof. destruct b; apply _. Qed.
   Instance lockInv_timeless lo ln γ l' : Timeless (lockInv lo ln γ l').
   Proof. apply _. Qed.
 
@@ -136,7 +136,7 @@ Section refinement.
     iIntros "Hlo". repeat rel_pure_l.
     case_decide; simplify_eq/=; rel_if_l.
     (* Whether the ticket is called out *)
-    - destruct st; last first.
+    - destruct st.
       { iDestruct (ticket_nondup with "Hticket Hbticket") as %[]. }
       rel_apply_r (refines_acquire_r with "Hl'").
       iIntros "Hl'".
@@ -210,8 +210,8 @@ Section refinement.
     iAlways. iIntros (? lk) "/= #Hl".
     iDestruct "Hl" as (lo ln γ) "(% & Hin)". simplify_eq/=.
     rel_apply_l (acquire_l_logatomic
-                   (fun o => ∃ st, is_lock_r lk st ∗
-                             if st then True else ticket γ o)%I
+                   (fun o => ∃ st, is_locked_r lk st ∗
+                             if st then ticket γ o else True)%I
                    True%I γ); first done.
     iAlways.
     openI.
@@ -226,7 +226,7 @@ Section refinement.
       iNext. iExists _,_,_. by iFrame.
     - iIntros (o). iDestruct 1 as (n) "(Hlo & Hln & Hissued & Ht & Hrest)".
       iIntros "_". iDestruct "Hrest" as (st) "[Hl' Ht']".
-      destruct st; last first.
+      destruct st.
       { iDestruct (ticket_nondup with "Ht Ht'") as %[]. }
       rel_apply_r (refines_acquire_r with "Hl'").
       iIntros "Hl'".
@@ -310,8 +310,8 @@ Section refinement.
     rel_rec_l. rel_proj_l.
     pose (R := fun (o : nat) =>
                  (∃ (n : nat) st, ln ↦ #n
-                 ∗ issuedTickets γ n ∗ is_lock_r lk st ∗
-                 if st then True else ticket γ o)%I).
+                 ∗ issuedTickets γ n ∗ is_locked_r lk st ∗
+                 if st then ticket γ o else True)%I).
     rel_apply_l (wkincr_atomic_l R True%I); first done.
     iAlways.
     openI.

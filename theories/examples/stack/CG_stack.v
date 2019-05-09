@@ -39,8 +39,8 @@ Section rules.
 
   Lemma refines_CG_push_r st l (v w : val) E t K A :
     nclose relocN ⊆ E →
-    st ↦ₛ v -∗ is_lock_r l Unlocked_r -∗
-    (st ↦ₛ SOMEV (w, v) -∗ is_lock_r l Unlocked_r
+    st ↦ₛ v -∗ is_locked_r l false -∗
+    (st ↦ₛ SOMEV (w, v) -∗ is_locked_r l false
       -∗ REL t << fill K (of_val #()) @ E : A) -∗
     REL t << fill K (CG_locked_push (#st, l)%V w) @ E : A.
   Proof.
@@ -59,8 +59,8 @@ Section rules.
   Lemma refines_CG_pop_suc_r st l (w v : val) E t K A :
     nclose relocN ⊆ E →
     st ↦ₛ SOMEV (w, v) -∗
-    is_lock_r l Unlocked_r -∗
-    (st ↦ₛ v -∗ is_lock_r l Unlocked_r
+    is_locked_r l false -∗
+    (st ↦ₛ v -∗ is_locked_r l false
       -∗ REL t << fill K (of_val (SOMEV w)) @ E : A) -∗
     REL t << fill K (CG_locked_pop (#st, l)%V) @ E : A.
   Proof.
@@ -78,8 +78,8 @@ Section rules.
   Lemma refines_CG_pop_fail_r st l E t K A :
     nclose relocN ⊆ E →
     st ↦ₛ NONEV -∗
-    is_lock_r l Unlocked_r -∗
-    (st ↦ₛ NONEV -∗ is_lock_r l Unlocked_r
+    is_locked_r l false -∗
+    (st ↦ₛ NONEV -∗ is_locked_r l false
       -∗ REL t << fill K (of_val NONEV) @ E : A) -∗
     REL t << fill K (CG_locked_pop (#st, l)%V) @ E : A.
   Proof.

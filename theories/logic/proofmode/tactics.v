@@ -5,7 +5,7 @@ From iris.proofmode Require Import
      sel_patterns environments
      reduction.
 From reloc.logic Require Import proofmode.spec_tactics.
-From reloc.logic Require Export model rules.
+From reloc.logic Require Export model rules derived.
 From iris.proofmode Require Export tactics.
 (* Set Default Proof Using "Type". *)
 
@@ -690,3 +690,15 @@ Tactic Notation "rel_op_r" := rel_binop_r.
 Tactic Notation "rel_if_true_r" := rel_pure_r (If #true _ _).
 Tactic Notation "rel_if_false_r" := rel_pure_r (If #false _ _).
 Tactic Notation "rel_if_r" := rel_pure_r (If _ _ _).
+
+Ltac rel_arrow_val :=
+  rel_pures_l; rel_pures_r;
+  (iApply refines_arrow_val
+  || fail "rel_arrow_val: cannot apply the closure rule");
+  iAlways.
+
+Ltac rel_arrow :=
+  rel_pures_l; rel_pures_r;
+  (iApply refines_arrow
+  || fail "rel_arrow: cannot apply the closure rule");
+  iAlways.
