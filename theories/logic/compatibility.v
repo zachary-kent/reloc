@@ -108,5 +108,22 @@ Section compatibility.
     value_case.
   Qed.
 
+  Lemma refines_load e e' A :
+    (REL e << e' : ref A) -∗
+    REL !e << !e' : A.
+  Proof.
+    iIntros "H".
+    rel_bind_ap e e' "H" v v' "H".
+    iDestruct "H" as (l l' -> ->) "#H".
+    rel_load_l_atomic.
+    iInv (relocN .@ "ref" .@ (l,l')) as (w w') "[Hw1 [>Hw2 #Hw]]" "Hclose"; simpl.
+    iModIntro. iExists _; iFrame "Hw1".
+    iNext. iIntros "Hw1".
+    rel_load_r.
+    iMod ("Hclose" with "[Hw1 Hw2]").
+    { iNext. iExists w,w'; by iFrame. }
+    value_case.
+  Qed.
+
 End compatibility.
 
