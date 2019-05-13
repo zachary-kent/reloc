@@ -1,3 +1,4 @@
+(** THIS EXAMPLE IS WIP *)
 From iris.algebra Require Import excl.
 From iris.heap_lang Require Import proofmode.
 From iris.heap_lang.lib Require Export spawn par.
@@ -100,7 +101,7 @@ Section rules.
     repeat rel_pure_r.
     tp_rec i. simpl.
     rel_rec_l. repeat rel_pure_l.
-    rewrite {3}refines_eq /refines_def. iIntros (LL) "_". clear LL.
+    rewrite {3}refines_eq /refines_def. iIntros (ρ) "#Hρ".
     iIntros (j K) "Hj". iModIntro.
     tp_bind j e2.
     pose (C:=(AppRCtx (λ: "v2", let: "v1" := join #c2 in ("v1", "v2")) :: K)).
@@ -150,7 +151,7 @@ Section rules.
     { simpl. eauto. }
     repeat rel_pure_r.
     tp_rec i. simpl.
-    rewrite {3}refines_eq /refines_def. iIntros (LL) "_". clear LL.
+    rewrite {3}refines_eq /refines_def. iIntros (ρ) "#Hρ".
     iIntros (j K) "Hj". iModIntro.
     tp_bind j e2. tp_bind i e1.
     (* execute e1 *)
