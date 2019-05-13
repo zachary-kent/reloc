@@ -275,24 +275,6 @@ Section rules.
   Qed.
 
   (** ** Primitive structural rules *)
-  Lemma refines_spec_ctx E e e' A :
-    ((∃ ρ, spec_ctx ρ) -∗ REL e << e' @ E : A) -∗
-    (REL e << e' @ E : A).
-  Proof.
-    rewrite refines_eq /refines_def.
-    iIntros "Hctx". iIntros (ρ') "#Hspec".
-    rewrite -(bi.intuitionistic_intuitionistically (spec_ctx _)).
-    rewrite (bi.intuitionistically_sep_dup (spec_ctx _)).
-    iDestruct "Hspec" as "[#Hspec #Hspec']".
-    iRevert "Hspec'".
-    rewrite (bi.intuitionistic_intuitionistically (spec_ctx _)).
-    iAssert (∃ ρ, spec_ctx ρ)%I as "Hρ".
-    { eauto. }
-    iClear "Hspec".
-    iRevert (ρ').
-    by iApply "Hctx".
-  Qed.
-
   Lemma refines_fork e e' :
     (REL e << e' : ()%lrel) -∗
     REL Fork e << Fork e' : ().

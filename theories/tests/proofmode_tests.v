@@ -86,7 +86,6 @@ Proof.
   rel_store_r. do 2 rel_pure_r.
   rel_fork_r i as "Hi".
   repeat rel_pure_r.
-  iApply refines_spec_ctx. iDestruct 1 as (?) "#?".
   tp_store i.
   rel_load_r.
   rel_values.

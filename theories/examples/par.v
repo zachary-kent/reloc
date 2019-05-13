@@ -32,7 +32,6 @@ Section rules.
     repeat rel_pure_r. rel_fork_r i as "Hi".
     { simpl. eauto. }
     repeat rel_pure_r.
-    iApply refines_spec_ctx. iDestruct 1 as (ρ) "#Hρ".
     tp_rec i. simpl.
     tp_bind i e1.
     iMod ("H" with "Hi") as (v1) "[Hi H]".
@@ -76,7 +75,6 @@ Section rules.
     repeat rel_pure_r. rel_alloc_r c2 as "Hc2".
     repeat rel_pure_r. rel_fork_r i as "Hi".
     repeat rel_pure_r.
-    iApply refines_spec_ctx. iDestruct 1 as (ρ) "#Hρ".
     tp_rec i. simpl.
     tp_pure i (InjR _). tp_store i.
     rel_bind_l e. rel_bind_r e.
@@ -100,7 +98,6 @@ Section rules.
     repeat rel_pure_r. rel_fork_r i as "Hi".
     { simpl. eauto. }
     repeat rel_pure_r.
-    iApply refines_spec_ctx. iDestruct 1 as (ρ) "#Hρ".
     tp_rec i. simpl.
     rel_rec_l. repeat rel_pure_l.
     rewrite {3}refines_eq /refines_def. iIntros (LL) "_". clear LL.
@@ -152,7 +149,6 @@ Section rules.
     repeat rel_pure_r. rel_fork_r i as "Hi".
     { simpl. eauto. }
     repeat rel_pure_r.
-    iApply refines_spec_ctx. iDestruct 1 as (ρ) "#Hρ".
     tp_rec i. simpl.
     rewrite {3}refines_eq /refines_def. iIntros (LL) "_". clear LL.
     iIntros (j K) "Hj". iModIntro.

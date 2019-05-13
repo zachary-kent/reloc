@@ -39,7 +39,6 @@ Section proof.
     rel_rec_r. rel_alloc_r y as "Hy".
     repeat rel_pure_r. rel_fork_r i as "Hi".
     repeat rel_pure_r.
-    iApply refines_spec_ctx. iDestruct 1 as (ρ) "#Hρ".
     destruct b.
     - tp_store i. rel_load_r. iApply "He".
     - rel_load_r. iApply "He".

@@ -4,7 +4,7 @@ From iris.proofmode Require Import
      coq_tactics ltac_tactics
      sel_patterns environments
      reduction.
-From reloc.logic Require Export spec_rules.
+From reloc.logic Require Export model spec_rules.
 Set Default Proof Using "Type".
 
 (** * TP tactics *)
@@ -99,9 +99,21 @@ Proof.
   by rewrite bi.wand_elim_r.
 Qed.
 
+Ltac with_spec_ctx tac :=
+  lazymatch goal with
+  | |- envs_entails _ (refines ?E ?e1 ?e2 ?A) =>
+    let ρ := fresh in
+    let H := iFresh in
+    iApply (refines_spec_ctx E e1 e2 A);
+    iDestruct 1 as (ρ) H;
+    (tac (); iClear H; clear ρ)
+  | _ => tac ()
+  end.
+
 (* TODO: The problem here is that it will fail if the redex is not specified, and is not on the top level *)
 Tactic Notation "tp_pure" constr(j) open_constr(ef) :=
   iStartProof;
+  with_spec_ctx ltac:(fun _ =>
   eapply (tac_tp_pure j _ ef);
     [iSolveTC || fail "tp_pure: cannot eliminate modality in the goal"
     |solve_ndisj || fail "tp_pure: cannot prove 'nclose specN ⊆ ?'"
@@ -112,7 +124,7 @@ Tactic Notation "tp_pure" constr(j) open_constr(ef) :=
     |try (exact I || reflexivity) (* ψ *)
     |try (exact I || reflexivity) (* ϕ *)
     |pm_reflexivity || fail "tp_pure: this should not happen"
-    |(* new goal *)].
+    |(* new goal *)]).
 
 Tactic Notation "tp_rec" constr(j) := tp_pure j (App _ _).
 Tactic Notation "tp_seq" constr(j) := tp_rec j.
@@ -169,6 +181,7 @@ Qed.
 
 Tactic Notation "tp_store" constr(j) :=
   iStartProof;
+  with_spec_ctx ltac:(fun _ =>
   eapply (tac_tp_store j);
     [iSolveTC || fail "tp_store: cannot eliminate modality in the goal"
     |solve_ndisj || fail "tp_store: cannot prove 'nclose specN ⊆ ?'"
@@ -178,7 +191,7 @@ Tactic Notation "tp_store" constr(j) :=
     |iAssumptionCore || fail "tp_store: cannot find '? ↦ₛ ?'"
     |iSolveTC || fail "tp_store: cannot convert the argument to a value"
     |pm_reflexivity || fail "tp_store: this should not happen"
-    |(* new goal *)].
+    |(* new goal *)]).
 
 (*
 DF:
@@ -226,6 +239,7 @@ Qed.
 
 Tactic Notation "tp_load" constr(j) :=
   iStartProof;
+  with_spec_ctx ltac:(fun _ =>
   eapply (tac_tp_load j);
     [solve_ndisj || fail "tp_load: cannot prove 'nclose specN ⊆ ?'"
     |iAssumptionCore || fail "tp_load: cannot find spec_ctx" (* spec_ctx *)
@@ -233,7 +247,7 @@ Tactic Notation "tp_load" constr(j) :=
     |tp_bind_helper
     |iAssumptionCore || fail "tp_load: cannot find '? ↦ₛ ?'"
     |pm_reflexivity || fail "tp_load: this should not happen"
-    |(* new goal *)].
+    |(* new goal *)]).
 
 Lemma tac_tp_cas_fail `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l : loc) e1 e2 v' v1 v2 Q q :
   nclose specN ⊆ E1 →
@@ -277,6 +291,7 @@ Qed.
 
 Tactic Notation "tp_cas_fail" constr(j) :=
   iStartProof;
+  with_spec_ctx ltac:(fun _ =>
   eapply (tac_tp_cas_fail j);
     [solve_ndisj || fail "tp_cas_fail: cannot prove 'nclose specN ⊆ ?'"
     |iAssumptionCore || fail "tp_cas_fail: cannot find spec_ctx" (* spec_ctx *)
@@ -288,7 +303,7 @@ Tactic Notation "tp_cas_fail" constr(j) :=
     |try congruence (* v' ≠ v1 *)
     |try (fast_done || (left; fast_done) || (right; fast_done)) (* vals_cas_compare_safe *)
     |pm_reflexivity || fail "tp_cas_fail: this should not happen"
-    |(* new goal *)].
+    |(* new goal *)]).
 
 Lemma tac_tp_cas_suc `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l : loc) e1 e2 v' v1 v2 Q :
   nclose specN ⊆ E1 →
@@ -332,6 +347,7 @@ Qed.
 
 Tactic Notation "tp_cas_suc" constr(j) :=
   iStartProof;
+  with_spec_ctx ltac:(fun _ =>
   eapply (tac_tp_cas_suc j);
     [solve_ndisj || fail "tp_cas_suc: cannot prove 'nclose specN ⊆ ?'"
     |iAssumptionCore || fail "tp_cas_suc: cannot find spec_ctx" (* spec_ctx *)
@@ -343,7 +359,7 @@ Tactic Notation "tp_cas_suc" constr(j) :=
     |try congruence     (* v' = v1 *)
     |try fast_done      (* val_is_unboxed v1 *)
     |pm_reflexivity || fail "tp_cas_suc: this should not happen"
-    |(* new goal *)].
+    |(* new goal *)]).
 
 Lemma tac_tp_faa `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l : loc)  e2 (z1 z2 : Z) Q :
   nclose specN ⊆ E1 →
@@ -384,6 +400,7 @@ Qed.
 
 Tactic Notation "tp_faa" constr(j) :=
   iStartProof;
+  with_spec_ctx ltac:(fun _ =>
   eapply (tac_tp_faa j);
     [solve_ndisj || fail "tp_faa: cannot prove 'nclose specN ⊆ ?'"
     |iAssumptionCore || fail "tp_faa: cannot find spec_ctx" (* spec_ctx *)
@@ -392,7 +409,7 @@ Tactic Notation "tp_faa" constr(j) :=
     |iSolveTC (* IntoVal *)
     |iAssumptionCore || fail "tp_faa: cannot find '? ↦ ?'"
     |pm_reflexivity || fail "tp_faa: this should not happen"
-    |(* new goal *)].
+    |(* new goal *)]).
 
 Lemma tac_tp_fork `{relocG Σ} j Δ1 Δ2 E1 E2 ρ i1 i2 p K' e e' Q :
   nclose specN ⊆ E1 →
@@ -434,16 +451,18 @@ Qed.
 
 Tactic Notation "tp_fork" constr(j) :=
   iStartProof;
+  with_spec_ctx ltac:(fun _ =>
   eapply (tac_tp_fork j);
     [solve_ndisj || fail "tp_fork: cannot prove 'nclose specN ⊆ ?'"
     |iAssumptionCore || fail "tp_fork: cannot find spec_ctx" (* spec_ctx *)
     |iAssumptionCore || fail "tp_fork: cannot find '" j " ⤇ ?'"
     |tp_bind_helper
     |pm_reflexivity || fail "tp_fork: this should not happen"
-    |(* new goal *)].
+    |(* new goal *)]).
 
 Tactic Notation "tp_fork" constr(j) "as" ident(j') constr(H) :=
   iStartProof;
+  with_spec_ctx ltac:(fun _ =>
   eapply (tac_tp_fork j);
     [solve_ndisj || fail "tp_fork: cannot prove 'nclose specN ⊆ ?'"
     |iAssumptionCore || fail "tp_fork: cannot find spec_ctx" (* spec_ctx *)
@@ -452,7 +471,7 @@ Tactic Notation "tp_fork" constr(j) "as" ident(j') constr(H) :=
     |pm_reflexivity || fail "tp_fork: this should not happen"
     |(iIntros (j') || fail 1 "tp_fork: " j' " not fresh ");
      (iIntros H || fail 1 "tp_fork: " H " not fresh")
-    (* new goal *)].
+    (* new goal *)]).
 
 Tactic Notation "tp_fork" constr(j) "as" ident(j') :=
   let H := iFresh in tp_fork j as j' H.
@@ -503,6 +522,7 @@ Tactic Notation "tp_alloc" constr(j) "as" ident(j') constr(H) :=
         [ pm_reflexivity
         | iIntros H || fail 1 "tp_alloc:" H "not correct intro pattern" ] in
   iStartProof;
+  with_spec_ctx ltac:(fun _ =>
   eapply (tac_tp_alloc j);
     [solve_ndisj || fail "tp_alloc: cannot prove 'nclose specN ⊆ ?'"
     |iAssumptionCore || fail "tp_alloc: cannot find spec_ctx" (* spec_ctx *)
@@ -510,7 +530,7 @@ Tactic Notation "tp_alloc" constr(j) "as" ident(j') constr(H) :=
     |tp_bind_helper
     |iSolveTC || fail "tp_alloc: expressions is not a value"
     |finish ()
-    (* new goal *)].
+    (* new goal *)]).
 
 Tactic Notation "tp_alloc" constr(j) "as" ident(j') :=
   let H := iFresh in tp_alloc j as j' H.

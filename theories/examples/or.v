@@ -77,9 +77,7 @@ Section rules.
     repeat rel_pure_r.
     iDestruct "H" as "[H | H]".
     - rel_load_r. repeat rel_pure_r. eauto with iFrame.
-    - iApply refines_spec_ctx. (* TODO: get rid of this *)
-      iDestruct 1 as (ρ) "#Hρ".
-      tp_store j.
+    - tp_store j.
       rel_load_r. repeat rel_pure_r. eauto with iFrame.
   Qed.
 
