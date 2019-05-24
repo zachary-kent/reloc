@@ -1,6 +1,6 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** A resource algebra for the specification programs. *)
-From iris.algebra Require Import auth gmap agree list frac.
+From iris.algebra Require Import auth excl gmap agree list frac.
 From iris.bi Require Export fractional.
 From iris.base_logic Require Export gen_heap invariants.
 From iris.proofmode Require Import tactics.
@@ -137,7 +137,7 @@ Section mapsto.
   Proof.
     apply bi.wand_intro_r.
     rewrite heapS_mapsto_eq -own_op -auth_frag_op own_valid uPred.discrete_valid.
-    f_equiv=> /auth_own_valid /=.
+    f_equiv=> /=.
     rewrite pair_op op_singleton right_id pair_op.
     move=> [_ Hv]. move:Hv => /=.
     rewrite singleton_valid.
@@ -147,7 +147,7 @@ Section mapsto.
   Lemma mapsto_valid l q v : l ↦ₛ{q} v -∗ ✓ q.
   Proof.
     rewrite heapS_mapsto_eq /heapS_mapsto_def own_valid !uPred.discrete_valid.
-    apply pure_mono=> /auth_own_valid /= [_ Hfoo].
+    apply pure_mono=> /auth_frag_valid /= [_ Hfoo].
     revert Hfoo. simpl. rewrite singleton_valid.
     by intros [? _].
   Qed.

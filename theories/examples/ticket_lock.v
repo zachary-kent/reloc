@@ -50,7 +50,10 @@ Section refinement.
   Qed.
 
   Lemma newIssuedTickets : (|==> ∃ γ, issuedTickets γ 0)%I.
-  Proof. iMod (own_alloc (● (GSet ∅))) as (γ) "Hγ"; [done|eauto]. Qed.
+  Proof.
+    iMod (own_alloc (● (GSet ∅))) as (γ) "Hγ"; [|by eauto].
+    by apply auth_auth_valid.
+  Qed.
 
   Lemma issueNewTicket γ m :
     issuedTickets γ m ==∗

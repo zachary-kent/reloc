@@ -32,7 +32,7 @@ Proof.
   iMod (own_alloc (● (to_tpool [e'], to_gen_heap (heap σ))
     ⋅ ◯ ((to_tpool [e'] : tpoolUR, ∅) : cfgUR)))
     as (γc) "[Hcfg1 Hcfg2]".
-  { apply auth_valid_discrete_2. split=>//.
+  { apply auth_both_valid. split=>//.
     - apply prod_included. split=>///=.
       apply: ucmra_unit_least.
     - split=>//. apply to_tpool_valid. apply to_gen_heap_valid. }
@@ -55,7 +55,7 @@ Proof.
     iInv specN as (tp σ') ">[Hown Hsteps]" "Hclose"; iDestruct "Hsteps" as %Hsteps'.
     rewrite tpool_mapsto_eq /tpool_mapsto_def /=.
     iDestruct (own_valid_2 with "Hown Hj") as %Hvalid.
-    move: Hvalid=> /auth_valid_discrete_2
+    move: Hvalid=> /auth_both_valid
        [/prod_included [/tpool_singleton_included Hv2 _] _].
     destruct tp as [|? tp']; simplify_eq/=.
     iMod ("Hclose" with "[-]") as "_".

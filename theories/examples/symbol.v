@@ -64,7 +64,7 @@ Section rules.
   Proof.
     iIntros "Hn Hm".
     by iDestruct (own_valid_2 with "Hn Hm")
-      as %[?%mnat_included _]%auth_valid_discrete_2.
+      as %[?%mnat_included _]%auth_both_valid.
   Qed.
 
   Lemma same_size (n m : nat) :
@@ -152,7 +152,7 @@ Section proof.
     iModIntro. iExists _. iFrame. iNext. iIntros "Hs1'".
     rel_load_r. rel_pure_r. rel_pure_r.
     iDestruct (own_valid_2 with "Ha Hn")
-      as %[?%mnat_included _]%auth_valid_discrete_2.
+      as %[?%mnat_included _]%auth_both_valid.
     rel_op_l. rel_op_r. rewrite bool_decide_true; last lia.
     rel_pure_r. rel_load_r. rel_op_r.
     iMod ("Hcl" with "[Ha Hs1' Hs2' Htbl1' Htbl2' Hls]") as "_".
@@ -189,7 +189,7 @@ Section proof.
     iInv sizeN as (m ls) "(Ha & Hs1' & >Hs2' & >Htbl1' & >Htbl2' & Hls)" "Hcl".
     iModIntro. iExists _. iFrame. iNext. iIntros "Hs1'".
     iDestruct (own_valid_2 with "Ha Hn")
-      as %[?%mnat_included _]%auth_valid_discrete_2.
+      as %[?%mnat_included _]%auth_both_valid.
     iMod ("Hcl" with "[Ha Hs1' Hs2' Htbl1' Htbl2' Hls]") as "_".
     { iNext. iExists _,_. by iFrame. }
     clear ls. repeat rel_pure_l.
@@ -225,7 +225,8 @@ Section proof.
     rel_alloc_r size2 as "[Hs2 Hs2']"; repeat rel_pure_r.
     rel_alloc_l tbl1 as "[Htbl1 Htbl1']"; repeat rel_pure_l.
     rel_alloc_r tbl2 as "[Htbl2 Htbl2']"; repeat rel_pure_r.
-    iMod (own_alloc (● (0%nat : mnat))) as (γ) "Ha"; first done.
+    iMod (own_alloc (● (0%nat : mnat))) as (γ) "Ha".
+    { by apply auth_auth_valid. }
     iMod (inv_alloc sizeN _ (table_inv γ size1 size2 tbl1 tbl2) with "[Hs1 Hs2 Htbl1 Htbl2 Ha]") as "#Hinv".
     { iNext. iExists _,_. iFrame. iApply lrel_list_nil. }
     rel_apply_r refines_newlock_r.
@@ -303,7 +304,8 @@ Section proof.
     rel_alloc_r size2 as "[Hs2 Hs2']"; repeat rel_pure_r.
     rel_alloc_l tbl1 as "[Htbl1 Htbl1']"; repeat rel_pure_l.
     rel_alloc_r tbl2 as "[Htbl2 Htbl2']"; repeat rel_pure_r.
-    iMod (own_alloc (● (0%nat : mnat))) as (γ) "Ha"; first done.
+    iMod (own_alloc (● (0%nat : mnat))) as (γ) "Ha".
+    { by apply auth_auth_valid. }
     iMod (inv_alloc sizeN _ (table_inv γ size1 size2 tbl1 tbl2) with "[Hs1 Hs2 Htbl1 Htbl2 Ha]") as "#Hinv".
     { iNext. iExists _,_. iFrame. iApply lrel_list_nil. }
     rel_apply_r refines_newlock_r.

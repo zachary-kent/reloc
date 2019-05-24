@@ -66,7 +66,8 @@ Section logic.
   Lemma alloc_empty_bij : (|==> ∃ γ, BIJ γ ∅)%I.
   Proof.
     rewrite BIJ_eq /BIJ_def.
-    iMod (own_alloc (● (∅ : bijUR))) as (γ) "H"; first done.
+    iMod (own_alloc (● (∅ : bijUR))) as (γ) "H".
+    { by apply auth_auth_valid. }
     iModIntro; iExists _; iFrame. iPureIntro. apply empty_bijective.
   Qed.
 
@@ -115,8 +116,8 @@ Section logic.
   Proof.
     iIntros "HL H1 H2". rewrite BIJ_eq /BIJ_def inBij_eq /inBij_def.
     iDestruct "HL" as "[HL HL1]"; iDestruct "HL1" as %HL.
-    iDestruct (own_valid_2 with "HL H1") as %Hv1%auth_valid_discrete_2.
-    iDestruct (own_valid_2 with "HL H2") as %Hv2%auth_valid_discrete_2.
+    iDestruct (own_valid_2 with "HL H1") as %Hv1%auth_both_valid.
+    iDestruct (own_valid_2 with "HL H2") as %Hv2%auth_both_valid.
     iPureIntro.
     destruct Hv1 as [Hv1 _]; destruct Hv2 as [Hv2 _].
     apply gset_included, elem_of_subseteq_singleton in Hv1;

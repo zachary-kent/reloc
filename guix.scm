@@ -30,10 +30,10 @@
   #:use-module (gnu packages coq)
   #:use-module ((guix licenses) #:prefix license:))
 
-(define stdpp-commit "d6eb24f23eeb42529210a4d422392d7950d920c0")
-(define stdpp-sha256 (base32 "1m1ys10f16v5ndxmwfjnw43p0qdb6fkk08z8864357zwmpvf2vgg")) ;; sha256 hash of the specific std++ checkout
-(define iris-commit "a9031f7f4979974426c5c9fa4ac315863b99c362")
-(define iris-sha256 (base32 "05kmbljc68ndnl8jyn3xy14f3vhcbxq7n2n3bkjyyfiyl8b2vaql")) ;; sha256 hash of the specific std++ checkout
+(define stdpp-commit "f8719169e3ed75123d88c59d292ddd0972351ad3")
+(define stdpp-sha256 (base32 "0fb7vj5l8j8ms7v3ag74i61q8hygc8w692dlfyli9vxbds7ff7lc")) ;; sha256 hash of the specific std++ checkout
+(define iris-commit "c9984c7fc0b2067b11012099ce7884c981e492ed")
+(define iris-sha256 (base32 "1lf3k6h2jc26r3ns44qnd4l9b769a2bx17xc3fni6m39y8w5h0py")) ;; sha256 hash of the specific std++ checkout
 (define %source-dir (dirname (current-filename)))
 
 (define-public coq-stdpp
