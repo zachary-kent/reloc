@@ -502,4 +502,15 @@ Section fundamental.
     - by iApply (bin_log_related_CAS with "[] []").
   Qed.
 
+  Theorem refines_typed e τ :
+    ∅ ⊢ₜ e : τ →
+    REL e << e : (interp τ []).
+  Proof.
+    move=> /binary_fundamental Hty.
+    iPoseProof (Hty [] with "[]") as "H".
+    { rewrite fmap_empty. iApply env_ltyped2_empty. }
+    by rewrite !fmap_empty !subst_map_empty.
+  Qed.
+
 End fundamental.
+
