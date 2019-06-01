@@ -159,7 +159,9 @@ Section rules.
     iExists l. iFrame "Hj Hl". iApply "Hclose". iNext.
     iExists (<[j:=fill K (# l)]> tp), (state_upd_heap <[l:=v]> σ).
     rewrite to_gen_heap_insert to_tpool_insert'; last eauto. iFrame. iPureIntro.
-    eapply rtc_r, step_insert_no_fork; eauto. econstructor; eauto.
+    eapply rtc_r, step_insert_no_fork; eauto.
+    rewrite -state_init_heap_singleton. eapply AllocNS; first by lia.
+    intros. assert (i = 0) as -> by lia. by rewrite loc_add_0.
   Qed.
 
   Lemma step_load E ρ j K l q v:
