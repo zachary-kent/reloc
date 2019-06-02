@@ -11,6 +11,7 @@
 *.bak
 .coqdeps.d
 .coq-native/
+_opam
 build-dep/
 Makefile.coq
 Makefile.coq.conf
