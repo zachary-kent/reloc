@@ -29,8 +29,9 @@ Fixpoint subst_map_ctx_item (es : stringmap val) (K : ectx_item)
   | CasRCtx e0 e1 => CasRCtx (subst_map es e0) (subst_map es e1)
   | FaaLCtx v2 => FaaLCtx v2
   | FaaRCtx e1 => FaaRCtx (subst_map es e1)
-  | ProphLCtx v2 => ProphLCtx v2
-  | ProphRCtx e1 => ProphRCtx (subst_map es e1)
+  | ResolveLCtx Ki v1 v2 => ResolveLCtx (subst_map_ctx_item es Ki) v1 v2
+  | ResolveMCtx e0 v2 => ResolveMCtx (subst_map es e0) v2
+  | ResolveRCtx e0 e1 => ResolveRCtx (subst_map es e0) (subst_map es e1)
   end.
 
 Definition subst_map_ctx (es : stringmap val) (K : list ectx_item) :=
@@ -39,7 +40,7 @@ Definition subst_map_ctx (es : stringmap val) (K : list ectx_item) :=
 Lemma subst_map_fill_item (vs : stringmap val) (Ki : ectx_item) (e : expr)  :
   subst_map vs (fill_item Ki e) =
   fill_item (subst_map_ctx_item vs Ki) (subst_map vs e).
-Proof. induction Ki; simpl; eauto. Qed.
+Proof. induction Ki; simpl; eauto with f_equal. Qed.
 
 Lemma subst_map_fill (vs : stringmap val) (K : list ectx_item) (e : expr) :
   subst_map vs (fill K e) = fill (subst_map_ctx vs K) (subst_map vs e).

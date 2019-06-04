@@ -59,8 +59,8 @@ Section proofs.
 
   (** Lazy coin (with prophecies) refines eager coin *)
   Definition I (cl ce : loc) (p : proph_id) :=
-    (∃ vs : list val, proph p vs ∗
-    (cl ↦ NONEV ∗ ce ↦ₛ #(val_to_bool vs)
+    (∃ vs : list (val*val), proph p vs ∗
+    (cl ↦ NONEV ∗ ce ↦ₛ #(extract_bool vs)
     ∨ ∃ (b:bool), cl ↦ SOMEV #b ∗ ce ↦ₛ #b))%I.
 
   Lemma coin_lazy'_eager_refinement :
@@ -105,12 +105,12 @@ Section proofs.
       iDestruct 1 as (vs) "[Hp H]". repeat rel_pure_l.
       iDestruct "H" as "[[Hcl Hce]|H]"; last iDestruct "H" as (x) "[Hcl Hce]";
         rel_store_l; repeat rel_pure_l.
-      + rel_apply_r (refines_rand_r (val_to_bool vs)).
+      + rel_apply_r (refines_rand_r (extract_bool vs)).
         rel_store_r.
         rel_apply_l (refines_release_l with "Hlk Hlocked [-]").
         { iExists vs. iFrame. iLeft. iFrame. }
         iNext. rel_values.
-      + rel_apply_r (refines_rand_r (val_to_bool vs)).
+      + rel_apply_r (refines_rand_r (extract_bool vs)).
         rel_store_r.
         rel_apply_l (refines_release_l with "Hlk Hlocked [-]").
         { iExists vs. iFrame. iLeft. iFrame. }

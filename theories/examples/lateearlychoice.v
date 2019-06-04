@@ -62,9 +62,9 @@ Section proof.
       iMod ("Hcl" with "[Hy]") as "_"; eauto with iFrame.
   Qed.
 
-  Definition val_to_bool (vs : list val) : bool :=
+  Definition extract_bool (vs : list (val*val)) : bool :=
     match vs with
-    | LitV (LitBool b)::_ => b
+    | (_,LitV (LitBool b))::_ => b
     | _                   => true
     end.
 
@@ -77,7 +77,7 @@ Section proof.
     rel_rec_l. rel_rec_r.
     rel_newproph_l vs p as "Hp".
     repeat rel_pure_l.
-    rel_apply_r (refines_rand_r (val_to_bool vs)).
+    rel_apply_r (refines_rand_r (extract_bool vs)).
     repeat rel_pure_r.
     iApply (refines_seq lrel_unit).
     { iApply refines_store.

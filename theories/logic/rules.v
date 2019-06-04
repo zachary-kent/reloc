@@ -335,7 +335,7 @@ Section rules.
   Qed.
 
   Lemma refines_newproph_l K E t A :
-    (|={⊤,E}=> ▷ (∀ (vs : list val) (p : proph_id),
+    (|={⊤,E}=> ▷ (∀ (vs : list (val*val)) (p : proph_id),
            proph p vs -∗
            REL fill K (of_val #p) << t @ E : A))%I
     -∗ REL fill K NewProph << t : A.
@@ -349,7 +349,7 @@ Section rules.
   Lemma refines_resolveproph_l K E (p : proph_id) w t A :
     (|={⊤,E}=> ∃ vs,
            ▷ (proph p vs) ∗
-           ▷ (∀ (vs' : list val), ⌜vs = w::vs'⌝ -∗
+           ▷ (∀ (vs' : list (val*val)), ⌜vs = (LitV LitUnit,w)::vs'⌝ -∗
                   proph p vs' -∗
                   REL fill K (of_val #()) << t @ E : A))%I
     -∗ REL fill K (ResolveProph #p w) << t : A.

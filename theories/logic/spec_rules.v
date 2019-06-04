@@ -134,6 +134,7 @@ Section rules.
     iExists (<[j:=fill K #()]> tp), σ.
     rewrite to_tpool_insert'; last eauto. iFrame. iPureIntro.
     eapply rtc_r, step_insert_no_fork; eauto. econstructor; eauto.
+    econstructor; eauto.
   Qed.
 
   (** Alloc, load, and store *)
@@ -320,4 +321,3 @@ Section rules.
   Qed.
 
 End rules.
-

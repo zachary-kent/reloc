@@ -1,6 +1,6 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** (In)equational theory of erratic choice operator (`or`). *)
-From reloc Require Export reloc lib.Y (* for bot *).
+From reloc Require Export reloc lib.Y. (* for bot *)
 Set Default Proof Using "Type".
 
 (** (Binary) non-determinism can be simluated with concurrency. In
@@ -221,9 +221,9 @@ Section rules.
   (** To prove the refinement in the other direction, we instrument
   our program with prophecies and resolve them when we actually make
   the choice on the LHS *)
-  Definition to_choice (vs : list val) : bool :=
+  Definition to_choice (vs : list (val*val)) : bool :=
     match vs with
-    | LitV (LitInt 0)::_ => true
+    | (_,LitV (LitInt 0))::_ => true
     | _ => false
     end.
 

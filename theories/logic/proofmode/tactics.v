@@ -521,7 +521,7 @@ Tactic Notation "rel_newproph_l_atomic" := rel_apply_l refines_newproph_l.
 Lemma tac_rel_newproph_l_simpl `{relocG Σ} K ℶ1 ℶ2 e t A :
   e = fill K NewProph →
   MaybeIntoLaterNEnvs 1 ℶ1 ℶ2 →
-  (envs_entails ℶ2 (∀ (vs : list val) (p : proph_id),
+  (envs_entails ℶ2 (∀ (vs : list (val*val)) (p : proph_id),
      (proph p vs -∗ refines ⊤ (fill K (of_val #p)) t A))) →
   envs_entails ℶ1 (refines ⊤ e t A).
 Proof.
