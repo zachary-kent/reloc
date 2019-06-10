@@ -30,10 +30,10 @@
   #:use-module (gnu packages coq)
   #:use-module ((guix licenses) #:prefix license:))
 
-(define stdpp-commit "f8719169e3ed75123d88c59d292ddd0972351ad3")
-(define stdpp-sha256 (base32 "0fb7vj5l8j8ms7v3ag74i61q8hygc8w692dlfyli9vxbds7ff7lc")) ;; sha256 hash of the specific std++ checkout
-(define iris-commit "c9984c7fc0b2067b11012099ce7884c981e492ed")
-(define iris-sha256 (base32 "1lf3k6h2jc26r3ns44qnd4l9b769a2bx17xc3fni6m39y8w5h0py")) ;; sha256 hash of the specific std++ checkout
+(define stdpp-commit "c8dbb063cffe6275a75218d377c3174538396670")
+(define stdpp-sha256 (base32 "0jn820ahfdnbqax3iaqg2c3d9bd5x0w9mb3r7a6f8lszrg1hll26")) ;; sha256 hash of the specific std++ checkout
+(define iris-commit "31bf88ff46fd89815e49dd22dbc5fea4a77fb62e")
+(define iris-sha256 (base32 "1avarky1lzpzjypjwfjifl26p69nygn7g7r3ry1jkxj2w3ilh8bi")) ;; sha256 hash of the specific std++ checkout
 (define %source-dir (dirname (current-filename)))
 
 (define-public coq-stdpp
@@ -97,8 +97,9 @@
          ;; need diff for tests
          ("diffutils" ,diffutils)
          ("coq" ,coq)
-         ("coq-stdpp" ,coq-stdpp)
          ("camlp5" ,camlp5)))
+      (propagated-inputs
+       `(("coq-stdpp"  ,coq-stdpp)))
       (arguments
        `(#:tests? #f
          #:phases
@@ -123,6 +124,7 @@
                       #:select? (git-predicate %source-dir)))
   (build-system gnu-build-system)
   ;; We propogate all the inputs, because then it's just easier to set up the dev environment
+  (inputs `(("coq"    ,coq)))
   (propagated-inputs
    `(("coq"           ,coq)
      ("coq-autosubst" ,coq-autosubst)
