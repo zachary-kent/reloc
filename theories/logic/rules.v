@@ -331,7 +331,7 @@ Section rules.
     iIntros (<-) "Hlog".
     iApply refines_atomic_l; auto.
     iMod "Hlog". iModIntro.
-    iApply (wp_alloc _ _ v); auto.
+    iApply (wp_alloc _ _ v with "[//]"). iIntros "!>" (l) "[? _]". by iApply "Hlog".
   Qed.
 
   Lemma refines_newproph_l K E t A :
