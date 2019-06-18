@@ -93,7 +93,7 @@ Ltac rel_values :=
   rel_finish.
 
 Tactic Notation "rel_apply_l" open_constr(lem) :=
-  (iPoseProofCore lem as false true (fun H =>
+  (iPoseProofCore lem as false (fun H =>
     rel_reshape_cont_l ltac:(fun K e =>
       rel_bind_ctx_l K;
       iApplyHyp H)
@@ -108,7 +108,7 @@ Tactic Notation "rel_apply_l" open_constr(lem) :=
   try rel_finish.
 
 Tactic Notation "rel_apply_r" open_constr(lem) :=
-  (iPoseProofCore lem as false true (fun H =>
+  (iPoseProofCore lem as false (fun H =>
     rel_reshape_cont_r ltac:(fun K e =>
       rel_bind_ctx_r K;
       iApplyHyp H)
