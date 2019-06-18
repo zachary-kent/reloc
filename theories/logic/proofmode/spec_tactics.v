@@ -257,7 +257,7 @@ Lemma tac_tp_cas_fail `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l : l
   IntoVal e1 v1 →
   IntoVal e2 v2 →
   envs_lookup i3 Δ2 = Some (false, l ↦ₛ{q} v')%I →
-  v' ≠ v1 →
+  val_for_compare v' ≠ val_for_compare v1 →
   vals_cas_compare_safe v' v1 →
   envs_simple_replace i3 false
     (Esnoc (Esnoc Enil i2 (j ⤇ fill K' #false)) i3 (l ↦ₛ{q} v')%I) Δ2 = Some Δ3 →
@@ -300,8 +300,8 @@ Tactic Notation "tp_cas_fail" constr(j) :=
     |iSolveTC
     |iSolveTC
     |iAssumptionCore || fail "tp_cas_fail: cannot find '? ↦ ?'"
-    |try congruence (* v' ≠ v1 *)
-    |try (fast_done || (left; fast_done) || (right; fast_done)) (* vals_cas_compare_safe *)
+    |try (simpl; congruence) (* v' ≠ v1 *)
+    |try heap_lang.proofmode.solve_vals_cas_compare_safe
     |pm_reflexivity || fail "tp_cas_fail: this should not happen"
     |(* new goal *)]).
 
@@ -313,8 +313,8 @@ Lemma tac_tp_cas_suc `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l : lo
   IntoVal e1 v1 →
   IntoVal e2 v2 →
   envs_lookup i3 Δ2 = Some (false, l ↦ₛ v')%I →
-  v' = v1 →
-  val_is_unboxed v1 →
+  val_for_compare v' = val_for_compare v1 →
+  vals_cas_compare_safe v' v1 →
   envs_simple_replace i3 false
     (Esnoc (Esnoc Enil i2 (j ⤇ fill K' #true)) i3 (l ↦ₛ v2)%I) Δ2 = Some Δ3 →
   envs_entails Δ3 (|={E1,E2}=> Q) →
@@ -356,8 +356,8 @@ Tactic Notation "tp_cas_suc" constr(j) :=
     |iSolveTC
     |iSolveTC
     |iAssumptionCore || fail "tp_cas_suc: cannot find '? ↦ ?'"
-    |try congruence     (* v' = v1 *)
-    |try fast_done      (* val_is_unboxed v1 *)
+    |try (simpl; congruence)     (* v' = v1 *)
+    |try heap_lang.proofmode.solve_vals_cas_compare_safe
     |pm_reflexivity || fail "tp_cas_suc: this should not happen"
     |(* new goal *)]).
 

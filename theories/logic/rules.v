@@ -199,7 +199,7 @@ Section rules.
     IntoVal e1 v1 →
     IntoVal e2 v2 →
     vals_cas_compare_safe v v1 →
-    v ≠ v1 →
+    val_for_compare v ≠ val_for_compare v1 →
     l ↦ₛ v -∗
     (l ↦ₛ v -∗ REL t << fill K (of_val #false) @ E : A)
     -∗ REL t << fill K (CAS #l e1 e2) @ E : A.
@@ -220,8 +220,8 @@ Section rules.
     nclose specN ⊆ E →
     IntoVal e1 v1 →
     IntoVal e2 v2 →
-    val_is_unboxed v1 →
-    v = v1 →
+    vals_cas_compare_safe v v1 →
+    val_for_compare v = val_for_compare v1 →
     l ↦ₛ v -∗
     (l ↦ₛ v2 -∗ REL t << fill K (of_val #true) @ E : A)
     -∗ REL t << fill K (CAS #l e1 e2) @ E : A.
@@ -390,17 +390,17 @@ Section rules.
     IntoVal e2 v2 →
     val_is_unboxed v1 →
     (|={⊤,E}=> ∃ v', ▷ l ↦ v' ∗
-     (⌜v' ≠ v1⌝ -∗ ▷ (l ↦ v' -∗ REL fill K (of_val #false) << t @ E : A)) ∧
-     (⌜v' = v1⌝ -∗ ▷ (l ↦ v2 -∗ REL fill K (of_val #true) << t @ E : A)))
+     (⌜val_for_compare v' ≠ val_for_compare v1⌝ -∗ ▷ (l ↦ v' -∗ REL fill K (of_val #false) << t @ E : A)) ∧
+     (⌜val_for_compare v' = val_for_compare v1⌝ -∗ ▷ (l ↦ v2 -∗ REL fill K (of_val #true) << t @ E : A)))
     -∗ REL fill K (CAS #l e1 e2) << t : A.
   Proof.
     iIntros (<-<-?) "Hlog".
     iApply refines_atomic_l; auto.
     iMod "Hlog" as (v') "[Hl Hlog]". iModIntro.
-    destruct (decide (v' = v1)).
+    destruct (decide (val_for_compare v' = val_for_compare v1)).
     - (* CAS successful *) subst.
       iApply (wp_cas_suc with "Hl"); eauto.
-      { by left. }
+      { by right. }
       iDestruct "Hlog" as "[_ Hlog]".
       iSpecialize ("Hlog" with "[]"); eauto.
     - (* CAS failed *)

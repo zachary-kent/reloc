@@ -102,14 +102,14 @@ Section CG_Counter.
     repeat rel_pure_l. rel_cas_l_atomic.
     iMod "H2" as (n') "[Hx [HR HQ]]". iModIntro. simpl.
     destruct (decide (n = n')); subst.
-    - iExists #n'. iFrame.
+    - iExists #n'. iFrame. simpl.
       iSplitR; eauto. { iDestruct 1 as %Hfoo. exfalso. done. }
       iIntros "_ !> Hx". simpl.
       iDestruct "HQ" as "[_ HQ]".
       replace (n' + 1)%Z with (1 + n')%Z; last by lia. (* TODO :( *)
       iSpecialize ("HQ" with "[$Hx $HR]").
       rel_if_true_l. by iApply "HQ".
-    - iExists #n'. iFrame.
+    - iExists #n'. iFrame. simpl.
       iSplitL; eauto; last first.
       { iDestruct 1 as %Hfoo. exfalso. simplify_eq. }
       iIntros "_ !> Hx". simpl.

@@ -218,7 +218,7 @@ Section rules.
     IntoVal e2 v2 →
     nclose specN ⊆ E →
     vals_cas_compare_safe v' v1 →
-    v' ≠ v1 →
+    val_for_compare v' ≠ val_for_compare v1 →
     spec_ctx ρ ∗ j ⤇ fill K (CAS #l e1 e2) ∗ l ↦ₛ{q} v'
     ={E}=∗ j ⤇ fill K #false ∗ l ↦ₛ{q} v'.
   Proof.
@@ -242,12 +242,12 @@ Section rules.
     IntoVal e1 v1 →
     IntoVal e2 v2 →
     nclose specN ⊆ E →
-    val_is_unboxed v1 →
-    v1 = v1' →
+    vals_cas_compare_safe v1' v1 →
+    val_for_compare v1' = val_for_compare v1 →
     spec_ctx ρ ∗ j ⤇ fill K (CAS #l e1 e2) ∗ l ↦ₛ v1'
     ={E}=∗ j ⤇ fill K #true ∗ l ↦ₛ v2.
   Proof.
-    iIntros (<-<-??<-) "(#Hinv & Hj & Hl)"; subst.
+    iIntros (<-<-???) "(#Hinv & Hj & Hl)"; subst.
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def heapS_mapsto_eq /heapS_mapsto_def.
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
@@ -265,7 +265,6 @@ Section rules.
     iExists (<[j:=fill K (# true)]> tp), (state_upd_heap <[l:=v2]> σ).
     rewrite to_gen_heap_insert to_tpool_insert'; last eauto. iFrame. iPureIntro.
     eapply rtc_r, step_insert_no_fork; eauto. econstructor; eauto.
-    left; eauto.
   Qed.
 
   Lemma step_faa E ρ j K l e1 e2 (i1 i2 : Z) :

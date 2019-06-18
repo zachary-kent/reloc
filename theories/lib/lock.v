@@ -89,7 +89,7 @@ Section lockG_rules.
     iDestruct "Hlock" as (l) "[% #?]". simplify_eq.
     rel_cas_l_atomic.
     iInv N as (b) "[Hl HR]" "Hclose".
-    iModIntro. iExists _. iFrame.
+    iModIntro. iExists _. iFrame. simpl.
     iSplit.
     - iIntros (?). iNext. iIntros "Hl".
       assert (b = true) as ->. { destruct b; congruence. }

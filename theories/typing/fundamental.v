@@ -295,7 +295,7 @@ Section fundamental.
     simplify_eq. rel_cas_l_atomic.
     iInv (relocN .@ "ref" .@ (l,l')) as (v1 v1') "[Hv1 [>Hv2 #Hv]]" "Hclose".
     iModIntro. iExists _; iFrame. simpl.
-    destruct (decide (v1 = v2')) as [|Hneq]; subst.
+    destruct (decide (val_for_compare v1 = val_for_compare v2')) as [|Hneq]; subst.
     - iSplitR; first by (iIntros (?); contradiction).
       iIntros (?). iNext. iIntros "Hv1".
       iDestruct (eq_type_sound with "Hv") as "%"; first fast_done.
@@ -513,4 +513,3 @@ Section fundamental.
   Qed.
 
 End fundamental.
-

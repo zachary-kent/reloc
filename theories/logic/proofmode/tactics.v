@@ -438,7 +438,7 @@ Lemma tac_rel_cas_fail_r `{relocG Σ} K ℶ1 i1 E (l : loc) e1 e2 v1 v2 v e t er
   IntoVal e2 v2 →
   nclose specN ⊆ E →
   envs_lookup i1 ℶ1 = Some (false, l ↦ₛ v)%I →
-  v ≠ v1 →
+  val_for_compare v ≠ val_for_compare v1 →
   vals_cas_compare_safe v v1 →
   eres = fill K #false →
   envs_entails ℶ1 (refines E t eres A) →
@@ -457,8 +457,8 @@ Lemma tac_rel_cas_suc_r `{relocG Σ} K ℶ1 ℶ2 i1 E (l : loc) e1 e2 v1 v2 v e 
   IntoVal e2 v2 →
   nclose specN ⊆ E →
   envs_lookup i1 ℶ1 = Some (false, l ↦ₛ v)%I →
-  v = v1 →
-  val_is_unboxed v1 →
+  val_for_compare v = val_for_compare v1 →
+  vals_cas_compare_safe v v1 →
   envs_simple_replace i1 false (Esnoc Enil i1 (l ↦ₛ v2)) ℶ1 = Some ℶ2 →
   eres = fill K #true →
   envs_entails ℶ2 (refines E t eres A) →
@@ -488,8 +488,8 @@ Tactic Notation "rel_cas_fail_r" :=
   (* the remaining goals are from tac_rel_cas_fail_r (except for the first one, which has already been solved by this point) *)
   [solve_ndisj || fail "rel_cas_fail_r: cannot prove 'nclose specN ⊆ ?'"
   |solve_mapsto ()
-  |try congruence   (** v ≠ v1 *)
-  |try (fast_done || (left; fast_done) || (right; fast_done)) (** vals_cas_compare_safe *)
+  |try (simpl; congruence)   (** v ≠ v1 *)
+  |try heap_lang.proofmode.solve_vals_cas_compare_safe
   |reflexivity
   |rel_finish  (** new goal *)].
 
@@ -509,8 +509,8 @@ Tactic Notation "rel_cas_suc_r" :=
   (* the remaining goals are from tac_rel_cas_suc_r (except for the first one, which has already been solved by this point) *)
   [solve_ndisj || fail "rel_cas_suc_r: cannot prove 'nclose specN ⊆ ?'"
   |solve_mapsto ()
-  |try congruence   (** v = v1 *)
-  |try fast_done (** val_is_unboxed *)
+  |try (simpl; congruence)   (** v = v1 *)
+  |try heap_lang.proofmode.solve_vals_cas_compare_safe
   |pm_reflexivity  (** new env *)
   |reflexivity
   |rel_finish  (** new goal *)].
