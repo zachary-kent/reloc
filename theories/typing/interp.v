@@ -11,7 +11,7 @@ From Autosubst Require Import Autosubst.
 Section semtypes.
   Context `{relocG Σ}.
 
-  Program Definition ctx_lookup (x : var) : listC (lrelC Σ) -n> (lrelC Σ)
+  Program Definition ctx_lookup (x : var) : listO (lrelC Σ) -n> (lrelC Σ)
     := λne Δ, (from_option id lrel_true (Δ !! x))%I.
   Next Obligation.
     intros x n Δ Δ' HΔ.
@@ -25,8 +25,8 @@ Section semtypes.
       rewrite HP in HP'. inversion HP'.
   Qed.
 
-  Program Fixpoint interp (τ : type) : listC (lrelC Σ) -n> lrelC Σ :=
-    match τ as _ return listC (lrelC Σ) -n> lrelC Σ with
+  Program Fixpoint interp (τ : type) : listO (lrelC Σ) -n> lrelC Σ :=
+    match τ as _ return listO (lrelC Σ) -n> lrelC Σ with
     | TUnit => λne _, lrel_unit
     | TNat => λne _, lrel_int
     | TBool => λne _, lrel_bool
@@ -94,7 +94,7 @@ Section interp_ren.
     - intros v1 v2; simpl.
       rewrite iter_up. case_decide; simpl; properness.
       { by rewrite !lookup_app_l. }
-      change (bi_ofeC (uPredI (iResUR Σ))) with (uPredC (iResUR Σ)).
+      change (bi_ofeO (uPredI (iResUR Σ))) with (uPredO (iResUR Σ)).
       rewrite !lookup_app_r; [|lia..].
       assert ((length Δ1 + S (x - length Δ1) - length Δ1) = S (x - length Δ1))%nat as Hwat.
       { lia. }

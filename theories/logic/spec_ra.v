@@ -11,7 +11,7 @@ Definition relocN := nroot .@ "reloc".
 Definition specN := relocN .@ "spec".
 
 (** The CMRA for the heap of the specification. *)
-Definition tpoolUR : ucmraT := gmapUR nat (exclR exprC).
+Definition tpoolUR : ucmraT := gmapUR nat (exclR exprO).
 Definition cfgUR := prodUR tpoolUR (gen_heapUR loc val).
 
 (** The CMRA for the thread pool. *)
@@ -107,7 +107,7 @@ Section conversions.
     - by rewrite lookup_insert tpool_lookup lookup_app_r // Nat.sub_diag.
     - rewrite lookup_insert_ne; last lia.
       rewrite !tpool_lookup ?lookup_ge_None_2 ?app_length //=;
-         change (ofe_car exprC) with expr; lia.
+         change (ofe_car exprO) with expr; lia.
   Qed.
 
   Lemma tpool_singleton_included tp j e :
