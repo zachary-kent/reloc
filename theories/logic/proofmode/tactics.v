@@ -102,7 +102,7 @@ Tactic Notation "rel_apply_l" open_constr(lem) :=
       end));
   try lazymatch goal with
   | |- val_is_unboxed _ => fast_done
-  | |- vals_cas_compare_safe _ _ =>
+  | |- vals_cmpxchg_compare_safe _ _ =>
     fast_done || (left; fast_done) || (right; fast_done)
   end;
   try rel_finish.
@@ -428,19 +428,19 @@ Tactic Notation "rel_alloc_l" :=
   let H := iFresh "H" in
   rel_alloc_l l as H.
 
-(** Cas *)
-(* TODO: non-atomic tactics for CAS? *)
-Tactic Notation "rel_cas_l_atomic" := rel_apply_l refines_cas_l.
+(** CmpXchg *)
+(* TODO: non-atomic tactics for CmpXchg? *)
+Tactic Notation "rel_cmpxchg_l_atomic" := rel_apply_l refines_cmpxchg_l.
 
-Lemma tac_rel_cas_fail_r `{relocG Σ} K ℶ1 i1 E (l : loc) e1 e2 v1 v2 v e t eres A :
-  e = fill K (CAS (# l) e1 e2) →
+Lemma tac_rel_cmpxchg_fail_r `{relocG Σ} K ℶ1 i1 E (l : loc) e1 e2 v1 v2 v e t eres A :
+  e = fill K (CmpXchg (# l) e1 e2) →
   IntoVal e1 v1 →
   IntoVal e2 v2 →
   nclose specN ⊆ E →
   envs_lookup i1 ℶ1 = Some (false, l ↦ₛ v)%I →
   val_for_compare v ≠ val_for_compare v1 →
-  vals_cas_compare_safe v v1 →
-  eres = fill K #false →
+  vals_cmpxchg_compare_safe v v1 →
+  eres = fill K (v, #false)%V →
   envs_entails ℶ1 (refines E t eres A) →
   envs_entails ℶ1 (refines E t e A).
 Proof.
@@ -448,19 +448,19 @@ Proof.
   subst e eres.
   rewrite envs_lookup_split // /= Hg; simpl.
   apply bi.wand_elim_l'.
-  eapply refines_cas_fail_r; eauto.
+  eapply refines_cmpxchg_fail_r; eauto.
 Qed.
 
-Lemma tac_rel_cas_suc_r `{relocG Σ} K ℶ1 ℶ2 i1 E (l : loc) e1 e2 v1 v2 v e t eres A :
-  e = fill K (CAS (# l) e1 e2) →
+Lemma tac_rel_cmpxchg_suc_r `{relocG Σ} K ℶ1 ℶ2 i1 E (l : loc) e1 e2 v1 v2 v e t eres A :
+  e = fill K (CmpXchg (# l) e1 e2) →
   IntoVal e1 v1 →
   IntoVal e2 v2 →
   nclose specN ⊆ E →
   envs_lookup i1 ℶ1 = Some (false, l ↦ₛ v)%I →
   val_for_compare v = val_for_compare v1 →
-  vals_cas_compare_safe v v1 →
+  vals_cmpxchg_compare_safe v v1 →
   envs_simple_replace i1 false (Esnoc Enil i1 (l ↦ₛ v2)) ℶ1 = Some ℶ2 →
-  eres = fill K #true →
+  eres = fill K (v, #true)%V →
   envs_entails ℶ2 (refines E t eres A) →
   envs_entails ℶ1 (refines E t e A).
 Proof.
@@ -469,48 +469,48 @@ Proof.
   rewrite envs_simple_replace_sound //; simpl.
   rewrite right_id Hg.
   apply bi.wand_elim_l'.
-  eapply refines_cas_suc_r; eauto.
+  eapply refines_cmpxchg_suc_r; eauto.
 Qed.
 
-Tactic Notation "rel_cas_fail_r" :=
+Tactic Notation "rel_cmpxchg_fail_r" :=
   let solve_mapsto _ :=
     let l := match goal with |- _ = Some (_, (?l ↦ₛ _)%I) => l end in
-    iAssumptionCore || fail "rel_cas_fail_r: cannot find" l "↦ₛ ?" in
+    iAssumptionCore || fail "rel_cmpxchg_fail_r: cannot find" l "↦ₛ ?" in
   rel_pures_r;
   first
     [rel_reshape_cont_r ltac:(fun K e' =>
-       eapply (tac_rel_cas_fail_r K);
-       [reflexivity  (** e = fill K (CAS #l e1 e2) *)
+       eapply (tac_rel_cmpxchg_fail_r K);
+       [reflexivity  (** e = fill K (CmpXchg #l e1 e2) *)
        |iSolveTC     (** e1 is a value *)
        |iSolveTC     (** e2 is a value *)
        |idtac..])
-    |fail 1 "rel_cas_fail_r: cannot find 'Cas'"];
-  (* the remaining goals are from tac_rel_cas_fail_r (except for the first one, which has already been solved by this point) *)
-  [solve_ndisj || fail "rel_cas_fail_r: cannot prove 'nclose specN ⊆ ?'"
+    |fail 1 "rel_cmpxchg_fail_r: cannot find 'CmpXchg'"];
+  (* the remaining goals are from tac_rel_cmpxchg_fail_r (except for the first one, which has already been solved by this point) *)
+  [solve_ndisj || fail "rel_cmpxchg_fail_r: cannot prove 'nclose specN ⊆ ?'"
   |solve_mapsto ()
   |try (simpl; congruence)   (** v ≠ v1 *)
-  |try heap_lang.proofmode.solve_vals_cas_compare_safe
+  |try heap_lang.proofmode.solve_vals_cmpxchg_compare_safe
   |reflexivity
   |rel_finish  (** new goal *)].
 
-Tactic Notation "rel_cas_suc_r" :=
+Tactic Notation "rel_cmpxchg_suc_r" :=
   let solve_mapsto _ :=
     let l := match goal with |- _ = Some (_, (?l ↦ₛ _)%I) => l end in
-    iAssumptionCore || fail "rel_cas_suc_r: cannot find" l "↦ₛ ?" in
+    iAssumptionCore || fail "rel_cmpxchg_suc_r: cannot find" l "↦ₛ ?" in
   rel_pures_r;
   first
     [rel_reshape_cont_r ltac:(fun K e' =>
-       eapply (tac_rel_cas_suc_r K);
-       [reflexivity  (** e = fill K (CAS #l e1 e2) *)
+       eapply (tac_rel_cmpxchg_suc_r K);
+       [reflexivity  (** e = fill K (CmpXchg #l e1 e2) *)
        |iSolveTC     (** e1 is a value *)
        |iSolveTC     (** e2 is a value *)
        |idtac..])
-    |fail 1 "rel_cas_suc_r: cannot find 'Cas'"];
-  (* the remaining goals are from tac_rel_cas_suc_r (except for the first one, which has already been solved by this point) *)
-  [solve_ndisj || fail "rel_cas_suc_r: cannot prove 'nclose specN ⊆ ?'"
+    |fail 1 "rel_cmpxchg_suc_r: cannot find 'CmpXchg'"];
+  (* the remaining goals are from tac_rel_cmpxchg_suc_r (except for the first one, which has already been solved by this point) *)
+  [solve_ndisj || fail "rel_cmpxchg_suc_r: cannot prove 'nclose specN ⊆ ?'"
   |solve_mapsto ()
   |try (simpl; congruence)   (** v = v1 *)
-  |try heap_lang.proofmode.solve_vals_cas_compare_safe
+  |try heap_lang.proofmode.solve_vals_cmpxchg_compare_safe
   |pm_reflexivity  (** new env *)
   |reflexivity
   |rel_finish  (** new goal *)].

@@ -275,13 +275,13 @@ Section fundamental.
     - by iApply "IH2".
   Qed.
 
-  Lemma bin_log_related_CAS Δ Γ e1 e2 e3 e1' e2' e3' τ
+  Lemma bin_log_related_CmpXchg Δ Γ e1 e2 e3 e1' e2' e3' τ
     (HEqτ : EqType τ)
     (HUbτ : UnboxedType τ) :
     ({Δ;Γ} ⊨ e1 ≤log≤ e1' : Tref τ) -∗
     ({Δ;Γ} ⊨ e2 ≤log≤ e2' : τ) -∗
     ({Δ;Γ} ⊨ e3 ≤log≤ e3' : τ) -∗
-    {Δ;Γ} ⊨ CAS e1 e2 e3 ≤log≤ CAS e1' e2' e3' : TBool.
+    {Δ;Γ} ⊨ CmpXchg e1 e2 e3 ≤log≤ CmpXchg e1' e2' e3' : TProd τ TBool.
   Proof.
     iIntros "IH1 IH2 IH3".
     intro_clause.
@@ -292,24 +292,26 @@ Section fundamental.
     iDestruct (unboxed_type_sound with "IH2") as "[% %]"; try fast_done.
     iDestruct (eq_type_sound with "IH2") as "%"; first fast_done.
     iDestruct (eq_type_sound with "IH3") as "%"; first fast_done.
-    simplify_eq. rel_cas_l_atomic.
+    simplify_eq. rel_cmpxchg_l_atomic.
     iInv (relocN .@ "ref" .@ (l,l')) as (v1 v1') "[Hv1 [>Hv2 #Hv]]" "Hclose".
     iModIntro. iExists _; iFrame. simpl.
     destruct (decide (val_for_compare v1 = val_for_compare v2')) as [|Hneq]; subst.
     - iSplitR; first by (iIntros (?); contradiction).
       iIntros (?). iNext. iIntros "Hv1".
       iDestruct (eq_type_sound with "Hv") as "%"; first fast_done.
-      rel_cas_suc_r.
+      rel_cmpxchg_suc_r.
       iMod ("Hclose" with "[-]").
       { iNext; iExists _, _; by iFrame. }
-      rel_values.
+      rel_values. iExists _, _, _, _. do 2 (iSplitL; first done).
+      iFrame "Hv". iExists _. done.
     - iSplitL; last by (iIntros (?); congruence).
       iIntros (?). iNext. iIntros "Hv1".
       iDestruct (eq_type_sound with "Hv") as "%"; first fast_done.
-      rel_cas_fail_r.
+      rel_cmpxchg_fail_r.
       iMod ("Hclose" with "[-]").
       { iNext; iExists _, _; by iFrame. }
-      rel_values.
+      rel_values. iExists _, _, _, _. do 2 (iSplitL; first done).
+      iFrame "Hv". iExists _. done.
   Qed.
 
   Lemma bin_log_related_alloc Δ Γ e e' τ :
@@ -499,7 +501,7 @@ Section fundamental.
     - by iApply bin_log_related_alloc.
     - by iApply bin_log_related_load.
     - by iApply (bin_log_related_store with "[]").
-    - by iApply (bin_log_related_CAS with "[] []").
+    - by iApply (bin_log_related_CmpXchg with "[] []").
   Qed.
 
   Theorem refines_typed e τ :

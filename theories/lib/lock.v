@@ -87,18 +87,18 @@ Section lockG_rules.
     iLöb as "IH".
     rel_rec_l.
     iDestruct "Hlock" as (l) "[% #?]". simplify_eq.
-    rel_cas_l_atomic.
+    rel_cmpxchg_l_atomic.
     iInv N as (b) "[Hl HR]" "Hclose".
     iModIntro. iExists _. iFrame. simpl.
     iSplit.
     - iIntros (?). iNext. iIntros "Hl".
       assert (b = true) as ->. { destruct b; congruence. }
-      rel_if_l.
+      rel_pures_l.
       iMod ("Hclose" with "[Hl]"); first (iNext; iExists true; eauto).
       by iApply "IH".
     - iIntros (?). simplify_eq.
       iNext. iIntros "Hl".
-      rel_if_l.
+      rel_pures_l.
       iMod ("Hclose" with "[Hl]"); first (iNext; iExists true; eauto).
       iDestruct "HR" as "[Hlocked HR]".
       iApply ("Hlog" with "Hlocked HR").
@@ -134,8 +134,8 @@ Section lock_rules_r.
     iIntros "Hl Hlog".
     iDestruct "Hl" as (lk ->) "Hl".
     rel_rec_r.
-    rel_cas_suc_r.
-    rel_if_r.
+    rel_cmpxchg_suc_r.
+    rel_pures_r.
     iApply "Hlog". iExists _. by iFrame.
   Qed.
 

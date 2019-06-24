@@ -212,15 +212,15 @@ Section rules.
     eapply rtc_r, step_insert_no_fork; eauto. econstructor; eauto.
   Qed.
 
-  (** CAS & FAA *)
-  Lemma step_cas_fail E ρ j K l q v' e1 v1 e2 v2 :
+  (** CmpXchg & FAA *)
+  Lemma step_cmpxchg_fail E ρ j K l q v' e1 v1 e2 v2 :
     IntoVal e1 v1 →
     IntoVal e2 v2 →
     nclose specN ⊆ E →
-    vals_cas_compare_safe v' v1 →
+    vals_cmpxchg_compare_safe v' v1 →
     val_for_compare v' ≠ val_for_compare v1 →
-    spec_ctx ρ ∗ j ⤇ fill K (CAS #l e1 e2) ∗ l ↦ₛ{q} v'
-    ={E}=∗ j ⤇ fill K #false ∗ l ↦ₛ{q} v'.
+    spec_ctx ρ ∗ j ⤇ fill K (CmpXchg #l e1 e2) ∗ l ↦ₛ{q} v'
+    ={E}=∗ j ⤇ fill K (v', #false)%V ∗ l ↦ₛ{q} v'.
   Proof.
     iIntros (<-<-???) "(#Hinv & Hj & Hl)".
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def heapS_mapsto_eq /heapS_mapsto_def.
@@ -231,21 +231,22 @@ Section rules.
       as %[[_ ?%gen_heap_singleton_included]%prod_included _]%auth_both_valid.
     iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
     { by eapply auth_update, prod_local_update_1, singleton_local_update,
-        (exclusive_local_update _ (Excl (fill K (# false)))). }
+        (exclusive_local_update _ (Excl (fill K (_, #false)%V))). }
     iFrame "Hj Hl". iApply "Hclose". iNext.
-    iExists (<[j:=fill K (#false)]> tp), σ.
+    iExists (<[j:=fill K (_, #false)%V]> tp), σ.
     rewrite to_tpool_insert'; last eauto. iFrame. iPureIntro.
     eapply rtc_r, step_insert_no_fork; eauto. econstructor; eauto.
+    rewrite bool_decide_false //.
   Qed.
 
-  Lemma step_cas_suc E ρ j K l e1 v1 v1' e2 v2:
+  Lemma step_cmpxchg_suc E ρ j K l e1 v1 v1' e2 v2:
     IntoVal e1 v1 →
     IntoVal e2 v2 →
     nclose specN ⊆ E →
-    vals_cas_compare_safe v1' v1 →
+    vals_cmpxchg_compare_safe v1' v1 →
     val_for_compare v1' = val_for_compare v1 →
-    spec_ctx ρ ∗ j ⤇ fill K (CAS #l e1 e2) ∗ l ↦ₛ v1'
-    ={E}=∗ j ⤇ fill K #true ∗ l ↦ₛ v2.
+    spec_ctx ρ ∗ j ⤇ fill K (CmpXchg #l e1 e2) ∗ l ↦ₛ v1'
+    ={E}=∗ j ⤇ fill K (v1', #true)%V ∗ l ↦ₛ v2.
   Proof.
     iIntros (<-<-???) "(#Hinv & Hj & Hl)"; subst.
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def heapS_mapsto_eq /heapS_mapsto_def.
@@ -256,15 +257,16 @@ Section rules.
       as %[[_ Hl%gen_heap_singleton_included]%prod_included _]%auth_both_valid.
     iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
     { by eapply auth_update, prod_local_update_1, singleton_local_update,
-        (exclusive_local_update _ (Excl (fill K (# true)))). }
+        (exclusive_local_update _ (Excl (fill K (_, #true)%V))). }
     iMod (own_update_2 with "Hown Hl") as "[Hown Hl]".
     { eapply auth_update, prod_local_update_2, singleton_local_update,
         (exclusive_local_update _ (1%Qp, to_agree v2)); last done.
       by rewrite /to_gen_heap lookup_fmap Hl. }
     iFrame "Hj Hl". iApply "Hclose". iNext.
-    iExists (<[j:=fill K (# true)]> tp), (state_upd_heap <[l:=v2]> σ).
+    iExists (<[j:=fill K (_, #true)%V]> tp), (state_upd_heap <[l:=v2]> σ).
     rewrite to_gen_heap_insert to_tpool_insert'; last eauto. iFrame. iPureIntro.
     eapply rtc_r, step_insert_no_fork; eauto. econstructor; eauto.
+    rewrite bool_decide_true //.
   Qed.
 
   Lemma step_faa E ρ j K l e1 e2 (i1 i2 : Z) :

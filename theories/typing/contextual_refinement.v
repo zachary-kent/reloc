@@ -46,10 +46,10 @@ Inductive ctx_item :=
   | CTX_Load
   | CTX_StoreL (e2 : expr)
   | CTX_StoreR (e1 : expr)
-  (* Compare and swap used for fine-grained concurrency *)
-  | CTX_CAS_L (e1 : expr) (e2 : expr)
-  | CTX_CAS_M (e0 : expr) (e2 : expr)
-  | CTX_CAS_R (e0 : expr) (e1 : expr).
+  (* Compare-exchange used for fine-grained concurrency *)
+  | CTX_CmpXchg_L (e1 : expr) (e2 : expr)
+  | CTX_CmpXchg_M (e0 : expr) (e2 : expr)
+  | CTX_CmpXchg_R (e0 : expr) (e1 : expr).
 
 Fixpoint fill_ctx_item (ctx : ctx_item) (e : expr) : expr :=
   match ctx with
@@ -82,9 +82,9 @@ Fixpoint fill_ctx_item (ctx : ctx_item) (e : expr) : expr :=
   | CTX_Load => Load e
   | CTX_StoreL e2 => Store e e2
   | CTX_StoreR e1 => Store e1 e
-  | CTX_CAS_L e1 e2 => CAS e e1 e2
-  | CTX_CAS_M e0 e2 => CAS e0 e e2
-  | CTX_CAS_R e0 e1 => CAS e0 e1 e
+  | CTX_CmpXchg_L e1 e2 => CmpXchg e e1 e2
+  | CTX_CmpXchg_M e0 e2 => CmpXchg e0 e e2
+  | CTX_CmpXchg_R e0 e1 => CmpXchg e0 e1 e
   end.
 
 Definition ctx := list ctx_item.
@@ -180,15 +180,15 @@ Inductive typed_ctx_item :
   | TP_CTX_CasL Γ e1  e2 τ :
      EqType τ → UnboxedType τ →
      typed Γ e1 τ → typed Γ e2 τ →
-     typed_ctx_item (CTX_CAS_L e1 e2) Γ (Tref τ) Γ TBool
+     typed_ctx_item (CTX_CmpXchg_L e1 e2) Γ (Tref τ) Γ (TProd τ TBool)
   | TP_CTX_CasM Γ e0 e2 τ :
      EqType τ → UnboxedType τ →
      typed Γ e0 (Tref τ) → typed Γ e2 τ →
-     typed_ctx_item (CTX_CAS_M e0 e2) Γ τ Γ TBool
+     typed_ctx_item (CTX_CmpXchg_M e0 e2) Γ τ Γ (TProd τ TBool)
   | TP_CTX_CasR Γ e0 e1 τ :
      EqType τ → UnboxedType τ →
      typed Γ e0 (Tref τ) → typed Γ e1 τ →
-     typed_ctx_item (CTX_CAS_R e0 e1) Γ τ Γ TBool.
+     typed_ctx_item (CTX_CmpXchg_R e0 e1) Γ τ Γ (TProd τ TBool).
 
 Inductive typed_ctx: ctx → stringmap type → type → stringmap type → type → Prop :=
   | TPCTX_nil Γ τ :
@@ -362,13 +362,13 @@ Section bin_log_related_under_typed_ctx.
       + iApply (bin_log_related_store with "[]");
           try by iApply binary_fundamental.
         iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_CAS with "[] []");
+      + iApply (bin_log_related_CmpXchg with "[] []");
           try (by iApply binary_fundamental); eauto.
         iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_CAS with "[] []");
+      + iApply (bin_log_related_CmpXchg with "[] []");
           try (by iApply binary_fundamental); eauto.
         iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_CAS with "[] []");
+      + iApply (bin_log_related_CmpXchg with "[] []");
           try (by iApply binary_fundamental); eauto.
         iApply (IHK with "[Hrel]"); auto.
   Qed.

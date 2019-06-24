@@ -149,10 +149,10 @@ Inductive typed (Γ : stringmap type) : expr → type → Prop :=
   | TAlloc e τ : Γ ⊢ₜ e : τ → Γ ⊢ₜ Alloc e : Tref τ
   | TLoad e τ : Γ ⊢ₜ e : Tref τ → Γ ⊢ₜ Load e : τ
   | TStore e e' τ : Γ ⊢ₜ e : Tref τ → Γ ⊢ₜ e' : τ → Γ ⊢ₜ Store e e' : TUnit
-  | TCAS e1 e2 e3 τ :
+  | TCmpXchg e1 e2 e3 τ :
      EqType τ → UnboxedType τ →
      Γ ⊢ₜ e1 : Tref τ → Γ ⊢ₜ e2 : τ → Γ ⊢ₜ e3 : τ →
-     Γ ⊢ₜ CAS e1 e2 e3 : TBool
+     Γ ⊢ₜ CmpXchg e1 e2 e3 : TProd τ TBool
 where "Γ ⊢ₜ e : τ" := (typed Γ e τ).
 
 Lemma binop_nat_typed_safe (op : bin_op) (n1 n2 : Z) τ :

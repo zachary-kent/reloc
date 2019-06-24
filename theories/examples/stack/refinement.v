@@ -98,17 +98,17 @@ Section proof.
     close_sinv "Hclose" "[Hst Hst' Hl HLK]". clear w.
     repeat rel_pure_l.
     rel_alloc_l nstk as "Hnstk".
-    rel_cas_l_atomic.
+    rel_cmpxchg_l_atomic.
     iInv N as (istk' w) "(>Hst' & >Hl & >Hst & HLK)" "Hclose".
     iExists _. iFrame "Hst".
     iModIntro. iSplit.
-    - (* CAS fails *)
+    - (* CmpXchg fails *)
       iIntros (?); iNext; iIntros "Hst".
       close_sinv "Hclose" "[Hst Hst' Hl HLK]". clear w.
-      rel_if_false_l. simpl.
+      rel_pures_l. simpl.
       rel_rec_l.
       by iApply "IH".
-    - (* CAS succeeds *)
+    - (* CmpXchg succeeds *)
       iIntros (?). simplify_eq/=. iNext. iIntros "Hst".
       rel_apply_r (refines_CG_push_r with "Hst' Hl").
       iIntros "Hst' Hl".
@@ -119,7 +119,7 @@ Section proof.
         iExists _. iSplitL "Hnstk".
         - iExists 1%Qp; iFrame.
         - iRight. iExists _,_,_,_. eauto. }
-      rel_if_true_l.
+      rel_pures_l.
       rel_values.
   Qed.
 
@@ -157,18 +157,18 @@ Section proof.
       close_sinv "Hclose" "[Hst' Hst Hl HLK2]".
       iDestruct "Histk" as (q) "Histk".
       rel_load_l. repeat rel_pure_l.
-      rel_cas_l_atomic.
+      rel_cmpxchg_l_atomic.
       iInv N as (istk' w) "(>Hst' & >Hl & >Hst & HLK)" "Hclose".
       iExists _. iFrame "Hst".
       iModIntro. iSplit.
-      + (* CAS fails *) iIntros (?); simplify_eq/=.
+      + (* CmpXchg fails *) iIntros (?); simplify_eq/=.
         iNext. iIntros "Hst".
-        rel_if_l.
+        rel_pures_l.
         close_sinv "Hclose" "[Hst Hst' Hl HLK]".
         iApply "IH".
-      + (* CAS succeeds *) iIntros (?); simplify_eq/=.
+      + (* CmpXchg succeeds *) iIntros (?); simplify_eq/=.
         iNext. iIntros "Hst".
-        rel_if_l.
+        rel_pures_l.
         rewrite (stack_link_unfold _ istk).
         iDestruct "HLK" as (w') "(Histk2 & HLK)".
         iAssert (⌜w' = InjRV (y1, #z1)⌝)%I with "[Histk Histk2]" as %->.
@@ -179,7 +179,7 @@ Section proof.
         rel_apply_r (refines_CG_pop_suc_r with "Hst' Hl").
         iIntros "Hst' Hl".
         close_sinv "Hclose" "[-]".
-        rel_pure_l.
+        rel_pures_l.
         rel_values. iModIntro. iExists _,_; eauto.
   Qed.
 
@@ -238,4 +238,3 @@ Proof.
   iIntros (? ?).
   iApply stack_refinement.
 Qed.
-

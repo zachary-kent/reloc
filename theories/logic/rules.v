@@ -194,45 +194,45 @@ Section rules.
     by iApply "Hlog".
   Qed.
 
-  Lemma refines_cas_fail_r E K l e1 e2 v1 v2 v t A :
+  Lemma refines_cmpxchg_fail_r E K l e1 e2 v1 v2 v t A :
     nclose specN ⊆ E →
     IntoVal e1 v1 →
     IntoVal e2 v2 →
-    vals_cas_compare_safe v v1 →
+    vals_cmpxchg_compare_safe v v1 →
     val_for_compare v ≠ val_for_compare v1 →
     l ↦ₛ v -∗
-    (l ↦ₛ v -∗ REL t << fill K (of_val #false) @ E : A)
-    -∗ REL t << fill K (CAS #l e1 e2) @ E : A.
+    (l ↦ₛ v -∗ REL t << fill K (of_val (v, #false)) @ E : A)
+    -∗ REL t << fill K (CmpXchg #l e1 e2) @ E : A.
   Proof.
     iIntros (?<-<-??) "Hl Hlog".
-    pose (Φ := (fun (w : val) => ⌜w = #false⌝ ∗ l ↦ₛ v)%I).
+    pose (Φ := (fun (w : val) => ⌜w = (v, #false)%V⌝ ∗ l ↦ₛ v)%I).
     iApply (refines_step_r Φ with "[Hl]"); eauto.
     { cbv[Φ].
       iIntros (ρ j K') "#Hs Hj /=".
-      tp_cas_fail j; auto.
-      iExists #false. simpl.
+      tp_cmpxchg_fail j; auto.
+      iExists _. simpl.
       iFrame. eauto. }
     iIntros (w) "[% Hl]"; subst.
     by iApply "Hlog".
   Qed.
 
-  Lemma refines_cas_suc_r E K l e1 e2 v1 v2 v t A :
+  Lemma refines_cmpxchg_suc_r E K l e1 e2 v1 v2 v t A :
     nclose specN ⊆ E →
     IntoVal e1 v1 →
     IntoVal e2 v2 →
-    vals_cas_compare_safe v v1 →
+    vals_cmpxchg_compare_safe v v1 →
     val_for_compare v = val_for_compare v1 →
     l ↦ₛ v -∗
-    (l ↦ₛ v2 -∗ REL t << fill K (of_val #true) @ E : A)
-    -∗ REL t << fill K (CAS #l e1 e2) @ E : A.
+    (l ↦ₛ v2 -∗ REL t << fill K (of_val (v, #true)) @ E : A)
+    -∗ REL t << fill K (CmpXchg #l e1 e2) @ E : A.
   Proof.
     iIntros (?<-<-??) "Hl Hlog".
-    pose (Φ := (fun w => ⌜w = #true⌝ ∗ l ↦ₛ v2)%I).
+    pose (Φ := (fun w => ⌜w = (v, #true)%V⌝ ∗ l ↦ₛ v2)%I).
     iApply (refines_step_r Φ with "[Hl]"); eauto.
     { cbv[Φ].
       iIntros (ρ j K') "#Hs Hj /=".
-      tp_cas_suc j; auto.
-      iExists #true. simpl.
+      tp_cmpxchg_suc j; auto.
+      iExists _. simpl.
       iFrame. eauto. }
     iIntros (w) "[% Hl]"; subst.
     by iApply "Hlog".
@@ -385,26 +385,26 @@ Section rules.
     iApply (wp_store _ _ _ _ v' with "Hl"); auto.
   Qed.
 
-  Lemma refines_cas_l K E l e1 e2 v1 v2 t A :
+  Lemma refines_cmpxchg_l K E l e1 e2 v1 v2 t A :
     IntoVal e1 v1 →
     IntoVal e2 v2 →
     val_is_unboxed v1 →
     (|={⊤,E}=> ∃ v', ▷ l ↦ v' ∗
-     (⌜val_for_compare v' ≠ val_for_compare v1⌝ -∗ ▷ (l ↦ v' -∗ REL fill K (of_val #false) << t @ E : A)) ∧
-     (⌜val_for_compare v' = val_for_compare v1⌝ -∗ ▷ (l ↦ v2 -∗ REL fill K (of_val #true) << t @ E : A)))
-    -∗ REL fill K (CAS #l e1 e2) << t : A.
+     (⌜val_for_compare v' ≠ val_for_compare v1⌝ -∗ ▷ (l ↦ v' -∗ REL fill K (of_val (v', #false)) << t @ E : A)) ∧
+     (⌜val_for_compare v' = val_for_compare v1⌝ -∗ ▷ (l ↦ v2 -∗ REL fill K (of_val (v', #true)) << t @ E : A)))
+    -∗ REL fill K (CmpXchg #l e1 e2) << t : A.
   Proof.
     iIntros (<-<-?) "Hlog".
     iApply refines_atomic_l; auto.
     iMod "Hlog" as (v') "[Hl Hlog]". iModIntro.
     destruct (decide (val_for_compare v' = val_for_compare v1)).
-    - (* CAS successful *) subst.
-      iApply (wp_cas_suc with "Hl"); eauto.
+    - (* CmpXchg successful *) subst.
+      iApply (wp_cmpxchg_suc with "Hl"); eauto.
       { by right. }
       iDestruct "Hlog" as "[_ Hlog]".
       iSpecialize ("Hlog" with "[]"); eauto.
-    - (* CAS failed *)
-      iApply (wp_cas_fail with "Hl"); eauto.
+    - (* CmpXchg failed *)
+      iApply (wp_cmpxchg_fail with "Hl"); eauto.
       { by right. }
       iDestruct "Hlog" as "[Hlog _]".
       iSpecialize ("Hlog" with "[]"); eauto.

@@ -213,7 +213,7 @@ Section proofs.
         iNext. iIntros (vs' ->) "Hp". repeat rel_pure_l.
         repeat rel_pure_r.
         rel_apply_r (refines_rand_r b). repeat rel_pure_r.
-        rel_cas_suc_r. repeat rel_pure_r.
+        rel_cmpxchg_suc_r. repeat rel_pure_r.
         rel_apply_l (refines_release_l with "Hlk Hlocked [-]").
         { iExists vs'. iFrame. iRight. iExists b. iFrame. }
         iNext. repeat rel_pure_l; rel_values.
@@ -273,11 +273,11 @@ Section proofs.
         { eauto with iFrame. }
         rel_apply_l refines_rand_l. iNext. iIntros (b).
         repeat rel_pure_l.
-        rel_cas_l_atomic. iInv coinN as "(Hlk & [[Hc' Hc]|H])" "Hclose".
+        rel_cmpxchg_l_atomic. iInv coinN as "(Hlk & [[Hc' Hc]|H])" "Hclose".
         * iModIntro; iExists _. iFrame. iSplit.
           { iIntros (?); simplify_eq/=. }
           iIntros (_). iNext. iIntros "Hc".
-          rel_pure_l. rel_apply_r (refines_acquire_r with "Hlk").
+          rel_pures_l. rel_apply_r (refines_acquire_r with "Hlk").
           iIntros "Hlk". repeat rel_pure_r. rel_load_r.
           repeat rel_pure_r. rel_apply_r (refines_rand_r b).
           repeat rel_pure_r. rel_store_r.
@@ -291,7 +291,7 @@ Section proofs.
           iModIntro; iExists _. iFrame. iSplit; last first.
           { iIntros (?); simplify_eq/=. }
           iIntros (_). iNext. iIntros "Hc".
-          rel_pure_l. rel_rec_l. do 2 rel_pure_l.
+          rel_pures_l. rel_rec_l. do 2 rel_pure_l.
           iMod ("Hclose" with "[-]") as "_".
           { eauto with iFrame. }
           iApply "IH".
@@ -351,4 +351,3 @@ Proof.
   - eapply (refines_sound #[relocΣ; lockΣ]).
     iIntros (? Δ). iApply coin_lazy'_lazy_refinement.
 Qed.
-

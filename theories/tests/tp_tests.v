@@ -31,11 +31,12 @@ Lemma test2 E1 j K (l : loc) (n : nat) ρ :
   ={E1}=∗ l ↦ₛ #(n*2) ∗ j ⤇ fill K #true.
 Proof.
   iIntros (?) "#? Hj Hl".
-  tp_cas_fail j. tp_normalise j.
+  tp_cmpxchg_fail j. tp_normalise j.
+  tp_pure j (Snd _). tp_normalise j.
   tp_closure j. tp_normalise j.
   tp_seq j. tp_normalise j.
   tp_binop j. tp_normalise j.
-  tp_cas_suc j. by iFrame.
+  tp_cmpxchg_suc j. tp_pure j (Snd _). by iFrame.
 Qed.
 
 (* fork *)

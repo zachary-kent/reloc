@@ -249,22 +249,22 @@ Tactic Notation "tp_load" constr(j) :=
     |pm_reflexivity || fail "tp_load: this should not happen"
     |(* new goal *)]).
 
-Lemma tac_tp_cas_fail `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l : loc) e1 e2 v' v1 v2 Q q :
+Lemma tac_tp_cmpxchg_fail `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l : loc) e1 e2 v' v1 v2 Q q :
   nclose specN ⊆ E1 →
   envs_lookup i1 Δ1 = Some (p, spec_ctx ρ) →
   envs_lookup_delete false i2 Δ1 = Some (false, j ⤇ e, Δ2)%I →
-  e = fill K' (CAS #l e1 e2) →
+  e = fill K' (CmpXchg #l e1 e2) →
   IntoVal e1 v1 →
   IntoVal e2 v2 →
   envs_lookup i3 Δ2 = Some (false, l ↦ₛ{q} v')%I →
   val_for_compare v' ≠ val_for_compare v1 →
-  vals_cas_compare_safe v' v1 →
+  vals_cmpxchg_compare_safe v' v1 →
   envs_simple_replace i3 false
-    (Esnoc (Esnoc Enil i2 (j ⤇ fill K' #false)) i3 (l ↦ₛ{q} v')%I) Δ2 = Some Δ3 →
+    (Esnoc (Esnoc Enil i2 (j ⤇ fill K' (v', #false)%V)) i3 (l ↦ₛ{q} v')%I) Δ2 = Some Δ3 →
   envs_entails Δ3 (|={E1,E2}=> Q) →
   envs_entails Δ1 (|={E1,E2}=> Q).
 Proof.
-  rewrite envs_entails_eq. intros ??? Hfill <-<-? Hcas ?? HQ.
+  rewrite envs_entails_eq. intros ??? Hfill <-<-? Hcmpxchg ?? HQ.
   rewrite -(idemp bi_and (of_envs Δ1)).
   rewrite {1}(envs_lookup_sound' Δ1 false). 2: eassumption.
   rewrite bi.sep_elim_l.
@@ -282,45 +282,45 @@ Proof.
   (* (S (S (spec_ctx ρ) (j => fill _ _)) (S (l ↦ v) ..)) *)
   rewrite assoc.
   rewrite -(assoc _ (spec_ctx ρ) (j ⤇ fill K' _)%I).
-  rewrite step_cas_fail //.
+  rewrite step_cmpxchg_fail //.
   rewrite -(fupd_trans E1 E1 E2).
   rewrite fupd_frame_r.
   apply fupd_mono.
   by rewrite (comm _ (j ⤇ _)%I) /= right_id bi.wand_elim_r.
 Qed.
 
-Tactic Notation "tp_cas_fail" constr(j) :=
+Tactic Notation "tp_cmpxchg_fail" constr(j) :=
   iStartProof;
   with_spec_ctx ltac:(fun _ =>
-  eapply (tac_tp_cas_fail j);
-    [solve_ndisj || fail "tp_cas_fail: cannot prove 'nclose specN ⊆ ?'"
-    |iAssumptionCore || fail "tp_cas_fail: cannot find spec_ctx" (* spec_ctx *)
-    |iAssumptionCore || fail "tp_cas_fail: cannot find '" j " ⤇ ?'"
-    |tp_bind_helper (* e = K'[CAS _ _ _] *)
+  eapply (tac_tp_cmpxchg_fail j);
+    [solve_ndisj || fail "tp_cmpxchg_fail: cannot prove 'nclose specN ⊆ ?'"
+    |iAssumptionCore || fail "tp_cmpxchg_fail: cannot find spec_ctx" (* spec_ctx *)
+    |iAssumptionCore || fail "tp_cmpxchg_fail: cannot find '" j " ⤇ ?'"
+    |tp_bind_helper (* e = K'[CmpXchg _ _ _] *)
     |iSolveTC
     |iSolveTC
-    |iAssumptionCore || fail "tp_cas_fail: cannot find '? ↦ ?'"
+    |iAssumptionCore || fail "tp_cmpxchg_fail: cannot find '? ↦ ?'"
     |try (simpl; congruence) (* v' ≠ v1 *)
-    |try heap_lang.proofmode.solve_vals_cas_compare_safe
-    |pm_reflexivity || fail "tp_cas_fail: this should not happen"
+    |try heap_lang.proofmode.solve_vals_cmpxchg_compare_safe
+    |pm_reflexivity || fail "tp_cmpxchg_fail: this should not happen"
     |(* new goal *)]).
 
-Lemma tac_tp_cas_suc `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l : loc) e1 e2 v' v1 v2 Q :
+Lemma tac_tp_cmpxchg_suc `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l : loc) e1 e2 v' v1 v2 Q :
   nclose specN ⊆ E1 →
   envs_lookup i1 Δ1 = Some (p, spec_ctx ρ) →
   envs_lookup_delete false i2 Δ1 = Some (false, j ⤇ e, Δ2)%I →
-  e = fill K' (CAS #l e1 e2) →
+  e = fill K' (CmpXchg #l e1 e2) →
   IntoVal e1 v1 →
   IntoVal e2 v2 →
   envs_lookup i3 Δ2 = Some (false, l ↦ₛ v')%I →
   val_for_compare v' = val_for_compare v1 →
-  vals_cas_compare_safe v' v1 →
+  vals_cmpxchg_compare_safe v' v1 →
   envs_simple_replace i3 false
-    (Esnoc (Esnoc Enil i2 (j ⤇ fill K' #true)) i3 (l ↦ₛ v2)%I) Δ2 = Some Δ3 →
+    (Esnoc (Esnoc Enil i2 (j ⤇ fill K' (v', #true)%V)) i3 (l ↦ₛ v2)%I) Δ2 = Some Δ3 →
   envs_entails Δ3 (|={E1,E2}=> Q) →
   envs_entails Δ1 (|={E1,E2}=> Q).
 Proof.
-  rewrite envs_entails_eq. intros ??? Hfill <-<-? Hcas Hsafe ? HQ.
+  rewrite envs_entails_eq. intros ??? Hfill <-<-? Hcmpxchg Hsafe ? HQ.
   rewrite -(idemp bi_and (of_envs Δ1)).
   rewrite {1}(envs_lookup_sound' Δ1 false). 2: eassumption.
   rewrite bi.sep_elim_l.
@@ -338,27 +338,27 @@ Proof.
   (* (S (S (spec_ctx ρ) (j => fill _ _)) (S (l ↦ v) ..)) *)
   rewrite assoc.
   rewrite -(assoc _ (spec_ctx ρ) (j ⤇ fill K' _)%I).
-  rewrite step_cas_suc //.
+  rewrite step_cmpxchg_suc //.
   rewrite -(fupd_trans E1 E1 E2).
   rewrite fupd_frame_r.
   apply fupd_mono.
   by rewrite (comm _ (j ⤇ _)%I) bi.wand_elim_r.
 Qed.
 
-Tactic Notation "tp_cas_suc" constr(j) :=
+Tactic Notation "tp_cmpxchg_suc" constr(j) :=
   iStartProof;
   with_spec_ctx ltac:(fun _ =>
-  eapply (tac_tp_cas_suc j);
-    [solve_ndisj || fail "tp_cas_suc: cannot prove 'nclose specN ⊆ ?'"
-    |iAssumptionCore || fail "tp_cas_suc: cannot find spec_ctx" (* spec_ctx *)
-    |iAssumptionCore || fail "tp_cas_suc: cannot find '" j " ⤇ ?'"
-    |tp_bind_helper (* e = K'[CAS _ _ _] *)
+  eapply (tac_tp_cmpxchg_suc j);
+    [solve_ndisj || fail "tp_cmpxchg_suc: cannot prove 'nclose specN ⊆ ?'"
+    |iAssumptionCore || fail "tp_cmpxchg_suc: cannot find spec_ctx" (* spec_ctx *)
+    |iAssumptionCore || fail "tp_cmpxchg_suc: cannot find '" j " ⤇ ?'"
+    |tp_bind_helper (* e = K'[CmpXchg _ _ _] *)
     |iSolveTC
     |iSolveTC
-    |iAssumptionCore || fail "tp_cas_suc: cannot find '? ↦ ?'"
+    |iAssumptionCore || fail "tp_cmpxchg_suc: cannot find '? ↦ ?'"
     |try (simpl; congruence)     (* v' = v1 *)
-    |try heap_lang.proofmode.solve_vals_cas_compare_safe
-    |pm_reflexivity || fail "tp_cas_suc: this should not happen"
+    |try heap_lang.proofmode.solve_vals_cmpxchg_compare_safe
+    |pm_reflexivity || fail "tp_cmpxchg_suc: this should not happen"
     |(* new goal *)]).
 
 Lemma tac_tp_faa `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l : loc)  e2 (z1 z2 : Z) Q :
@@ -405,7 +405,7 @@ Tactic Notation "tp_faa" constr(j) :=
     [solve_ndisj || fail "tp_faa: cannot prove 'nclose specN ⊆ ?'"
     |iAssumptionCore || fail "tp_faa: cannot find spec_ctx" (* spec_ctx *)
     |iAssumptionCore || fail "tp_faa: cannot find '" j " ⤇ ?'"
-    |tp_bind_helper (* e = K'[CAS _ _ _] *)
+    |tp_bind_helper (* e = K'[FAA _ _ _] *)
     |iSolveTC (* IntoVal *)
     |iAssumptionCore || fail "tp_faa: cannot find '? ↦ ?'"
     |pm_reflexivity || fail "tp_faa: this should not happen"

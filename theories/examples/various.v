@@ -199,20 +199,20 @@ Section proofs.
       iApply refines_arrow.
       iAlways. iIntros (f f') "Hf".
       rel_let_l. rel_let_r.
-      rel_cas_l_atomic.
+      rel_cmpxchg_l_atomic.
       iInv i3n as (n) "(Hx & Hx' & >Hbb)" "Hcl".
       iDestruct "Hbb" as "[(Hb & Hb' & Hx1 & Hx'1) | (Hb & Hb')]"; last first.
       { iModIntro; iExists _; iFrame. simpl.
         iSplitL; last by iIntros (?); congruence.
         iIntros (?); iNext; iIntros "Hb".
-        rel_cas_fail_r; rel_if_r; rel_if_l.
+        rel_cmpxchg_fail_r; rel_pures_r; rel_pures_l.
         iMod ("Hcl" with "[-]").
         { iNext. iExists n. iFrame. iRight. iFrame. }
         rel_values. }
       { iModIntro. iExists _; iFrame. simpl.
         iSplitR; first by iIntros (?); congruence.
         iIntros (?); iNext; iIntros "Hb".
-        rel_cas_suc_r; rel_if_r; rel_if_l.
+        rel_cmpxchg_suc_r; rel_pures_r; rel_pures_l.
         rel_load_r. repeat rel_pure_r.
         iMod ("Hcl" with "[Hb Hb' Hx Hx']") as "_".
         { iNext. iExists _; iFrame. iRight. iFrame. }

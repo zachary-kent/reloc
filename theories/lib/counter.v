@@ -74,8 +74,8 @@ Section CG_Counter.
     iIntros (?) "Hx Hlog".
     rel_rec_r. repeat rel_pure_r.
     rel_load_r. repeat rel_pure_r.
-    rel_cas_suc_r.
-    rel_if_r.
+    rel_cmpxchg_suc_r.
+    rel_pures_r.
     replace (n + 1)%Z with (1 + n)%Z; last lia.
     by iApply "Hlog".
   Qed.
@@ -99,7 +99,7 @@ Section CG_Counter.
     iExists #n. iFrame. iNext. iIntros "Hx".
     iDestruct "Hrev" as "[Hrev _]".
     iMod ("Hrev" with "[HR Hx]") as "_"; first iFrame.
-    repeat rel_pure_l. rel_cas_l_atomic.
+    repeat rel_pure_l. rel_cmpxchg_l_atomic.
     iMod "H2" as (n') "[Hx [HR HQ]]". iModIntro. simpl.
     destruct (decide (n = n')); subst.
     - iExists #n'. iFrame. simpl.
@@ -108,12 +108,12 @@ Section CG_Counter.
       iDestruct "HQ" as "[_ HQ]".
       replace (n' + 1)%Z with (1 + n')%Z; last by lia. (* TODO :( *)
       iSpecialize ("HQ" with "[$Hx $HR]").
-      rel_if_true_l. by iApply "HQ".
+      rel_pures_l. by iApply "HQ".
     - iExists #n'. iFrame. simpl.
       iSplitL; eauto; last first.
       { iDestruct 1 as %Hfoo. exfalso. simplify_eq. }
       iIntros "_ !> Hx". simpl.
-      rel_if_false_l.
+      rel_pures_l.
       iDestruct "HQ" as "[HQ _]".
       iMod ("HQ" with "[$Hx $HR]").
       by iApply "IH".
