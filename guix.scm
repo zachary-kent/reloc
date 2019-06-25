@@ -30,10 +30,10 @@
   #:use-module (gnu packages coq)
   #:use-module ((guix licenses) #:prefix license:))
 
-(define stdpp-commit "c8dbb063cffe6275a75218d377c3174538396670")
-(define stdpp-sha256 (base32 "0jn820ahfdnbqax3iaqg2c3d9bd5x0w9mb3r7a6f8lszrg1hll26")) ;; sha256 hash of the specific std++ checkout
-(define iris-commit "31bf88ff46fd89815e49dd22dbc5fea4a77fb62e")
-(define iris-sha256 (base32 "1avarky1lzpzjypjwfjifl26p69nygn7g7r3ry1jkxj2w3ilh8bi")) ;; sha256 hash of the specific std++ checkout
+(define stdpp-commit "4ff965b26be968461cb58f84dfc51d66d9da04c3")
+(define stdpp-sha256 (base32 "08zzkg5sln1vxfymqwlz7y6bnll0bqrawv1d6pn1nl4qp92q5blm")) ;; sha256 hash of the specific std++ checkout
+(define iris-commit "6a86d92560bd05d53e2d5ac0c878e090963ed9ef")
+(define iris-sha256 (base32 "1d8hdp574w42qvkvrnz0bxgmbm1m7c74sxwdj61ij8xl5azr2mfs")) ;; sha256 hash of the specific iris checkout
 (define %source-dir (dirname (current-filename)))
 
 (define-public coq-stdpp
@@ -126,8 +126,7 @@
   ;; We propogate all the inputs, because then it's just easier to set up the dev environment
   (inputs `(("coq"    ,coq)))
   (propagated-inputs
-   `(("coq"           ,coq)
-     ("coq-autosubst" ,coq-autosubst)
+   `(("coq-autosubst" ,coq-autosubst)
      ("coq-stdpp"     ,coq-stdpp)
      ("coq-iris"      ,coq-iris)))
   (arguments
