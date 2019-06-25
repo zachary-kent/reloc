@@ -115,5 +115,28 @@ Qed.
 
 Lemma nth_int_typed `{relocG Σ} :
   REL nth << nth : lrel_list lrel_int → lrel_int → lrel_int.
-Proof. admit. Admitted.
 (* XXX derive this from the fundamental property *)
+Proof.
+  unfold nth.
+  rel_arrow_val. fold nth.
+  iIntros (l1 l2) "#Hl".
+  rel_rec_l. rel_rec_r. rel_pures_l. rel_pures_r.
+  rel_arrow_val. iIntros (n1 n2) "Hn".
+  iRevert "Hl". iIntros "Hl".
+  rel_rec_l. rel_rec_r.
+  iLöb as "IH" forall (l1 l2 n1 n2).
+  iDestruct "Hl" as "#Hl".
+  rewrite /rec_unfold lrel_list_unfold.
+  rel_pures_l. rel_pures_r.
+  iDestruct "Hl" as "[[-> ->]|Hl]"; rel_pures_l; rel_pures_r.
+  - rel_values.
+  - iDestruct "Hl" as (w1 w2 t1 t2 -> ->) "[Hw Hl]".
+    rel_pures_l. rel_pures_r.
+    iDestruct "Hn" as (n) "[-> ->]".
+    case_bool_decide; rel_pures_l; rel_pures_r.
+    + rel_values.
+    + rel_rec_l. rel_rec_r.
+      rel_pures_l. rel_pures_r.
+      iApply ("IH" with "[] Hl").
+      iExists (n-1)%Z. eauto with iFrame.
+Qed.
