@@ -37,8 +37,8 @@ Proof.
 Qed.
 
 Lemma lrel_list_cons `{relocG Σ} (A : lrel Σ) v1 v2 ls1 ls2 :
-  A v1 v2 -∗
-  lrel_list A ls1 ls2 -∗
+  ▷ A v1 v2 -∗
+  ▷ lrel_list A ls1 ls2 -∗
   lrel_list A (CONSV v1 ls1) (CONSV v2 ls2).
 Proof.
   iIntros "#HA #Hls".
