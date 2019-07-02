@@ -210,7 +210,7 @@ Section related_facts.
   Context `{relocG Σ}.
 
   (* We need this to be able to open and closed invariants in front of logrels *)
-  Lemma fupd_logrel E1 E2 e e' A :
+  Lemma fupd_refines E1 E2 e e' A :
     ((|={E1,E2}=> REL e << e' @ E2 : A)
      -∗ (REL e << e' @ E1 : A))%I.
   Proof.
@@ -219,13 +219,13 @@ Section related_facts.
     iMod "H" as "H". iApply ("H" with "Hs Hj").
   Qed.
 
-  Global Instance elim_fupd_logrel p E1 E2 e e' P A :
+  Global Instance elim_fupd_refines p E1 E2 e e' P A :
    (* TODO: DF: look at the booleans here *)
    ElimModal True p false (|={E1,E2}=> P) P
      (REL e << e' @ E1 : A) (REL e << e' @ E2: A).
   Proof.
     rewrite /ElimModal. intros _.
-    iIntros "[HP HI]". iApply fupd_logrel.
+    iIntros "[HP HI]". iApply fupd_refines.
     destruct p; simpl; rewrite ?bi.intuitionistically_elim;
     iMod "HP"; iModIntro; by iApply "HI".
   Qed.
@@ -235,7 +235,7 @@ Section related_facts.
      (REL e << e' @ E : A) (REL e << e' @ E : A).
   Proof.
     rewrite /ElimModal (bupd_fupd E).
-    apply: elim_fupd_logrel.
+    apply: elim_fupd_refines.
   Qed.
 
   (* This + elim_modal_timless_bupd' is useful for stripping off laters of timeless propositions. *)
@@ -243,7 +243,7 @@ Section related_facts.
     IsExcept0 (REL e << e' @ E : A).
   Proof.
     rewrite /IsExcept0. iIntros "HL".
-    iApply fupd_logrel. by iMod "HL".
+    iApply fupd_refines. by iMod "HL".
   Qed.
 
   Lemma refines_spec_ctx E e e' A :
