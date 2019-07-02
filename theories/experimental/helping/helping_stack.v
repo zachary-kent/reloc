@@ -247,7 +247,7 @@ Section refinement.
 
   Notation D := (olocO -n> valO -n> iProp Σ).
 
-  Program Definition stack_link_pre : D -n> D := λne S ol v2,
+  Program Definition stack_link_pre : D -> D := λ S, λne ol v2,
     match ol with
     | None => ⌜v2 = NONEV⌝
     | Some l => ∃ (h : val) (t : option loc) (h' t' : val),
@@ -255,33 +255,15 @@ Section refinement.
                 ∗ (∃ q, l ↦{q} (h, oloc_to_val t))
                 ∗ lrel_int h h' ∗ ▷ S t t'
     end%I.
-  Next Obligation. intros ? [?|]; simpl; solve_proper. Qed.
-  Next Obligation.
-    intros S n. solve_proper_prepare.
-    repeat (case_match; solve_proper_prepare);
-    repeat first [eassumption | f_equiv ];
-    try match goal with
-    | [H : Some _ ≡{n}≡ _ |- _ ] => cbv in H
-    | [H : _ ≡{n}≡ Some _ |- _ ] => cbv in H
-    end; simplify_eq/=; auto.
-  Qed.
-  Next Obligation.
-    solve_proper_prepare.
-    repeat (case_match; solve_proper_prepare);
-    repeat first [eassumption | f_equiv ];
-    try match goal with
-    | [H : Some _ ≡{n}≡ _ |- _ ] => cbv in H
-    | [H : _ ≡{n}≡ Some _ |- _ ] => cbv in H
-    end; simplify_eq/=; auto.
-    (* TODO: f_equiv does not work here *)
-    apply H.
-  Qed.
 
   Global Instance stack_link_pre_contractive : Contractive stack_link_pre.
   Proof.
     solve_proper_prepare. destruct x0; last done.
     repeat (first [eassumption | f_contractive | f_equiv]).
   Qed.
+
+  Global Instance stack_link_pre_ne : NonExpansive stack_link_pre.
+  Proof. apply contractive_ne, _. Qed.
 
   Definition stack_link := fixpoint stack_link_pre.
 
@@ -297,7 +279,6 @@ Section refinement.
   Proof.
     rewrite {1}/stack_link.
     transitivity (stack_link_pre (fixpoint stack_link_pre) ol v2).
-    (* TODO: rewrite fixpoint_unfold. *)
     { f_equiv. f_equiv. apply fixpoint_unfold. }
     destruct ol; reflexivity.
   Qed.
