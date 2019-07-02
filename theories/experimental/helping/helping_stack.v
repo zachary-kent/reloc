@@ -245,10 +245,10 @@ Section refinement.
   Local Instance oloc_to_val_inj : Inj (=) (=) oloc_to_val.
   Proof. intros [|][|]; simpl; congruence. Qed.
 
-  Notation D := (olocO -n> valO -n> iProp Σ).
+  Notation D := (olocO -d> valO -d> iProp Σ).
 
-  Program Definition stack_link_pre : D -> D := λ S, λne ol v2,
-    match ol with
+  Definition stack_link_pre : D → D := λ S ol v2,
+    match ol return _ with
     | None => ⌜v2 = NONEV⌝
     | Some l => ∃ (h : val) (t : option loc) (h' t' : val),
                   ⌜v2 = SOMEV (h', t')⌝
@@ -258,13 +258,9 @@ Section refinement.
 
   Global Instance stack_link_pre_contractive : Contractive stack_link_pre.
   Proof.
-    solve_proper_prepare. destruct x0; last done.
-    repeat (first [eassumption | f_contractive | f_equiv]).
+    intros n S1 S2 HS. solve_proper_prepare.
+    repeat (first [apply HS | f_contractive | f_equiv]).
   Qed.
-
-  Global Instance stack_link_pre_ne : NonExpansive stack_link_pre.
-  Proof. apply contractive_ne, _. Qed.
-
   Definition stack_link := fixpoint stack_link_pre.
 
   Lemma stack_link_unfold ol v2 :
@@ -276,12 +272,7 @@ Section refinement.
                  ∗ (∃ q, l ↦{q} (h, oloc_to_val t))
                  ∗ lrel_int h h' ∗ ▷ stack_link t t'
      end%I).
-  Proof.
-    rewrite {1}/stack_link.
-    transitivity (stack_link_pre (fixpoint stack_link_pre) ol v2).
-    { f_equiv. f_equiv. apply fixpoint_unfold. }
-    destruct ol; reflexivity.
-  Qed.
+  Proof. apply (fixpoint_unfold stack_link_pre). Qed.
 
   Lemma stack_link_empty : stack_link None NILV.
   Proof. rewrite stack_link_unfold; by iPureIntro. Qed.
