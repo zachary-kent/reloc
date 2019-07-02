@@ -15,7 +15,7 @@ Section rules.
 
   (** * Primitive rules *)
 
-  (** ([fupd_logrel] is defined in [logrel_binary.v]) *)
+  (** ([fupd_refines] is defined in [logrel_binary.v]) *)
 
   (** ** Forward reductions on the LHS *)
 
