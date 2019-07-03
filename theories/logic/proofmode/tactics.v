@@ -102,7 +102,7 @@ Tactic Notation "rel_apply_l" open_constr(lem) :=
       end));
   try lazymatch goal with
   | |- val_is_unboxed _ => fast_done
-  | |- vals_cmpxchg_compare_safe _ _ =>
+  | |- vals_compare_safe _ _ =>
     fast_done || (left; fast_done) || (right; fast_done)
   end;
   try rel_finish.
@@ -174,7 +174,7 @@ Tactic Notation "rel_pure_l" open_constr(ef) :=
       eapply (tac_rel_pure_l K e');
       [reflexivity                  (** e = fill K e1 *)
       |iSolveTC                     (** PureClosed ϕ e1 e2 *)
-      |try fast_done                (** φ *)
+      |try heap_lang.proofmode.solve_vals_compare_safe                (** φ *)
       |first [left; split; reflexivity              (** Here we decide if the mask E is ⊤ *)
              | right; reflexivity]                  (**    (m = n ∧ E = ⊤) ∨ (m = 0) *)
       |iSolveTC                                     (** IntoLaters *)
@@ -191,7 +191,7 @@ Tactic Notation "rel_pure_r" open_constr(ef) :=
       eapply (tac_rel_pure_r K e');
       [reflexivity                  (** e = fill K e1 *)
       |iSolveTC                     (** PureClosed ϕ e1 e2 *)
-      |try fast_done                (** φ *)
+      |try heap_lang.proofmode.solve_vals_compare_safe                (** φ *)
       |solve_ndisj        || fail 1 "rel_pure_r: cannot solve ↑specN ⊆ ?"
       |simpl; reflexivity           (** eres = fill K e2 *)
       |rel_finish                   (** new goal *)])
@@ -438,8 +438,8 @@ Lemma tac_rel_cmpxchg_fail_r `{relocG Σ} K ℶ1 i1 E (l : loc) e1 e2 v1 v2 v e 
   IntoVal e2 v2 →
   nclose specN ⊆ E →
   envs_lookup i1 ℶ1 = Some (false, l ↦ₛ v)%I →
-  val_for_compare v ≠ val_for_compare v1 →
-  vals_cmpxchg_compare_safe v v1 →
+  v ≠ v1 →
+  vals_compare_safe v v1 →
   eres = fill K (v, #false)%V →
   envs_entails ℶ1 (refines E t eres A) →
   envs_entails ℶ1 (refines E t e A).
@@ -457,8 +457,8 @@ Lemma tac_rel_cmpxchg_suc_r `{relocG Σ} K ℶ1 ℶ2 i1 E (l : loc) e1 e2 v1 v2 
   IntoVal e2 v2 →
   nclose specN ⊆ E →
   envs_lookup i1 ℶ1 = Some (false, l ↦ₛ v)%I →
-  val_for_compare v = val_for_compare v1 →
-  vals_cmpxchg_compare_safe v v1 →
+  v = v1 →
+  vals_compare_safe v v1 →
   envs_simple_replace i1 false (Esnoc Enil i1 (l ↦ₛ v2)) ℶ1 = Some ℶ2 →
   eres = fill K (v, #true)%V →
   envs_entails ℶ2 (refines E t eres A) →
@@ -489,7 +489,7 @@ Tactic Notation "rel_cmpxchg_fail_r" :=
   [solve_ndisj || fail "rel_cmpxchg_fail_r: cannot prove 'nclose specN ⊆ ?'"
   |solve_mapsto ()
   |try (simpl; congruence)   (** v ≠ v1 *)
-  |try heap_lang.proofmode.solve_vals_cmpxchg_compare_safe
+  |try heap_lang.proofmode.solve_vals_compare_safe
   |reflexivity
   |rel_finish  (** new goal *)].
 
@@ -510,7 +510,7 @@ Tactic Notation "rel_cmpxchg_suc_r" :=
   [solve_ndisj || fail "rel_cmpxchg_suc_r: cannot prove 'nclose specN ⊆ ?'"
   |solve_mapsto ()
   |try (simpl; congruence)   (** v = v1 *)
-  |try heap_lang.proofmode.solve_vals_cmpxchg_compare_safe
+  |try heap_lang.proofmode.solve_vals_compare_safe
   |pm_reflexivity  (** new env *)
   |reflexivity
   |rel_finish  (** new goal *)].

@@ -198,8 +198,8 @@ Section rules.
     nclose specN ⊆ E →
     IntoVal e1 v1 →
     IntoVal e2 v2 →
-    vals_cmpxchg_compare_safe v v1 →
-    val_for_compare v ≠ val_for_compare v1 →
+    vals_compare_safe v v1 →
+    v ≠ v1 →
     l ↦ₛ v -∗
     (l ↦ₛ v -∗ REL t << fill K (of_val (v, #false)) @ E : A)
     -∗ REL t << fill K (CmpXchg #l e1 e2) @ E : A.
@@ -220,8 +220,8 @@ Section rules.
     nclose specN ⊆ E →
     IntoVal e1 v1 →
     IntoVal e2 v2 →
-    vals_cmpxchg_compare_safe v v1 →
-    val_for_compare v = val_for_compare v1 →
+    vals_compare_safe v v1 →
+    v = v1 →
     l ↦ₛ v -∗
     (l ↦ₛ v2 -∗ REL t << fill K (of_val (v, #true)) @ E : A)
     -∗ REL t << fill K (CmpXchg #l e1 e2) @ E : A.
@@ -390,14 +390,14 @@ Section rules.
     IntoVal e2 v2 →
     val_is_unboxed v1 →
     (|={⊤,E}=> ∃ v', ▷ l ↦ v' ∗
-     (⌜val_for_compare v' ≠ val_for_compare v1⌝ -∗ ▷ (l ↦ v' -∗ REL fill K (of_val (v', #false)) << t @ E : A)) ∧
-     (⌜val_for_compare v' = val_for_compare v1⌝ -∗ ▷ (l ↦ v2 -∗ REL fill K (of_val (v', #true)) << t @ E : A)))
+     (⌜v' ≠ v1⌝ -∗ ▷ (l ↦ v' -∗ REL fill K (of_val (v', #false)) << t @ E : A)) ∧
+     (⌜v' = v1⌝ -∗ ▷ (l ↦ v2 -∗ REL fill K (of_val (v', #true)) << t @ E : A)))
     -∗ REL fill K (CmpXchg #l e1 e2) << t : A.
   Proof.
     iIntros (<-<-?) "Hlog".
     iApply refines_atomic_l; auto.
     iMod "Hlog" as (v') "[Hl Hlog]". iModIntro.
-    destruct (decide (val_for_compare v' = val_for_compare v1)).
+    destruct (decide (v' = v1)).
     - (* CmpXchg successful *) subst.
       iApply (wp_cmpxchg_suc with "Hl"); eauto.
       { by right. }

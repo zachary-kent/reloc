@@ -257,8 +257,8 @@ Lemma tac_tp_cmpxchg_fail `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l
   IntoVal e1 v1 →
   IntoVal e2 v2 →
   envs_lookup i3 Δ2 = Some (false, l ↦ₛ{q} v')%I →
-  val_for_compare v' ≠ val_for_compare v1 →
-  vals_cmpxchg_compare_safe v' v1 →
+  v' ≠ v1 →
+  vals_compare_safe v' v1 →
   envs_simple_replace i3 false
     (Esnoc (Esnoc Enil i2 (j ⤇ fill K' (v', #false)%V)) i3 (l ↦ₛ{q} v')%I) Δ2 = Some Δ3 →
   envs_entails Δ3 (|={E1,E2}=> Q) →
@@ -301,7 +301,7 @@ Tactic Notation "tp_cmpxchg_fail" constr(j) :=
     |iSolveTC
     |iAssumptionCore || fail "tp_cmpxchg_fail: cannot find '? ↦ ?'"
     |try (simpl; congruence) (* v' ≠ v1 *)
-    |try heap_lang.proofmode.solve_vals_cmpxchg_compare_safe
+    |try heap_lang.proofmode.solve_vals_compare_safe
     |pm_reflexivity || fail "tp_cmpxchg_fail: this should not happen"
     |(* new goal *)]).
 
@@ -313,8 +313,8 @@ Lemma tac_tp_cmpxchg_suc `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l 
   IntoVal e1 v1 →
   IntoVal e2 v2 →
   envs_lookup i3 Δ2 = Some (false, l ↦ₛ v')%I →
-  val_for_compare v' = val_for_compare v1 →
-  vals_cmpxchg_compare_safe v' v1 →
+  v' = v1 →
+  vals_compare_safe v' v1 →
   envs_simple_replace i3 false
     (Esnoc (Esnoc Enil i2 (j ⤇ fill K' (v', #true)%V)) i3 (l ↦ₛ v2)%I) Δ2 = Some Δ3 →
   envs_entails Δ3 (|={E1,E2}=> Q) →
@@ -357,7 +357,7 @@ Tactic Notation "tp_cmpxchg_suc" constr(j) :=
     |iSolveTC
     |iAssumptionCore || fail "tp_cmpxchg_suc: cannot find '? ↦ ?'"
     |try (simpl; congruence)     (* v' = v1 *)
-    |try heap_lang.proofmode.solve_vals_cmpxchg_compare_safe
+    |try heap_lang.proofmode.solve_vals_compare_safe
     |pm_reflexivity || fail "tp_cmpxchg_suc: this should not happen"
     |(* new goal *)]).
 

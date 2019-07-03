@@ -217,8 +217,8 @@ Section rules.
     IntoVal e1 v1 →
     IntoVal e2 v2 →
     nclose specN ⊆ E →
-    vals_cmpxchg_compare_safe v' v1 →
-    val_for_compare v' ≠ val_for_compare v1 →
+    vals_compare_safe v' v1 →
+    v' ≠ v1 →
     spec_ctx ρ ∗ j ⤇ fill K (CmpXchg #l e1 e2) ∗ l ↦ₛ{q} v'
     ={E}=∗ j ⤇ fill K (v', #false)%V ∗ l ↦ₛ{q} v'.
   Proof.
@@ -243,8 +243,8 @@ Section rules.
     IntoVal e1 v1 →
     IntoVal e2 v2 →
     nclose specN ⊆ E →
-    vals_cmpxchg_compare_safe v1' v1 →
-    val_for_compare v1' = val_for_compare v1 →
+    vals_compare_safe v1' v1 →
+    v1' = v1 →
     spec_ctx ρ ∗ j ⤇ fill K (CmpXchg #l e1 e2) ∗ l ↦ₛ v1'
     ={E}=∗ j ⤇ fill K (v1', #true)%V ∗ l ↦ₛ v2.
   Proof.
