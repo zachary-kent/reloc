@@ -53,6 +53,8 @@ they can illustrate the usage of the logic.
   + `cell.v` - higher-order cell objects
   + `ticket_lock.v` - ticket lock refines spin lock
   + `various.v` - lots of examples with higher-order functions with local state, in the style of "The effects of higher-order state and control on local relational reasoning" paper
+- `experimental` more "experimental" stuff
+  + `helping/helping_stack.v` linearizability of stack with helping
 
 ## Differences with the old version
 
