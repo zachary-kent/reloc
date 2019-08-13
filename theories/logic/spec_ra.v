@@ -127,7 +127,7 @@ Section mapsto.
   Global Instance mapsto_fractional l v : Fractional (λ q, l ↦ₛ{q} v)%I.
   Proof.
     intros p q. rewrite heapS_mapsto_eq -own_op -auth_frag_op.
-    by rewrite pair_op op_singleton pair_op agree_idemp right_id.
+    by rewrite -pair_op op_singleton -pair_op agree_idemp right_id.
   Qed.
   Global Instance mapsto_as_fractional l q v :
     AsFractional (l ↦ₛ{q} v) (λ q, l ↦ₛ{q} v)%I q.
@@ -138,7 +138,7 @@ Section mapsto.
     apply bi.wand_intro_r.
     rewrite heapS_mapsto_eq -own_op -auth_frag_op own_valid uPred.discrete_valid.
     f_equiv=> /=.
-    rewrite pair_op op_singleton right_id pair_op.
+    rewrite -pair_op op_singleton right_id -pair_op.
     move=> [_ Hv]. move:Hv => /=.
     rewrite singleton_valid.
     by intros [_ ?%agree_op_invL'].
