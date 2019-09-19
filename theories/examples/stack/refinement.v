@@ -21,7 +21,7 @@ Section proof.
     iSplitL "H1"; eauto with iFrame.
   Qed.
 
-  Notation D := (locO -n> valO -n> iProp Σ).
+  Notation D := (locO -n> valO -n> iPropO Σ).
 
   Program Definition stack_link_pre (A : lrel Σ) : D -n> D := λne S v1 v2,
     (∃ w, (∃ q, v1 ↦{q} w) ∗

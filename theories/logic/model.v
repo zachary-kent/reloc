@@ -29,12 +29,13 @@ Section lrel_ofe.
   Instance lrel_equiv : Equiv (lrel Σ) := λ A B, ∀ w1 w2, A w1 w2 ≡ B w1 w2.
   Instance lrel_dist : Dist (lrel Σ) := λ n A B, ∀ w1 w2, A w1 w2 ≡{n}≡ B w1 w2.
   Lemma lrel_ofe_mixin : OfeMixin (lrel Σ).
-  Proof. by apply (iso_ofe_mixin (lrel_car : lrel Σ → (val -d> val -d> iProp Σ))). Qed.
+  Proof. by apply (iso_ofe_mixin (lrel_car : lrel Σ → (val -d> val -d> iPropO Σ))). Qed.
   Canonical Structure lrelC := OfeT (lrel Σ) lrel_ofe_mixin.
 
   Global Instance lrel_cofe : Cofe lrelC.
   Proof.
-    apply (iso_cofe_subtype' (λ A : val -d> val -d> iProp Σ, ∀ w1 w2, Persistent (A w1 w2)) (@LRel _) lrel_car)=>//.
+    apply (iso_cofe_subtype' (λ A : val -d> val -d> iPropO Σ,
+      ∀ w1 w2, Persistent (A w1 w2)) (@LRel _) lrel_car)=>//.
     - apply _.
     - apply limit_preserving_forall=> w1.
       apply limit_preserving_forall=> w2.

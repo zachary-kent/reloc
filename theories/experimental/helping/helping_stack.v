@@ -221,7 +221,7 @@ Section refinement.
   Local Instance oloc_to_val_inj : Inj (=) (=) oloc_to_val.
   Proof. intros [|][|]; simpl; congruence. Qed.
 
-  Local Notation D := (olocO -d> valO -d> iProp Σ).
+  Local Notation D := (olocO -d> valO -d> iPropO Σ).
 
   Definition stack_link_pre (A : lrel Σ) : D → D := λ S ol v2,
     match ol return _ with

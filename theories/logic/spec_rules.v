@@ -112,7 +112,7 @@ Section rules.
     { by eapply auth_update, prod_local_update_1,
          singleton_local_update, (exclusive_local_update _ (Excl (fill K #p))). }
     iExists p. iFrame. iApply "Hclose". iNext.
-    iExists (<[j:=fill K #p]> tp), (state_upd_used_proph_id ({[ p ]} ∪) σ).
+    iExists (<[j:=fill K #p]> tp), (state_upd_used_proph_id ({[ p ]} ∪.) σ).
     rewrite to_tpool_insert'; last eauto. iFrame. iPureIntro.
     eapply rtc_r, step_insert_no_fork; eauto. econstructor; eauto.
   Qed.
