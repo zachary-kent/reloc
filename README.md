@@ -9,6 +9,8 @@ See the small ReLoC [docs/guide.md](docs/guide.md) and the Iris [ProofGuide.md](
 
 ## Building
 
+This project has been tested with Coq 8.9.0.
+
 ### OPAM
 
 Make sure that you have Iris OPAM repository enabled:
