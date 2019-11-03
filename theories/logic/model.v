@@ -18,7 +18,6 @@ Record lrel Σ := LRel {
 }.
 Arguments LRel {_} _%I {_}.
 Arguments lrel_car {_} _ _ _ : simpl never.
-Declare Scope lrel_scope.
 Bind Scope lrel_scope with lrel.
 Delimit Scope lrel_scope with lrel.
 Existing Instance lrel_persistent.
