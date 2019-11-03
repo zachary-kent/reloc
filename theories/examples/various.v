@@ -7,6 +7,12 @@ From iris.algebra Require Import csum agree excl.
 From reloc Require Export reloc.
 From reloc.lib Require Export lock counter Y.
 
+Definition oneshotR := csumR (exclR unitR) (agreeR unitR).
+Class oneshotG Σ := { oneshot_inG :> inG Σ oneshotR }.
+Definition oneshotΣ : gFunctors := #[GFunctor oneshotR].
+Instance subG_oneshotΣ {Σ} : subG oneshotΣ Σ → oneshotG Σ.
+Proof. solve_inG. Qed.
+
 Section proofs.
   Context `{relocG Σ}.
 
@@ -34,12 +40,6 @@ Section proofs.
       iMod ("Hcl" with "Hx") as "_".
       rel_values.
   Qed.
-
-  Definition oneshotR := csumR (exclR unitR) (agreeR unitR).
-  Class oneshotG Σ := { oneshot_inG :> inG Σ oneshotR }.
-  Definition oneshotΣ : gFunctors := #[GFunctor oneshotR].
-  Instance subG_oneshotΣ {Σ} : subG oneshotΣ Σ → oneshotG Σ.
-  Proof. solve_inG. Qed.
 
   Definition pending γ `{oneshotG Σ} := own γ (Cinl (Excl ())).
   Definition shot γ `{oneshotG Σ} := own γ (Cinr (to_agree ())).

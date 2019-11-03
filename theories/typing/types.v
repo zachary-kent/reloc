@@ -51,6 +51,7 @@ Fixpoint binop_bool_res_type (op : bin_op) : option type :=
   | _ => None
   end.
 
+Declare Scope FType_scope.
 Delimit Scope FType_scope with ty.
 Bind Scope FType_scope with type.
 Infix "*" := TProd : FType_scope.

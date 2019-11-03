@@ -14,11 +14,11 @@ Section rules.
   Implicit Types v : val.
   Implicit Types l : loc.
 
-  Local Hint Resolve tpool_lookup.
-  Local Hint Resolve tpool_lookup_Some.
-  Local Hint Resolve to_tpool_insert.
-  Local Hint Resolve to_tpool_insert'.
-  Local Hint Resolve tpool_singleton_included.
+  Local Hint Resolve tpool_lookup : core.
+  Local Hint Resolve tpool_lookup_Some : core.
+  Local Hint Resolve to_tpool_insert : core.
+  Local Hint Resolve to_tpool_insert' : core.
+  Local Hint Resolve tpool_singleton_included : core.
 
   (** * Aux. lemmas *)
   Lemma step_insert K tp j e σ κ e' σ' efs :

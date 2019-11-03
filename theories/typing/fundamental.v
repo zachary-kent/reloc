@@ -11,7 +11,7 @@ From Autosubst Require Import Autosubst.
 Section fundamental.
   Context `{relocG Σ}.
   Implicit Types Δ : listO (lrelC Σ).
-  Hint Resolve to_of_val.
+  Hint Resolve to_of_val : core.
 
   Local Ltac intro_clause := progress (iIntros (vs) "#Hvs /=").
   Local Ltac intro_clause' := progress (iIntros (?) "? /=").
