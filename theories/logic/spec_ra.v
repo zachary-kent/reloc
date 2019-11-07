@@ -81,7 +81,7 @@ Section conversions.
   Qed.
   Lemma tpool_lookup_Some tp j e : to_tpool tp !! j = Excl' e → tp !! j = Some e.
   Proof. rewrite tpool_lookup fmap_Some. naive_solver. Qed.
-  Hint Resolve tpool_lookup_Some.
+  Hint Resolve tpool_lookup_Some : core.
 
   Lemma to_tpool_insert tp j e :
     j < length tp →

@@ -1,10 +1,9 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Notion of contextual refinement & proof that it is a precongruence wrt the logical relation *)
+From Autosubst Require Import Autosubst.
 From iris.heap_lang Require Export lang.
 From iris.proofmode Require Import tactics.
 From reloc.typing Require Export types interp fundamental.
-
-From Autosubst Require Import Autosubst.
 
 Inductive ctx_item :=
   (* λ-rec *)
@@ -155,7 +154,7 @@ Inductive typed_ctx_item :
   | TP_CTX_Unfold Γ τ :
      typed_ctx_item CTX_Unfold Γ (TRec τ) Γ τ.[(TRec τ)/]
   | TP_CTX_TLam Γ τ :
-     typed_ctx_item CTX_TLam (subst (ren (+1%nat)) <$> Γ) τ Γ (TForall τ)
+     typed_ctx_item CTX_TLam (Autosubst_Classes.subst (ren (+1%nat)) <$> Γ) τ Γ (TForall τ)
   | TP_CTX_TApp Γ τ τ' :
      typed_ctx_item CTX_TApp Γ (TForall τ) Γ τ.[τ'/]
   (* | TP_CTX_Pack Γ τ τ' : *)

@@ -27,7 +27,7 @@ Qed.
 Theorem logrel_typesafety Σ `{relocPreG Σ} e e' τ thp σ σ' :
   (∀ `{relocG Σ} Δ, {⊤;Δ;∅} ⊨ e ≤log≤ e : τ) →
   rtc erased_step ([e], σ) (thp, σ') → e' ∈ thp →
-  is_Some (to_val e') ∨ reducible e' σ'.
+  not_stuck e' σ'.
 Proof.
   intros Hlog ??.
   cut (adequate NotStuck e σ (λ v _, ∃ thp' h v', rtc erased_step ([e], σ) (of_val v' :: thp', h) ∧ (ObsType τ → v = v'))); first (intros [_ ?]; eauto).

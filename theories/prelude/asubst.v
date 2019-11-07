@@ -1,9 +1,6 @@
 (** Autosubst helper lemmata *)
-From stdpp Require Export base numbers.
-From Coq.ssr Require Export ssreflect.
-Global Open Scope general_if_scope.
-(* ^ otherwise ssreflects overwrites `if` *)
 From Autosubst Require Export Autosubst.
+From iris.algebra Require Export base.
 
 Section Autosubst_Lemmas.
   Context {term : Type} {Ids_term : Ids term}

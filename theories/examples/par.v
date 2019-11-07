@@ -60,7 +60,7 @@ Section rules.
       iApply (refines_bind with "He").
       iIntros (v v') "Hv". simpl.
       repeat rel_pure_l.
-      rel_bind_l (join _).
+      rel_bind_l (spawn.join _).
       iApply refines_wp_l.
       iApply (join_spec with "hndl").
       iNext. iIntros (?) "_". simpl.
@@ -104,7 +104,7 @@ Section rules.
     rewrite {3}refines_eq /refines_def. iIntros (ρ) "#Hρ".
     iIntros (j K) "Hj". iModIntro.
     tp_bind j e2.
-    pose (C:=(AppRCtx (λ: "v2", let: "v1" := join #c2 in ("v1", "v2")) :: K)).
+    pose (C:=(AppRCtx (λ: "v2", let: "v1" := spawn.join #c2 in ("v1", "v2")) :: K)).
     fold C.
     pose (N:=nroot.@"par").
     wp_bind (spawn _).
@@ -119,7 +119,7 @@ Section rules.
       iMod ("He1" with "Hρ Hi") as "He1".
       iApply (wp_wand with "He1").
       iIntros (v1). iDestruct 1 as (v2) "[Hi Hv]".
-      wp_pures. wp_bind (join _).
+      wp_pures. wp_bind (spawn.join _).
       iApply (join_spec with "l_hndl").
       iNext. iIntros (w1). iDestruct 1 as (w2) "[Hj Hw]".
       unfold C. iSimpl in "Hi". iSimpl in "Hj".
@@ -128,7 +128,7 @@ Section rules.
       (* TODO: better tp_pure tactics *)
       tp_pure j (Lam _ _). simpl.
       tp_rec j. simpl.
-      tp_bind j (join _). unlock join.
+      tp_bind j (spawn.join _). unlock spawn.join.
       tp_pure j (App _ #c2). simpl.
       iApply fupd_wp. tp_load j. simpl.
       tp_pure j (Case _ _ _). tp_pure j (Lam _ _). simpl.
@@ -172,7 +172,7 @@ Section rules.
     (* TODO: better tp_pure tactics *)
     tp_pure j (Lam _ _). simpl.
     tp_rec j. simpl.
-    tp_bind j (join _). unlock join.
+    tp_bind j (spawn.join _). unlock spawn.join.
     tp_pure j (App _ #c2). simpl.
     tp_load j. simpl.
     tp_pure j (Case _ _ _). tp_pure j (Lam _ _). simpl.

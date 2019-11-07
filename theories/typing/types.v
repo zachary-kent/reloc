@@ -1,8 +1,8 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** (Syntactic) Typing for System F_mu_ref with existential types and concurrency *)
+From Autosubst Require Export Autosubst.
 From stdpp Require Export stringmap.
 From iris.heap_lang Require Export lang notation metatheory.
-From Autosubst Require Export Autosubst.
 
 (** * Types *)
 Inductive type :=
@@ -143,7 +143,7 @@ Inductive typed (Γ : stringmap type) : expr → type → Prop :=
   | TPack e τ τ' : Γ ⊢ₜ e : τ.[τ'/] → Γ ⊢ₜ e : TExists τ
   | TUnpack e1 x e2 τ τ2 :
       Γ ⊢ₜ e1 : TExists τ →
-      <[x:=τ]>(⤉ Γ) ⊢ₜ e2 : (subst (ren (+1%nat)) τ2) →
+      <[x:=τ]>(⤉ Γ) ⊢ₜ e2 : (Autosubst_Classes.subst (ren (+1%nat)) τ2) →
       Γ ⊢ₜ (unpack: x := e1 in e2) : τ2
   | TFork e : Γ ⊢ₜ e : TUnit → Γ ⊢ₜ Fork e : TUnit
   | TAlloc e τ : Γ ⊢ₜ e : τ → Γ ⊢ₜ Alloc e : Tref τ

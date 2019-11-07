@@ -236,7 +236,7 @@ Section proofs.
           compute in Hfoo. eauto. }
         iMod ("Hcl" with "[Hx Hx' Hbb]") as "_".
         { iNext. iExists (S n).
-          replace (Z.of_nat (S n)) with (n + 1) by lia.
+          replace (Z.of_nat (S n)) with (n + 1)%Z by lia.
           iFrame. }
         repeat rel_pure_l. repeat rel_pure_r.
         rel_store_l_atomic. clear n'.
@@ -250,7 +250,7 @@ Section proofs.
         rel_store_r.
         iMod ("Hcl" with "[-]") as "_".
         { iNext. iExists (S n).
-          replace (Z.of_nat (S n)) with (n + 1) by lia.
+          replace (Z.of_nat (S n)) with (n + 1)%Z by lia.
           iFrame. iLeft. iFrame. }
         rel_values. }
     - rel_pure_l. rel_pure_r. iApply refines_arrow.
@@ -389,27 +389,27 @@ Section proofs.
         iApply ("Hcl" with "[-]"); iNext.
         + iExists n. iLeft. iFrame.
         + iExists (n-1)%nat. iRight.
-          replace (Z.of_nat (n-1)%nat) with (Z.of_nat n - 1) by lia.
-          replace (n - 1 + 1) with (Z.of_nat n) by lia.
+          replace (Z.of_nat (n - 1)) with (Z.of_nat n - 1)%Z by lia.
+          replace (n - 1 + 1)%Z with (Z.of_nat n) by lia.
          iFrame. }
       { iIntros "[Hc1 Hc] _".
         iDestruct "Hc" as "[[Hc2 Ht] | [Hc2 [Ht [Ht' %]]]]".
         - rel_apply_r (FG_increment_r with "Hc2"). iIntros "Hc2".
           iMod ("Hcl" with "[-]") as "_".
           { iNext. iExists (n + 1)%nat.
-            replace (Z.of_nat (n + 1)%nat) with (Z.of_nat n + 1) by lia.
+            replace (Z.of_nat (n + 1)) with (Z.of_nat n + 1)%Z by lia.
             iLeft; iFrame. }
           rel_values.
-        - replace (Z.of_nat n - 1) with (Z.of_nat (n - 1)%nat) by lia.
+        - replace (Z.of_nat n - 1)%Z with (Z.of_nat (n - 1)) by lia.
           rel_apply_r (FG_increment_r with "Hc2"). iIntros "Hc2".
           iMod ("Hcl" with "[-]") as "_".
           { iNext. iExists n. iRight; iFrame.
-            by replace ((n - 1)%nat + 1) with (Z.of_nat n) by lia. }
+            by replace ((n - 1)%nat + 1)%Z with (Z.of_nat n) by lia. }
          rel_values. }
-    - iModIntro. iExists (n+1)%nat.
-      replace (Z.of_nat n + 1) with (Z.of_nat (n+1)) by lia. iFrame.
+    - iModIntro. iExists (n + 1)%nat.
+      replace (Z.of_nat n + 1)%Z with (Z.of_nat (n + 1)) by lia. iFrame.
       iSplitL "Hc2 Ht".
-      { iRight. replace ((n + 1)%nat - 1) with (Z.of_nat n) by lia.
+      { iRight. replace ((n + 1)%nat - 1)%Z with (Z.of_nat n) by lia.
         iFrame. iDestruct "Ht" as "[$ $]".
         iPureIntro. lia. }
       iSplit.
@@ -418,8 +418,8 @@ Section proofs.
         + iExists (S n). iLeft.
           replace (Z.of_nat (n + 1)) with (Z.of_nat (S n)) by lia. iFrame.
         + iExists n. iRight. iFrame.
-          replace (Z.of_nat (n + 1)) with (Z.of_nat n + 1) by lia.
-          replace (n + 1 - 1) with (Z.of_nat n) by lia.
+          replace (Z.of_nat (n + 1)) with (Z.of_nat n + 1)%Z by lia.
+          replace (n + 1 - 1)%Z with (Z.of_nat n) by lia.
           iFrame. }
      { iIntros "[Hc1 Hc] _".
         iDestruct "Hc" as "[[Hc2 Ht] | [Hc2 [Ht [Ht' %]]]]".
@@ -427,16 +427,16 @@ Section proofs.
           iIntros "Hc2".
           iMod ("Hcl" with "[-]") as "_".
           { iNext. iExists (S (S n)).
-            replace ((n+1)%nat + 1) with (Z.of_nat (S (S n))) by lia.
+            replace ((n+1)%nat + 1)%Z with (Z.of_nat (S (S n))) by lia.
             iLeft; iFrame. }
           rel_values.
-        - replace ((n + 1)%nat + 1) with (Z.of_nat (S n) + 1) by lia.
-          replace ((n + 1)%nat - 1) with (Z.of_nat n) by lia.
+        - replace ((n + 1)%nat + 1)%Z with (Z.of_nat (S n) + 1)%Z by lia.
+          replace ((n + 1)%nat - 1)%Z with (Z.of_nat n) by lia.
           rel_apply_r (FG_increment_r with "Hc2").
           iIntros "Hc2".
           iMod ("Hcl" with "[-]") as "_".
           { iNext. iExists (S n). iRight. iFrame.
-            by replace (n + 1) with (Z.of_nat (S n)) by lia. }
+            by replace (n + 1)%Z with (Z.of_nat (S n)) by lia. }
           rel_values. }
   Qed.
 
@@ -464,8 +464,8 @@ Section proofs.
     iDestruct 1 as (m) "[Hc1 Hc2]".
     iDestruct "Hc2" as "[[Hc2 Hp] | (Hc2 & Hs & Ht & %)]";
       [iExists m; iLeft | iExists (m - 1)%nat; iRight]; iFrame.
-    replace ((m - 1)%nat + 1) with (Z.of_nat m) by lia.
-    replace (Z.of_nat (m - 1)%nat) with (Z.of_nat m - 1) by lia.
+    replace ((m - 1)%nat + 1)%Z with (Z.of_nat m) by lia.
+    replace (Z.of_nat (m - 1)) with (Z.of_nat m - 1)%Z by lia.
     iFrame.
   Qed.
 
@@ -490,7 +490,7 @@ Section proofs.
     iMod (shoot γ with "Hp") as "#Hs".
     iMod ("Hcl" with "[-]") as "_".
     { iNext. iExists m. iRight. iFrame.
-      replace (Z.of_nat (S m)) with (Z.of_nat m + 1) by lia. by iFrame. }
+      replace (Z.of_nat (S m)) with (Z.of_nat m + 1)%Z by lia. by iFrame. }
     iApply (refines_seq lrel_unit).
     { iApply (refines_app with "Hg").
       rel_values. }
@@ -551,18 +551,18 @@ Section proofs.
     iAlways.
     iInv shootN as (n) ">[(Hc1 & Hc2 & Ht) | (Hc1 & Hc2 & Ht & Ht'2)]" "Hcl";
       iModIntro; last first.
-    { iExists (S n). replace (Z.of_nat (S n)) with (Z.of_nat n + 1) by lia.
+    { iExists (S n). replace (Z.of_nat (S n)) with (Z.of_nat n + 1)%Z by lia.
       iFrame. iSplitL "Hc2 Ht Ht'2".
-      { iRight. simpl. replace (n + 1 - 1) with (Z.of_nat n) by lia.
-        iFrame. iPureIntro. omega. }
+      { iRight. simpl. replace (n + 1 - 1)%Z with (Z.of_nat n) by lia.
+        iFrame. iPureIntro. lia. }
       iSplit.
       - iIntros. iApply "Hcl". iApply close_i6.
-        iNext. iExists (S n). replace (Z.of_nat (S n)) with (Z.of_nat n + 1) by lia.
+        iNext. iExists (S n). replace (Z.of_nat (S n)) with (Z.of_nat n + 1)%Z by lia.
         iFrame.
       - iIntros "[Hc1 Hc2] Ht".
         rel_pure_l. rel_pure_l.
-        replace (n + 1 + 1) with (Z.of_nat (S (S n))) by lia.
-        replace (n + 1) with (Z.of_nat (S n)) by lia.
+        replace (n + 1 + 1)%Z with (Z.of_nat (S (S n))) by lia.
+        replace (n + 1)%Z with (Z.of_nat (S n)) by lia.
         iApply (refinement6_helper with "Hinv Hg Hf' Hcl Hc1 Hc2 Ht").
     }
     { iExists n. iFrame "Hc1". iSplitL "Hc2 Ht".
@@ -572,7 +572,7 @@ Section proofs.
         iNext. iExists _; iFrame.
       - iIntros  "[Hc1 Hc2] Ht".
         rel_pure_l. rel_pure_l.
-        replace (n + 1) with (Z.of_nat (S n)) by lia.
+        replace (n + 1)%Z with (Z.of_nat (S n)) by lia.
         iApply (refinement6_helper with "Hinv Hg Hf' Hcl Hc1 Hc2 Ht").
     }
   Qed.

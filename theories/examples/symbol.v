@@ -266,7 +266,7 @@ Section proof.
       iMod (same_size with "[$Ha $Hf]") as "[Ha #Hf]".
       iMod (inc_size with "Ha") as "Ha".
       iDestruct "Hs2" as "[Hs2 Hs2']".
-      replace (m' + 1) with (Z.of_nat (S m')); last lia.
+      replace (m' + 1)%Z with (Z.of_nat (S m')); last lia.
       iMod ("Hcl" with "[Ha Hs1 Hs2 Htbl1 Htbl2]") as "_".
       { iNext. iExists _,_. by iFrame. }
       rel_load_l. repeat rel_pure_l.
@@ -345,7 +345,7 @@ Section proof.
       iMod (same_size with "[$Ha $Hf]") as "[Ha #Hf]".
       iMod (inc_size with "Ha") as "Ha".
       iDestruct "Hs2" as "[Hs2 Hs2']".
-      replace (m' + 1) with (Z.of_nat (S m')); last lia.
+      replace (m' + 1)%Z with (Z.of_nat (S m')); last lia.
       iMod ("Hcl" with "[Ha Hs1 Hs2 Htbl1 Htbl2]") as "_".
       { iNext. iExists _,_. by iFrame. }
       rel_load_l. repeat rel_pure_l.
