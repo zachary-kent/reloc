@@ -1,6 +1,6 @@
 # ReLoC
 
-This is the Coq developement of [ReLoC](https://cs.ru.nl/~dfrumin/reloc/).
+This is the Coq development of [ReLoC](https://cs.ru.nl/~dfrumin/reloc/).
 It consists of the formalization of all the logical rules, tactics, and examples.
 
 ## Usage guide
@@ -17,23 +17,13 @@ Make sure that you have Iris OPAM repository enabled:
 
     opam repo add iris-dev https://gitlab.mpi-sws.org/iris/opam.git
 
-Then install the ReLoC developement as usual:
+Then install the ReLoC development as usual:
 
     opam install .
 
-### Guix
-
-Just run
-
-    guix package -f guix.scm
-
-to build and install ReLoC. Alternatively, to get a development environment use e.g.
-
-    guix environment -l guix.scm
-
 ### Manually
 
-Install the developement versions of [Iris](https://gitlab.mpi-sws.org/iris/iris/), [std++](https://gitlab.mpi-sws.org/iris/stdpp), and a [coq86-devel](https://github.com/uds-psl/autosubst/tree/coq86-devel) branch of Autosubst.
+Install the development versions of [Iris](https://gitlab.mpi-sws.org/iris/iris/), [std++](https://gitlab.mpi-sws.org/iris/stdpp), and a [coq86-devel](https://github.com/uds-psl/autosubst/tree/coq86-devel) branch of Autosubst.
 
 Run `make` and `make install`.
 
