@@ -9,7 +9,7 @@ See the small ReLoC [docs/guide.md](docs/guide.md) and the Iris [ProofGuide.md](
 
 ## Building
 
-This project has been tested with Coq 8.9.0.
+This project has been tested with Coq 8.10.1.
 
 ### OPAM
 
@@ -27,7 +27,7 @@ Just run
 
     guix package -f guix.scm
 
-to build and install ReLoC. Alternatively, to get a developement environment use e.g.
+to build and install ReLoC. Alternatively, to get a development environment use e.g.
 
     guix environment -l guix.scm
 
