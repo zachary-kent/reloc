@@ -613,7 +613,7 @@ Section refinement.
     rel_alloc_l st as "Hst". rel_pure_l. rel_pure_l. rel_pure_l. rel_pure_l.
     iMod (own_alloc (● to_offer_reg ∅ : authR offerRegR)) as (γo) "Hor".
     { apply auth_auth_valid. apply to_offer_reg_valid. }
-    iMod (inv_alloc stackN _ (stackInv _ γo st st' mb lk) with "[-]") as "#Hinv".
+    iMod (inv_alloc stackN _ (stackInv A γo st st' mb lk) with "[-]") as "#Hinv".
     { iNext. unfold stackInv.
       iExists None, _, _. iFrame.
       iSplit; eauto.
