@@ -64,10 +64,10 @@ Tactic Notation "tp_bind" constr(j) open_constr(efoc) :=
     |reflexivity
     |(* new goal *)].
 
-Lemma tac_tp_pure `{relocG Σ} j K' e1 e2 Δ1 Δ2 E1 ρ i1 i2 p e ϕ ψ Q n :
+Lemma tac_tp_pure `{relocG Σ} j K' e1 e2 Δ1 Δ2 E1 i1 i2 p e ϕ ψ Q n :
   (∀ P, ElimModal ψ false false (|={E1}=> P) P Q Q) →
   nclose specN ⊆ E1 →
-  envs_lookup i1 Δ1 = Some (p, spec_ctx ρ) →
+  envs_lookup i1 Δ1 = Some (p, spec_ctx) →
   envs_lookup i2 Δ1 = Some (false, j ⤇ e)%I →
   e = fill K' e1 →
   PureExec ϕ n e1 e2 →
@@ -83,15 +83,15 @@ Proof.
   rewrite -(idemp bi_and (of_envs Δ1)).
   rewrite {1}(envs_lookup_sound' Δ1 false). 2: apply HΔ1.
   rewrite bi.sep_elim_l.
-  enough (<pers> spec_ctx ρ ∧ of_envs Δ1 -∗ Q) as <-.
+  enough (<pers> spec_ctx ∧ of_envs Δ1 -∗ Q) as <-.
   { rewrite -bi.intuitionistically_into_persistently_1.
     destruct p; simpl;
-    by rewrite ?(bi.intuitionistic_intuitionistically (spec_ctx ρ)). }
+    by rewrite ?(bi.intuitionistic_intuitionistically spec_ctx). }
   rewrite bi.persistently_and_intuitionistically_sep_l.
   rewrite bi.intuitionistic_intuitionistically.
   rewrite (envs_simple_replace_sound Δ1 Δ2 i2) //; simpl.
   rewrite right_id Hfill.
-  rewrite (assoc _ (spec_ctx ρ) (j ⤇ _)%I).
+  rewrite (assoc _ spec_ctx (j ⤇ _)%I).
   rewrite step_pure //.
   rewrite -[Q]elim_modal // /=.
   apply bi.sep_mono_r.
@@ -102,11 +102,10 @@ Qed.
 Ltac with_spec_ctx tac :=
   lazymatch goal with
   | |- envs_entails _ (refines ?E ?e1 ?e2 ?A) =>
-    let ρ := fresh in
     let H := iFresh in
     iApply (refines_spec_ctx E e1 e2 A);
-    iDestruct 1 as (ρ) H;
-    (tac (); iClear H; clear ρ)
+    iIntros H;
+    (tac (); iClear H)
   | _ => tac ()
   end.
 
@@ -144,11 +143,11 @@ Tactic Notation "tp_if" constr(j) := tp_pure j (If _ _ _).
 Tactic Notation "tp_pair" constr(j) := tp_pure j (Pair _ _).
 Tactic Notation "tp_closure" constr(j) := tp_pure j (Rec _ _ _).
 
-Lemma tac_tp_store `{relocG Σ} j Δ1 Δ2 Δ3 E1 ρ i1 i2 i3 p K' e (l : loc) e' v' v Q :
+Lemma tac_tp_store `{relocG Σ} j Δ1 Δ2 Δ3 E1 i1 i2 i3 p K' e (l : loc) e' v' v Q :
   (∀ P, ElimModal True false false (|={E1}=> P) P Q Q) →
   (* TODO: ^ boolean values here *)
   nclose specN ⊆ E1 →
-  envs_lookup i1 Δ1 = Some (p, spec_ctx ρ) →
+  envs_lookup i1 Δ1 = Some (p, spec_ctx) →
   envs_lookup_delete false i2 Δ1 = Some (false, j ⤇ e, Δ2)%I →
   e = fill K' (Store (# l) e') →
   envs_lookup i3 Δ2 = Some (false, l ↦ₛ v')%I →
@@ -162,15 +161,15 @@ Proof.
   rewrite -(idemp bi_and (of_envs Δ1)).
   rewrite {1}(envs_lookup_sound' _ false). 2: eassumption.
   rewrite bi.sep_elim_l.
-  enough (spec_ctx ρ ∗ of_envs Δ1 -∗ Q) as Hq.
+  enough (spec_ctx ∗ of_envs Δ1 -∗ Q) as Hq.
   { rewrite -Hq.
-    destruct p; simpl; last rewrite -(bi.intuitionistic_intuitionistically (spec_ctx ρ));
+    destruct p; simpl; last rewrite -(bi.intuitionistic_intuitionistically spec_ctx);
     rewrite {1}bi.intuitionistically_into_persistently_1 bi.persistently_and_intuitionistically_sep_l;
-    by rewrite (bi.intuitionistic_intuitionistically (spec_ctx ρ)). }
+    by rewrite (bi.intuitionistic_intuitionistically spec_ctx). }
   rewrite envs_lookup_delete_sound //; simpl.
   rewrite envs_simple_replace_sound //; simpl.
   rewrite right_id.
-  rewrite !assoc -(assoc _ (spec_ctx _)) Hfill.
+  rewrite !assoc -(assoc _ spec_ctx) Hfill.
   rewrite step_store //.
   rewrite -[Q]elim_modal //.
   apply bi.sep_mono_r.
@@ -201,9 +200,9 @@ how can we prove that [i1 <> i2]? If we can do that then we can utilize
 the lemma [envs_lookup_envs_delete_ne].
 *)
 
-Lemma tac_tp_load `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l : loc) v Q q :
+Lemma tac_tp_load `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 i1 i2 i3 p K' e (l : loc) v Q q :
   nclose specN ⊆ E1 →
-  envs_lookup i1 Δ1 = Some (p, spec_ctx ρ) →
+  envs_lookup i1 Δ1 = Some (p, spec_ctx) →
   envs_lookup_delete false i2 Δ1 = Some (false, j ⤇ e, Δ2)%I →
   e = fill K' (Load #l) →
   envs_lookup i3 Δ2 = Some (false, l ↦ₛ{q} v)%I →
@@ -216,21 +215,19 @@ Proof.
   rewrite -(idemp bi_and (of_envs Δ1)).
   rewrite {1}(envs_lookup_sound' Δ1 false). 2: eassumption.
   rewrite bi.sep_elim_l.
-  enough (<pers> spec_ctx ρ ∧ of_envs Δ1 ={E1,E2}=∗ Q) as <-.
+  enough (<pers> spec_ctx ∧ of_envs Δ1 ={E1,E2}=∗ Q) as <-.
   { rewrite -bi.intuitionistically_into_persistently_1.
     destruct p; simpl;
-    by rewrite ?(bi.intuitionistic_intuitionistically (spec_ctx ρ)). }
+    by rewrite ?(bi.intuitionistic_intuitionistically spec_ctx). }
   rewrite bi.persistently_and_intuitionistically_sep_l.
   rewrite bi.intuitionistic_intuitionistically.
   rewrite envs_lookup_delete_sound //; simpl.
   rewrite (envs_simple_replace_sound Δ2 Δ3 i3) //; simpl.
   rewrite right_id Hfill.
-  (* (S (spec_ctx ρ) (S (j => fill) (S (l ↦ v) ..))) *)
-  rewrite (assoc _ (spec_ctx ρ) (j ⤇ fill K' (Load _))%I).
-  (* (S (S (spec_ctx ρ) (j => fill)) (S (l ↦ v) ..)) *)
+  rewrite (assoc _ spec_ctx (j ⤇ fill K' (Load _))%I).
   rewrite assoc.
-  rewrite -(assoc _ (spec_ctx ρ) (j ⤇ fill K' (Load _))%I).
-  rewrite (step_load _ ρ j K' l q v) //.
+  rewrite -(assoc _ spec_ctx (j ⤇ fill K' (Load _))%I).
+  rewrite (step_load _ j K' l q v) //.
   rewrite -(fupd_trans E1 E1 E2).
   rewrite fupd_frame_r.
   apply fupd_mono.
@@ -249,9 +246,9 @@ Tactic Notation "tp_load" constr(j) :=
     |pm_reflexivity || fail "tp_load: this should not happen"
     |(* new goal *)]).
 
-Lemma tac_tp_cmpxchg_fail `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l : loc) e1 e2 v' v1 v2 Q q :
+Lemma tac_tp_cmpxchg_fail `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 i1 i2 i3 p K' e (l : loc) e1 e2 v' v1 v2 Q q :
   nclose specN ⊆ E1 →
-  envs_lookup i1 Δ1 = Some (p, spec_ctx ρ) →
+  envs_lookup i1 Δ1 = Some (p, spec_ctx) →
   envs_lookup_delete false i2 Δ1 = Some (false, j ⤇ e, Δ2)%I →
   e = fill K' (CmpXchg #l e1 e2) →
   IntoVal e1 v1 →
@@ -268,20 +265,20 @@ Proof.
   rewrite -(idemp bi_and (of_envs Δ1)).
   rewrite {1}(envs_lookup_sound' Δ1 false). 2: eassumption.
   rewrite bi.sep_elim_l.
-  enough (<pers> spec_ctx ρ ∧ of_envs Δ1 ={E1,E2}=∗ Q) as <-.
+  enough (<pers> spec_ctx ∧ of_envs Δ1 ={E1,E2}=∗ Q) as <-.
   { rewrite -bi.intuitionistically_into_persistently_1.
     destruct p; simpl;
-    by rewrite ?(bi.intuitionistic_intuitionistically (spec_ctx ρ)). }
+    by rewrite ?(bi.intuitionistic_intuitionistically spec_ctx). }
   rewrite bi.persistently_and_intuitionistically_sep_l.
   rewrite bi.intuitionistic_intuitionistically.
   rewrite envs_lookup_delete_sound // /=.
   rewrite (envs_simple_replace_sound Δ2 Δ3 i3) // /=.
   rewrite Hfill.
-  (* (S (spec_ctx ρ) (S (j => fill _ _) (S (l ↦ v) ..))) *)
-  rewrite (assoc _ (spec_ctx ρ) (j ⤇ fill K' _)%I).
-  (* (S (S (spec_ctx ρ) (j => fill _ _)) (S (l ↦ v) ..)) *)
+  (* (S spec_ctx (S (j => fill _ _) (S (l ↦ v) ..))) *)
+  rewrite (assoc _ spec_ctx (j ⤇ fill K' _)%I).
+  (* (S (S spec_ctx (j => fill _ _)) (S (l ↦ v) ..)) *)
   rewrite assoc.
-  rewrite -(assoc _ (spec_ctx ρ) (j ⤇ fill K' _)%I).
+  rewrite -(assoc _ spec_ctx (j ⤇ fill K' _)%I).
   rewrite step_cmpxchg_fail //.
   rewrite -(fupd_trans E1 E1 E2).
   rewrite fupd_frame_r.
@@ -305,9 +302,9 @@ Tactic Notation "tp_cmpxchg_fail" constr(j) :=
     |pm_reflexivity || fail "tp_cmpxchg_fail: this should not happen"
     |(* new goal *)]).
 
-Lemma tac_tp_cmpxchg_suc `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l : loc) e1 e2 v' v1 v2 Q :
+Lemma tac_tp_cmpxchg_suc `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 i1 i2 i3 p K' e (l : loc) e1 e2 v' v1 v2 Q :
   nclose specN ⊆ E1 →
-  envs_lookup i1 Δ1 = Some (p, spec_ctx ρ) →
+  envs_lookup i1 Δ1 = Some (p, spec_ctx) →
   envs_lookup_delete false i2 Δ1 = Some (false, j ⤇ e, Δ2)%I →
   e = fill K' (CmpXchg #l e1 e2) →
   IntoVal e1 v1 →
@@ -324,20 +321,20 @@ Proof.
   rewrite -(idemp bi_and (of_envs Δ1)).
   rewrite {1}(envs_lookup_sound' Δ1 false). 2: eassumption.
   rewrite bi.sep_elim_l.
-  enough (<pers> spec_ctx ρ ∧ of_envs Δ1 ={E1,E2}=∗ Q) as <-.
+  enough (<pers> spec_ctx ∧ of_envs Δ1 ={E1,E2}=∗ Q) as <-.
   { rewrite -bi.intuitionistically_into_persistently_1.
     destruct p; simpl;
-    by rewrite ?(bi.intuitionistic_intuitionistically (spec_ctx ρ)). }
+    by rewrite ?(bi.intuitionistic_intuitionistically spec_ctx). }
   rewrite bi.persistently_and_intuitionistically_sep_l.
   rewrite bi.intuitionistic_intuitionistically.
   rewrite envs_lookup_delete_sound // /=.
   rewrite (envs_simple_replace_sound Δ2 Δ3 i3) //.
   simpl. rewrite right_id Hfill.
-  (* (S (spec_ctx ρ) (S (j => fill _ _) (S (l ↦ v) ..))) *)
-  rewrite (assoc _ (spec_ctx ρ) (j ⤇ fill K' _)%I).
-  (* (S (S (spec_ctx ρ) (j => fill _ _)) (S (l ↦ v) ..)) *)
+  (* (S spec_ctx (S (j => fill _ _) (S (l ↦ v) ..))) *)
+  rewrite (assoc _ spec_ctx (j ⤇ fill K' _)%I).
+  (* (S (S spec_ctx (j => fill _ _)) (S (l ↦ v) ..)) *)
   rewrite assoc.
-  rewrite -(assoc _ (spec_ctx ρ) (j ⤇ fill K' _)%I).
+  rewrite -(assoc _ spec_ctx (j ⤇ fill K' _)%I).
   rewrite step_cmpxchg_suc //.
   rewrite -(fupd_trans E1 E1 E2).
   rewrite fupd_frame_r.
@@ -361,9 +358,9 @@ Tactic Notation "tp_cmpxchg_suc" constr(j) :=
     |pm_reflexivity || fail "tp_cmpxchg_suc: this should not happen"
     |(* new goal *)]).
 
-Lemma tac_tp_faa `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 ρ i1 i2 i3 p K' e (l : loc)  e2 (z1 z2 : Z) Q :
+Lemma tac_tp_faa `{relocG Σ} j Δ1 Δ2 Δ3 E1 E2 i1 i2 i3 p K' e (l : loc)  e2 (z1 z2 : Z) Q :
   nclose specN ⊆ E1 →
-  envs_lookup i1 Δ1 = Some (p, spec_ctx ρ) →
+  envs_lookup i1 Δ1 = Some (p, spec_ctx) →
   envs_lookup_delete false i2 Δ1 = Some (false, j ⤇ e, Δ2)%I →
   e = fill K' (FAA #l e2) →
   IntoVal e2 #z2 →
@@ -377,20 +374,20 @@ Proof.
   rewrite -(idemp bi_and (of_envs Δ1)).
   rewrite {1}(envs_lookup_sound' Δ1 false). 2: eassumption.
   rewrite bi.sep_elim_l.
-  enough (<pers> spec_ctx ρ ∧ of_envs Δ1 ={E1,E2}=∗ Q) as <-.
+  enough (<pers> spec_ctx ∧ of_envs Δ1 ={E1,E2}=∗ Q) as <-.
   { rewrite -bi.intuitionistically_into_persistently_1.
     destruct p; simpl;
-    by rewrite ?(bi.intuitionistic_intuitionistically (spec_ctx ρ)). }
+    by rewrite ?(bi.intuitionistic_intuitionistically spec_ctx). }
   rewrite bi.persistently_and_intuitionistically_sep_l.
   rewrite bi.intuitionistic_intuitionistically.
   rewrite envs_lookup_delete_sound // /=.
   rewrite (envs_simple_replace_sound Δ2 Δ3 i3) //.
   simpl. rewrite right_id Hfill.
-  (* (S (spec_ctx ρ) (S (j => fill _ _) (S (l ↦ v) ..))) *)
-  rewrite (assoc _ (spec_ctx ρ) (j ⤇ fill K' _)%I).
-  (* (S (S (spec_ctx ρ) (j => fill _ _)) (S (l ↦ v) ..)) *)
+  (* (S spec_ctx (S (j => fill _ _) (S (l ↦ v) ..))) *)
+  rewrite (assoc _ spec_ctx (j ⤇ fill K' _)%I).
+  (* (S (S spec_ctx (j => fill _ _)) (S (l ↦ v) ..)) *)
   rewrite assoc.
-  rewrite -(assoc _ (spec_ctx ρ) (j ⤇ fill K' _)%I).
+  rewrite -(assoc _ spec_ctx (j ⤇ fill K' _)%I).
   rewrite step_faa //.
   rewrite -(fupd_trans E1 E1 E2).
   rewrite fupd_frame_r.
@@ -411,9 +408,9 @@ Tactic Notation "tp_faa" constr(j) :=
     |pm_reflexivity || fail "tp_faa: this should not happen"
     |(* new goal *)]).
 
-Lemma tac_tp_fork `{relocG Σ} j Δ1 Δ2 E1 E2 ρ i1 i2 p K' e e' Q :
+Lemma tac_tp_fork `{relocG Σ} j Δ1 Δ2 E1 E2 i1 i2 p K' e e' Q :
   nclose specN ⊆ E1 →
-  envs_lookup i1 Δ1 = Some (p, spec_ctx ρ) →
+  envs_lookup i1 Δ1 = Some (p, spec_ctx) →
   envs_lookup i2 Δ1 = Some (false, j ⤇ e)%I →
   e = fill K' (Fork e') →
   envs_simple_replace i2 false
@@ -425,16 +422,16 @@ Proof.
   rewrite -(idemp bi_and (of_envs Δ1)).
   rewrite {1}(envs_lookup_sound' Δ1 false i1). 2: eassumption.
   rewrite bi.sep_elim_l /=.
-  enough (<pers> spec_ctx ρ ∧ of_envs Δ1 ={E1,E2}=∗ Q) as <-.
+  enough (<pers> spec_ctx ∧ of_envs Δ1 ={E1,E2}=∗ Q) as <-.
   { rewrite -bi.intuitionistically_into_persistently_1.
     destruct p; simpl;
-    by rewrite ?(bi.intuitionistic_intuitionistically (spec_ctx ρ)). }
+    by rewrite ?(bi.intuitionistic_intuitionistically spec_ctx). }
   rewrite bi.persistently_and_intuitionistically_sep_l.
   rewrite bi.intuitionistic_intuitionistically.
   rewrite (envs_simple_replace_sound Δ1 Δ2 i2) //; simpl.
   rewrite right_id Hfill.
-  (* (S (spec_ctx ρ) (S (j => fill) (S (l ↦ v) ..))) *)
-  rewrite (assoc _ (spec_ctx ρ) (j ⤇ _)%I).
+  (* (S spec_ctx (S (j => fill) (S (l ↦ v) ..))) *)
+  rewrite (assoc _ spec_ctx (j ⤇ _)%I).
   rewrite step_fork //.
   rewrite -(fupd_trans E1 E1 E2).
   rewrite fupd_frame_r.
@@ -476,9 +473,9 @@ Tactic Notation "tp_fork" constr(j) "as" ident(j') constr(H) :=
 Tactic Notation "tp_fork" constr(j) "as" ident(j') :=
   let H := iFresh in tp_fork j as j' H.
 
-Lemma tac_tp_alloc `{relocG Σ} j Δ1 E1 E2 ρ i1 i2 p K' e e' v Q :
+Lemma tac_tp_alloc `{relocG Σ} j Δ1 E1 E2 i1 i2 p K' e e' v Q :
   nclose specN ⊆ E1 →
-  envs_lookup i1 Δ1 = Some (p, spec_ctx ρ) →
+  envs_lookup i1 Δ1 = Some (p, spec_ctx) →
   envs_lookup i2 Δ1 = Some (false, j ⤇ e)%I →
   e = fill K' (ref e') →
   IntoVal e' v →
@@ -492,10 +489,10 @@ Proof.
   rewrite -(idemp bi_and (of_envs Δ1)).
   rewrite {1}(envs_lookup_sound' Δ1 false i1). 2: eassumption.
   rewrite bi.sep_elim_l /=.
-  enough (<pers> spec_ctx ρ ∧ of_envs Δ1 ={E1,E2}=∗ Q) as <-.
+  enough (<pers> spec_ctx ∧ of_envs Δ1 ={E1,E2}=∗ Q) as <-.
   { rewrite -bi.intuitionistically_into_persistently_1.
     destruct p; simpl;
-    by rewrite ?(bi.intuitionistic_intuitionistically (spec_ctx ρ)). }
+    by rewrite ?(bi.intuitionistic_intuitionistically spec_ctx). }
   rewrite bi.persistently_and_intuitionistically_sep_l.
   rewrite bi.intuitionistic_intuitionistically.
   rewrite (envs_lookup_sound' Δ1 false i2). 2: eassumption.

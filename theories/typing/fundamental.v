@@ -102,7 +102,7 @@ Section fundamental.
     iApply refines_arrow_val.
     iModIntro. iLöb as "IH". iIntros (v1 v2) "#Hτ1".
     rel_pure_l. rel_pure_r.
-    iApply refines_spec_ctx. iDestruct 1 as (ρ) "#Hs".
+    iApply refines_spec_ctx. iIntros "#Hs".
 
     set (r := (RecV f x (subst_map (binder_delete x (binder_delete f (fst <$> vs))) e), RecV f x (subst_map (binder_delete x (binder_delete f (snd <$> vs))) e'))).
     set (vvs' := binder_insert f r (binder_insert x (v1,v2) vs)).

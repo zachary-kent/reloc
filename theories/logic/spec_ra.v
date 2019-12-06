@@ -45,14 +45,14 @@ Section definitionsS.
   Definition spec_inv ρ : iProp Σ :=
     (∃ tp σ, own cfg_name (● (to_tpool tp, to_gen_heap (heap σ)))
                  ∗ ⌜rtc erased_step ρ (tp,σ)⌝)%I.
-  Definition spec_ctx (ρ : cfg heap_lang) : iProp Σ :=
-    inv specN (spec_inv ρ).
+  Definition spec_ctx : iProp Σ :=
+    (∃ ρ, inv specN (spec_inv ρ))%I.
 
   Global Instance heapS_mapsto_timeless l q v : Timeless (heapS_mapsto l q v).
   Proof. rewrite heapS_mapsto_eq. apply _. Qed.
   Global Instance tpool_mapsto_timeless j e: Timeless (tpool_mapsto j e).
   Proof. rewrite tpool_mapsto_eq. apply _. Qed.
-  Global Instance spec_ctx_persistent ρ : Persistent (spec_ctx ρ).
+  Global Instance spec_ctx_persistent : Persistent spec_ctx.
   Proof. apply _. Qed.
 End definitionsS.
 Typeclasses Opaque heapS_mapsto tpool_mapsto spec_ctx.

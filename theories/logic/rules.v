@@ -28,7 +28,7 @@ Section rules.
   Proof.
     intros Hpure Hϕ.
     rewrite refines_eq /refines_def.
-    iIntros "IH" (ρ) "#Hs"; iIntros (j K) "Hj /=".
+    iIntros "IH" ; iIntros (j K) "#Hs Hj /=".
     iModIntro. wp_pures.
     iApply fupd_wp. iApply ("IH" with "Hs Hj").
   Qed.
@@ -42,7 +42,7 @@ Section rules.
   Proof.
     intros Hpure Hϕ.
     rewrite refines_eq /refines_def.
-    iIntros "IH" (ρ) "#Hs"; iIntros (j K) "Hj /=".
+    iIntros "IH" ; iIntros (j K) "#Hs Hj /=".
     iMod ("IH" with "Hs Hj") as "IH".
     iModIntro. by wp_pures.
   Qed.
@@ -54,7 +54,7 @@ Section rules.
   Proof.
     rewrite refines_eq /refines_def.
     iIntros "He".
-    iIntros (ρ) "#Hs". iIntros (j K') "Hj /=".
+    iIntros (j K') "#Hs Hj /=".
     iModIntro. iApply wp_bind.
     iApply (wp_wand with "He").
     iIntros (v) "Hv".
@@ -69,7 +69,7 @@ Section rules.
   Proof.
     rewrite refines_eq /refines_def.
     iIntros "Hlog".
-    iIntros (ρ) "#Hs". iIntros (j K') "Hj /=". iModIntro.
+    iIntros (j K') "#Hs Hj /=". iModIntro.
     iApply wp_bind. iApply wp_atomic; auto.
     iMod "Hlog" as "He". iModIntro.
     iApply (wp_wand with "He").
@@ -87,23 +87,23 @@ Section rules.
     ⊢ REL t << fill K' e @ E : A.
   Proof.
     rewrite refines_eq /refines_def => Hpure Hϕ.
-    iIntros "Hlog". iIntros (ρ) "#Hs". iIntros (j K) "Hj /=".
+    iIntros "Hlog". iIntros (j K) "#Hs Hj /=".
     tp_pure j _; auto.
     iApply ("Hlog" with "Hs Hj").
   Qed.
 
   (* A helper lemma for proving the stateful reductions for the RHS below *)
   Lemma refines_step_r Φ E K' e1 e2 A :
-    (∀ ρ j K, spec_ctx ρ -∗ (j ⤇ fill K e2 ={E}=∗ ∃ v, j ⤇ fill K (of_val v)
+    (∀ j K, spec_ctx -∗ (j ⤇ fill K e2 ={E}=∗ ∃ v, j ⤇ fill K (of_val v)
                   ∗ Φ v)) -∗
     (∀ v, Φ v -∗ REL e1 << fill K' (of_val v) @ E : A) -∗
     REL e1 << fill K' e2 @ E : A.
   Proof.
     rewrite refines_eq /refines_def.
     iIntros "He Hlog".
-    iIntros (ρ) "#Hs". iIntros (j K) "Hj /=".
+    iIntros (j K) "#Hs Hj /=".
     rewrite -fill_app.
-    iMod ("He" $! ρ j with "Hs Hj") as (v) "[Hj Hv]".
+    iMod ("He" $! j with "Hs Hj") as (v) "[Hj Hv]".
     iSpecialize ("Hlog" $! v with "Hv Hs").
     rewrite fill_app.
     by iApply "Hlog".
@@ -118,7 +118,7 @@ Section rules.
     pose (Φ := (fun w => ∃ (p : proph_id), ⌜w = (# p)⌝ : iProp Σ)%I).
     iApply (refines_step_r Φ); simpl; auto.
     { cbv[Φ].
-      iIntros (ρ j K') "#Hs Hj /=".
+      iIntros (j K') "#Hs Hj /=".
       iMod (step_newproph with "[$Hs $Hj]") as (p) "Hj". done.
       iModIntro. iExists _. iFrame. iExists _. iFrame. eauto. }
     iIntros (v') "He'". iDestruct "He'" as (p) "%". subst.
@@ -134,7 +134,7 @@ Section rules.
     pose (Φ := (fun w => ⌜w = #()⌝ : iProp Σ)%I).
     iApply (refines_step_r Φ); simpl; auto.
     { cbv[Φ].
-      iIntros (ρ j K') "#Hs Hj /=".
+      iIntros (j K') "#Hs Hj /=".
       iMod (step_resolveproph with "[$Hs $Hj]") as "Hj". done.
       iModIntro. iExists _. iFrame. eauto. }
     iIntros (v') "He'". iDestruct "He'" as %->.
@@ -152,7 +152,7 @@ Section rules.
     pose (Φ := (fun w => ∃ l : loc, ⌜w = (# l)⌝ ∗ l ↦ₛ v)%I).
     iApply (refines_step_r Φ); simpl; auto.
     { cbv[Φ].
-      iIntros (ρ j K') "#Hs Hj /=".
+      iIntros (j K') "#Hs Hj /=".
       tp_alloc j as l "Hl". iExists (# l).
       iFrame. iExists l. eauto. }
     iIntros (v') "He'". iDestruct "He'" as (l) "[% Hl]". subst.
@@ -169,7 +169,7 @@ Section rules.
     pose (Φ := (fun w => ⌜w = v⌝ ∗ l ↦ₛ{q} v)%I).
     iApply (refines_step_r Φ with "[Hl]"); eauto.
     { cbv[Φ].
-      iIntros (ρ j K') "#Hs Hj /=". iExists v.
+      iIntros (j K') "#Hs Hj /=". iExists v.
       tp_load j.
       iFrame. eauto. }
     iIntros (?) "[% Hl]"; subst.
@@ -187,7 +187,7 @@ Section rules.
     pose (Φ := (fun w => ⌜w = #()⌝ ∗ l ↦ₛ v')%I).
     iApply (refines_step_r Φ with "[Hl]"); eauto.
     { cbv[Φ].
-      iIntros (ρ j K') "#Hs Hj /=". iExists #().
+      iIntros (j K') "#Hs Hj /=". iExists #().
       tp_store j.
       iFrame. eauto. }
     iIntros (w) "[% Hl]"; subst.
@@ -208,7 +208,7 @@ Section rules.
     pose (Φ := (fun (w : val) => ⌜w = (v, #false)%V⌝ ∗ l ↦ₛ v)%I).
     iApply (refines_step_r Φ with "[Hl]"); eauto.
     { cbv[Φ].
-      iIntros (ρ j K') "#Hs Hj /=".
+      iIntros (j K') "#Hs Hj /=".
       tp_cmpxchg_fail j; auto.
       iExists _. simpl.
       iFrame. eauto. }
@@ -230,7 +230,7 @@ Section rules.
     pose (Φ := (fun w => ⌜w = (v, #true)%V⌝ ∗ l ↦ₛ v2)%I).
     iApply (refines_step_r Φ with "[Hl]"); eauto.
     { cbv[Φ].
-      iIntros (ρ j K') "#Hs Hj /=".
+      iIntros (j K') "#Hs Hj /=".
       tp_cmpxchg_suc j; auto.
       iExists _. simpl.
       iFrame. eauto. }
@@ -249,7 +249,7 @@ Section rules.
     pose (Φ := (fun w => ⌜w = #i1⌝ ∗ l ↦ₛ #(i1+i2))%I).
     iApply (refines_step_r Φ with "[Hl]"); eauto.
     { cbv[Φ].
-      iIntros (ρ j K') "#Hs Hj /=".
+      iIntros (j K') "#Hs Hj /=".
       tp_faa j; auto.
       iExists #i1. simpl.
       iFrame. eauto. }
@@ -266,7 +266,7 @@ Section rules.
     iIntros "Hlog".
     pose (Φ := (fun (v : val) => ∃ i, i ⤇ e ∗ ⌜v = #()⌝%V)%I).
     iApply (refines_step_r Φ with "[]"); cbv[Φ].
-    { iIntros (ρ j K') "#Hspec Hj".
+    { iIntros (j K') "#Hspec Hj".
       tp_fork j as i "Hi".
       iModIntro. iExists #(). iFrame. eauto.
     }
@@ -281,10 +281,9 @@ Section rules.
   Proof.
     rewrite refines_eq /refines_def.
     iIntros "H".
-    iIntros (ρ) "#Hs"; iIntros (j K) "Hj /=".
+    iIntros (j K) "#Hs Hj /=".
     tp_fork j as i "Hi". iModIntro.
-    iSpecialize ("H" with "Hs").
-    iSpecialize ("H" $! i [] with "Hi"). simpl.
+    iSpecialize ("H" $! i [] with "Hs Hi").
     iApply (wp_fork with "[H]").
     - iNext. iMod "H". iApply (wp_wand with "H"). eauto.
     - iNext. iExists _. by iFrame.
@@ -299,7 +298,7 @@ Section rules.
     REL v << v' : (A → A')%lrel.
   Proof.
     rewrite /AsRecV. iIntros (-> ->) "#H".
-    iApply refines_spec_ctx. iDestruct 1 as (ρ) "#Hs".
+    iApply refines_spec_ctx. iIntros "Hs".
     iApply refines_ret. iModIntro.
     iModIntro. iIntros (v1 v2) "HA".
     iSpecialize ("H" with "HA").

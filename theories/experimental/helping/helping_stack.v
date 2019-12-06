@@ -424,8 +424,7 @@ Section refinement.
         unlock acquire. tp_pure j (App _ lk). iSimpl in "Hj".
         unlock is_locked_r. iDestruct "Hl" as (lk' ->) "Hl".
         (* TODO: make all the tp_ tactics work without the need for an explicit Fupd *)
-        iApply refines_spec_ctx.
-        iDestruct 1 as (ρ) "#Hρ".
+        iApply refines_spec_ctx. iIntros "#Hρ".
         iApply fupd_refines.
         (* because we manually applied `fupd_refines`, the tactical `with_spec_ctx` doesn't work anymore *)
         tp_cmpxchg_suc j. iSimpl in "Hj".
@@ -447,7 +446,7 @@ Section refinement.
         tp_rec j. iSimpl in "Hj".
         tp_pure j (Snd _). unlock release.
         tp_rec j. tp_store j.
-        iClear "Hρ". clear ρ. iModIntro.
+        iClear "Hρ". iModIntro.
 
         rel_apply_r (refines_CG_pop_suc_r with "Hst2 [Hl]").
         { iExists _. by iFrame "Hl". }
@@ -497,8 +496,7 @@ Section refinement.
     iDestruct (offerInv_excl with "HN Ho") as %Hbaz.
     iMod (own_alloc (Excl ())) as (γ) "Hγ"; first done.
     rewrite {2}refines_eq /refines_def.
-    iIntros (ρ) "#Hs".
-    iIntros (j K) "Hj".
+    iIntros (j K) "#Hs Hj".
     iMod (offerReg_alloc o h2 γ j K with "HNown") as "[HNown Hfrag]"; eauto.
     iMod ("Hcl" with "[-Hfrag Hγ]") as "_".
     { iNext. iExists _,_,_; iFrame.

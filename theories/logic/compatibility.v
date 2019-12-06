@@ -60,10 +60,9 @@ Section compatibility.
   Proof.
     iIntros (?) "IH".
     rewrite refines_eq /refines_def.
-    iIntros (ρ) "#Hρ"; iIntros (j K) "Hj /=".
+    iIntros (j K) "Hs Hj /=".
     tp_fork j as i "Hi".
-    iSpecialize ("IH" with "Hρ").
-    iMod ("IH" $! i [] with "Hi") as "IH".
+    iMod ("IH" $! i [] with "Hs Hi") as "IH".
     iApply (wp_fork with "[-Hj]").
     - iNext. iApply (wp_wand with "IH"). eauto.
     - iExists #(); eauto.

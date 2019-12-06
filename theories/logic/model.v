@@ -62,9 +62,8 @@ Section semtypes.
 
   Definition refines_def (E : coPset)
            (e e' : expr) (A : lrel Σ) : iProp Σ :=
-    (* TODO: refactor the quantifiers *)
-    (∀ ρ, spec_ctx ρ -∗ (∀ j K, j ⤇ fill K e'
-        ={E,⊤}=∗ WP e {{ v, ∃ v', j ⤇ fill K (of_val v') ∗ A v v' }}))%I.
+    (∀ j K, spec_ctx -∗ j ⤇ fill K e'
+        ={E,⊤}=∗ WP e {{ v, ∃ v', j ⤇ fill K (of_val v') ∗ A v v' }})%I.
 
   Definition refines_aux : seal refines_def. Proof. by eexists. Qed.
   Definition refines := unseal refines_aux.
@@ -216,7 +215,7 @@ Section related_facts.
      -∗ (REL e << e' @ E1 : A))%I.
   Proof.
     rewrite refines_eq /refines_def.
-    iIntros "H". iIntros (ρ) "#Hs"; iIntros (j K) "Hj /=".
+    iIntros "H". iIntros (j K) "#Hs Hj /=".
     iMod "H" as "H". iApply ("H" with "Hs Hj").
   Qed.
 
@@ -248,17 +247,12 @@ Section related_facts.
   Qed.
 
   Lemma refines_spec_ctx E e e' A :
-    ((∃ ρ, spec_ctx ρ) -∗ REL e << e' @ E : A) -∗
+    (spec_ctx -∗ REL e << e' @ E : A) -∗
     (REL e << e' @ E : A).
   Proof.
     rewrite refines_eq /refines_def.
-    iIntros "Hctx". iIntros (ρ') "#Hspec".
-    rewrite -(bi.intuitionistic_intuitionistically (spec_ctx _)).
-    rewrite (bi.intuitionistically_sep_dup (spec_ctx _)).
-    iDestruct "Hspec" as "[#Hspec #Hspec']".
-    iRevert "Hspec'".
-    rewrite (bi.intuitionistic_intuitionistically (spec_ctx _)).
-    iApply ("Hctx" with "[]"). eauto with iFrame.
+    iIntros "Hctx". iIntros (j K) "#Hspec".
+    by iApply "Hctx".
   Qed.
 End related_facts.
 
@@ -273,8 +267,8 @@ Section monadic.
   Proof.
     iIntros "Hm Hf".
     rewrite refines_eq /refines_def.
-    iIntros (ρ) "#Hs". iSpecialize ("Hm" with "Hs").
-    iIntros (j K₁) "Hj /=".
+    iIntros (j K₁) "#Hs Hj /=".
+    iSpecialize ("Hm" with "Hs").
     rewrite -fill_app. iMod ("Hm" with "Hj") as "Hm".
     iModIntro. iApply wp_bind.
     iApply (wp_wand with "Hm").
@@ -290,8 +284,7 @@ Section monadic.
   Proof.
     iIntros (<-<-) "HA".
     rewrite refines_eq /refines_def.
-    iIntros (ρ) "#Hs". simpl.
-    iIntros (j K) "Hj /=".
+    iIntros (j K) "#Hs Hj /=".
     iMod "HA" as "HA". iModIntro.
     iApply wp_value. iExists _. by iFrame.
   Qed.

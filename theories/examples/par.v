@@ -101,8 +101,8 @@ Section rules.
     repeat rel_pure_r.
     tp_rec i. simpl.
     rel_rec_l. repeat rel_pure_l.
-    rewrite {3}refines_eq /refines_def. iIntros (ρ) "#Hρ".
-    iIntros (j K) "Hj". iModIntro.
+    rewrite {3}refines_eq /refines_def.
+    iIntros (j K) "#Hs Hj". iModIntro.
     tp_bind j e2.
     pose (C:=(AppRCtx (λ: "v2", let: "v1" := spawn.join #c2 in ("v1", "v2")) :: K)).
     fold C.
@@ -110,13 +110,13 @@ Section rules.
     wp_bind (spawn _).
     iApply (spawn_spec N with "[He2 Hj]").
     - wp_lam. rewrite refines_eq /refines_def.
-      iMod ("He2" with "Hρ Hj") as "He2".
+      iMod ("He2" with "Hs Hj") as "He2".
       iAssumption.
     - iNext. iIntros (l) "l_hndl".
       wp_pures. wp_bind e1.
       rewrite refines_eq /refines_def.
       tp_bind i e1.
-      iMod ("He1" with "Hρ Hi") as "He1".
+      iMod ("He1" with "Hs Hi") as "He1".
       iApply (wp_wand with "He1").
       iIntros (v1). iDestruct 1 as (v2) "[Hi Hv]".
       wp_pures. wp_bind (spawn.join _).
@@ -151,18 +151,18 @@ Section rules.
     { simpl. eauto. }
     repeat rel_pure_r.
     tp_rec i. simpl.
-    rewrite {3}refines_eq /refines_def. iIntros (ρ) "#Hρ".
-    iIntros (j K) "Hj". iModIntro.
+    rewrite {3}refines_eq /refines_def.
+    iIntros (j K) "#Hs Hj". iModIntro.
     tp_bind j e2. tp_bind i e1.
     (* execute e1 *)
     wp_bind e1. tp_bind i e1.
     rewrite {1}refines_eq /refines_def.
-    iMod ("He1" with "Hρ Hi") as "He1".
+    iMod ("He1" with "Hs Hi") as "He1".
     iApply (wp_wand with "He1"). iIntros (v1).
     iDestruct 1 as (v2) "[Hi Hv]". wp_pures.
     (* execute e2 *)
     rewrite refines_eq /refines_def.
-    iMod ("He2" with "Hρ Hj") as "He2".
+    iMod ("He2" with "Hs Hj") as "He2".
     iApply wp_fupd.
     iApply (wp_wand with "He2"). iIntros (w1).
     iDestruct 1 as (w2) "[Hj Hw]".

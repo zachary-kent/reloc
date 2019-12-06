@@ -51,14 +51,15 @@ Section rules.
 
   (** * Main rules *)
   (** Pure reductions *)
-  Lemma step_pure E ρ j K e e' (P : Prop) n :
+  Lemma step_pure E j K e e' (P : Prop) n :
     P →
     PureExec P n e e' →
     nclose specN ⊆ E →
-    spec_ctx ρ ∗ j ⤇ fill K e ={E}=∗ j ⤇ fill K e'.
+    spec_ctx ∗ j ⤇ fill K e ={E}=∗ j ⤇ fill K e'.
   Proof.
     iIntros (HP Hex ?) "[#Hspec Hj]".
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def /=.
+    iDestruct "Hspec" as (ρ) "Hspec".
     iInv specN as (tp σ) ">[Hown Hrtc]" "Hclose".
     iDestruct "Hrtc" as %Hrtc.
     iDestruct (own_valid_2 with "Hown Hj")
@@ -97,13 +98,14 @@ Section rules.
   Qed.
 
   (** Prophecy variables (at this point those are just noops) *)
-  Lemma step_newproph E ρ j K :
+  Lemma step_newproph E j K :
     nclose specN ⊆ E →
-    spec_ctx ρ ∗ j ⤇ fill K NewProph ={E}=∗
+    spec_ctx ∗ j ⤇ fill K NewProph ={E}=∗
     ∃ (p : proph_id), j ⤇ fill K #p.
   Proof.
     iIntros (?) "[#Hinv Hj]".
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def /=.
+    iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
       as %[[?%tpool_singleton_included' _]%prod_included _]%auth_both_valid.
@@ -117,13 +119,14 @@ Section rules.
     eapply rtc_r, step_insert_no_fork; eauto. econstructor; eauto.
   Qed.
 
-  Lemma step_resolveproph E ρ j K (p : proph_id) w :
+  Lemma step_resolveproph E j K (p : proph_id) w :
     nclose specN ⊆ E →
-    spec_ctx ρ ∗ j ⤇ fill K (ResolveProph #p (of_val w)) ={E}=∗
+    spec_ctx ∗ j ⤇ fill K (ResolveProph #p (of_val w)) ={E}=∗
     j ⤇ fill K #().
   Proof.
     iIntros (?) "[#Hinv Hj]".
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def /=.
+    iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
       as %[[?%tpool_singleton_included' _]%prod_included _]%auth_both_valid.
@@ -137,13 +140,14 @@ Section rules.
   Qed.
 
   (** Alloc, load, and store *)
-  Lemma step_alloc E ρ j K e v :
+  Lemma step_alloc E j K e v :
     IntoVal e v →
     nclose specN ⊆ E →
-    spec_ctx ρ ∗ j ⤇ fill K (ref e) ={E}=∗ ∃ l, j ⤇ fill K (#l) ∗ l ↦ₛ v.
+    spec_ctx ∗ j ⤇ fill K (ref e) ={E}=∗ ∃ l, j ⤇ fill K (#l) ∗ l ↦ₛ v.
   Proof.
     iIntros (<-?) "[#Hinv Hj]".
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def /=.
+    iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     destruct (exist_fresh (dom (gset loc) (heap σ))) as [l Hl%not_elem_of_dom].
     iDestruct (own_valid_2 with "Hown Hj")
@@ -164,13 +168,14 @@ Section rules.
     intros. assert (i = 0) as -> by lia. by rewrite loc_add_0.
   Qed.
 
-  Lemma step_load E ρ j K l q v:
+  Lemma step_load E j K l q v:
     nclose specN ⊆ E →
-    spec_ctx ρ ∗ j ⤇ fill K (!#l) ∗ l ↦ₛ{q} v
+    spec_ctx ∗ j ⤇ fill K (!#l) ∗ l ↦ₛ{q} v
     ={E}=∗ j ⤇ fill K (of_val v) ∗ l ↦ₛ{q} v.
   Proof.
     iIntros (?) "(#Hinv & Hj & Hl)".
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def.
+    iDestruct "Hinv" as (ρ) "Hinv".
     rewrite heapS_mapsto_eq /heapS_mapsto_def /=.
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
@@ -185,14 +190,15 @@ Section rules.
     eapply rtc_r, step_insert_no_fork; eauto. econstructor; eauto.
   Qed.
 
-  Lemma step_store E ρ j K l v' e v:
+  Lemma step_store E j K l v' e v:
     IntoVal e v →
     nclose specN ⊆ E →
-    spec_ctx ρ ∗ j ⤇ fill K (#l <- e) ∗ l ↦ₛ v'
+    spec_ctx ∗ j ⤇ fill K (#l <- e) ∗ l ↦ₛ v'
     ={E}=∗ j ⤇ fill K #() ∗ l ↦ₛ v.
   Proof.
     iIntros (<-?) "(#Hinv & Hj & Hl)".
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def.
+    iDestruct "Hinv" as (ρ) "Hinv".
     rewrite heapS_mapsto_eq /heapS_mapsto_def /=.
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
@@ -213,17 +219,18 @@ Section rules.
   Qed.
 
   (** CmpXchg & FAA *)
-  Lemma step_cmpxchg_fail E ρ j K l q v' e1 v1 e2 v2 :
+  Lemma step_cmpxchg_fail E j K l q v' e1 v1 e2 v2 :
     IntoVal e1 v1 →
     IntoVal e2 v2 →
     nclose specN ⊆ E →
     vals_compare_safe v' v1 →
     v' ≠ v1 →
-    spec_ctx ρ ∗ j ⤇ fill K (CmpXchg #l e1 e2) ∗ l ↦ₛ{q} v'
+    spec_ctx ∗ j ⤇ fill K (CmpXchg #l e1 e2) ∗ l ↦ₛ{q} v'
     ={E}=∗ j ⤇ fill K (v', #false)%V ∗ l ↦ₛ{q} v'.
   Proof.
     iIntros (<-<-???) "(#Hinv & Hj & Hl)".
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def heapS_mapsto_eq /heapS_mapsto_def.
+    iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
       as %[[?%tpool_singleton_included' _]%prod_included ?]%auth_both_valid.
@@ -239,17 +246,18 @@ Section rules.
     rewrite bool_decide_false //.
   Qed.
 
-  Lemma step_cmpxchg_suc E ρ j K l e1 v1 v1' e2 v2:
+  Lemma step_cmpxchg_suc E j K l e1 v1 v1' e2 v2:
     IntoVal e1 v1 →
     IntoVal e2 v2 →
     nclose specN ⊆ E →
     vals_compare_safe v1' v1 →
     v1' = v1 →
-    spec_ctx ρ ∗ j ⤇ fill K (CmpXchg #l e1 e2) ∗ l ↦ₛ v1'
+    spec_ctx ∗ j ⤇ fill K (CmpXchg #l e1 e2) ∗ l ↦ₛ v1'
     ={E}=∗ j ⤇ fill K (v1', #true)%V ∗ l ↦ₛ v2.
   Proof.
     iIntros (<-<-???) "(#Hinv & Hj & Hl)"; subst.
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def heapS_mapsto_eq /heapS_mapsto_def.
+    iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
       as %[[?%tpool_singleton_included' _]%prod_included _]%auth_both_valid.
@@ -269,14 +277,15 @@ Section rules.
     rewrite bool_decide_true //.
   Qed.
 
-  Lemma step_faa E ρ j K l e1 e2 (i1 i2 : Z) :
+  Lemma step_faa E j K l e1 e2 (i1 i2 : Z) :
     IntoVal e1 #i2 →
     nclose specN ⊆ E →
-    spec_ctx ρ ∗ j ⤇ fill K (FAA #l e1) ∗ l ↦ₛ #i1
+    spec_ctx ∗ j ⤇ fill K (FAA #l e1) ∗ l ↦ₛ #i1
     ={E}=∗ j ⤇ fill K #i1 ∗ l ↦ₛ #(i1+i2).
   Proof.
     iIntros (<-?) "(#Hinv & Hj & Hl)"; subst.
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def heapS_mapsto_eq /heapS_mapsto_def.
+    iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
       as %[[?%tpool_singleton_included' _]%prod_included _]%auth_both_valid.
@@ -296,12 +305,13 @@ Section rules.
   Qed.
 
   (** Fork *)
-  Lemma step_fork E ρ j K e :
+  Lemma step_fork E j K e :
     nclose specN ⊆ E →
-    spec_ctx ρ ∗ j ⤇ fill K (Fork e) ={E}=∗ ∃ j', j ⤇ fill K #() ∗ j' ⤇ e.
+    spec_ctx ∗ j ⤇ fill K (Fork e) ={E}=∗ ∃ j', j ⤇ fill K #() ∗ j' ⤇ e.
   Proof.
     iIntros (?) "[#Hspec Hj]".
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def.
+    iDestruct "Hspec" as (ρ) "Hspec".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
       as %[[?%tpool_singleton_included' _]%prod_included ?]%auth_both_valid.

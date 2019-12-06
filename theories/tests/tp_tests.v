@@ -7,9 +7,9 @@ Section test.
 Context `{relocG Σ}.
 
 (* store, load, and some pure reductions *)
-Lemma test1 E1 j K (l : loc) (n : nat) ρ :
+Lemma test1 E1 j K (l : loc) (n : nat) :
   nclose specN ⊆ E1 →
-  spec_ctx ρ -∗
+  spec_ctx -∗
   j ⤇ fill K ((λ: "x", #l <- "x" + #1) !#l)%E -∗
   l ↦ₛ #n
   ={E1}=∗ l ↦ₛ #(n+1) ∗ j ⤇ fill K #().
@@ -23,9 +23,9 @@ Proof.
 Qed.
 
 (* CAS *)
-Lemma test2 E1 j K (l : loc) (n : nat) ρ :
+Lemma test2 E1 j K (l : loc) (n : nat) :
   nclose specN ⊆ E1 →
-  spec_ctx ρ -∗
+  spec_ctx -∗
   j ⤇ fill K (CAS #l #2 #n;; CAS #l #3 (#n*#2)) -∗
   l ↦ₛ #3
   ={E1}=∗ l ↦ₛ #(n*2) ∗ j ⤇ fill K #true.
@@ -40,21 +40,20 @@ Proof.
 Qed.
 
 (* fork *)
-Lemma test3 E1 j e K (l : loc) (n : nat) ρ :
+Lemma test3 E1 j e K (l : loc) (n : nat) :
   nclose specN ⊆ E1 →
-  spec_ctx ρ -∗
+  spec_ctx -∗
   j ⤇ fill K (Fork e)
   ={E1}=∗ ∃ i, i ⤇ e ∗ j ⤇ fill K #().
 Proof.
   iIntros (?) "#? Hj".
-  tp_fork j. Undo.
   tp_fork j as i. eauto with iFrame.
 Qed.
 
 (* alloc *)
-Lemma test4 E1 j K (n : nat) ρ :
+Lemma test4 E1 j K (n : nat) :
   nclose specN ⊆ E1 →
-  spec_ctx ρ -∗
+  spec_ctx -∗
   j ⤇ fill K (ref #3)
   ={E1}=∗ ∃ l, l ↦ₛ #3 ∗ j ⤇ fill K #l.
 Proof.
@@ -71,12 +70,12 @@ End test.
 (* (* TODO: Coq complains if I make it a section variable *) *)
 (* Axiom (steps_release_test : forall E ρ j K (l : loc) (b : bool), *)
 (*     nclose specN ⊆ E → *)
-(*     spec_ctx ρ -∗ l ↦ₛ #b -∗ j ⤇ fill K (App #() #l) *)
+(*     spec_ctx -∗ l ↦ₛ #b -∗ j ⤇ fill K (App #() #l) *)
 (*     ={E}=∗ j ⤇ fill K #() ∗ l ↦ₛ #false). *)
 
 (* Theorem test_apply E ρ j (b : bool) K l: *)
 (*   nclose specN ⊆ E → *)
-(*   spec_ctx ρ -∗  *)
+(*   spec_ctx -∗  *)
 (*   l ↦ₛ #b -∗ j ⤇ fill K (App #() #l) *)
 (*   -∗ |={E}=> True. *)
 (* Proof. *)
