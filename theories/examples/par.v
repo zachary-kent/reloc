@@ -12,8 +12,8 @@ Axioms/rules for parallel composition
 - [x] () is a unit
 - [x] e1 ;; e2 << (e1 ||| e2)
     also requires unfolding
-- [ ] interchange law
-    probably will also require unfolding
+- [x] interchange law
+    also requires unfolding
 *)
 
 Section rules.
@@ -181,4 +181,73 @@ Section rules.
     iModIntro. iExists _. iFrame.
   Qed.
 
+  Lemma interchange a b c d (A B C D : lrel Σ) :
+    is_closed_expr [] a →
+    is_closed_expr [] b →
+    is_closed_expr [] c →
+    is_closed_expr [] d →
+    (REL a << a : A) -∗
+    (REL b << b : B) -∗
+    (REL c << c : C) -∗
+    (REL d << d : D) -∗
+    REL (a ||| b)%V ;; (c ||| d)%V << ((b ;; c) ||| (a ;; d))%V : lrel_true.
+  Proof.
+    iIntros (????) "Ha Hb Hc Hd". rel_rec_r. repeat rel_pure_r.
+    rel_rec_r.
+    repeat rel_pure_r. rel_alloc_r c2 as "Hc2".
+    repeat rel_pure_r. rel_fork_r i as "Hi".
+    { simpl. eauto. }
+    repeat rel_pure_r.
+    tp_rec i. simpl.
+    rel_rec_l. repeat rel_pure_l.
+    rewrite {5}refines_eq /refines_def.
+    iIntros (j K) "#Hs Hj". iModIntro.
+    pose (N:=nroot.@"par").
+    wp_bind (spawn _).
+    iApply (spawn_spec N with "[Ha Hj]").
+    - wp_lam. rewrite refines_eq /refines_def.
+      tp_bind j a.
+      iMod ("Ha" with "Hs Hj") as "Ha".
+      iExact "Ha".
+    - iNext. iIntros (h) "Hdl". wp_pures.
+      wp_bind b.
+      rewrite {1}refines_eq /refines_def.
+      tp_bind i b.
+      iMod ("Hb" with "Hs Hi") as "Hb".
+      iApply (wp_wand with "Hb").
+      iIntros (bv). iDestruct 1 as (bv') "[Hi HB]". simpl.
+      wp_pures. wp_bind (join _).
+      iApply (join_spec with "Hdl").
+      iNext. iIntros (av). iDestruct 1 as (av') "[Hj HA]".
+      wp_pures.
+      (* TODO why is this so annoying *)
+      tp_pure j (Lam _ _). iSimpl in "Hj".
+      tp_pure j (App _ av'). iSimpl in "Hj".
+      tp_pure i (Lam _ _). iSimpl in "Hi".
+      tp_pure i (App _ bv'). iSimpl in "Hi".
+      wp_rec. wp_pures.
+      wp_apply (spawn_spec N with "[Hc Hi]").
+      { wp_pures.
+        rewrite refines_eq /refines_def.
+        tp_bind i c.
+        iMod ("Hc" with "Hs Hi") as "Hc". iExact "Hc". }
+      clear h. iIntros (h) "Hdl". wp_pures.
+      wp_bind d.
+      rewrite refines_eq /refines_def.
+      tp_bind j d.
+      iMod ("Hd" with "Hs Hj") as "Hd".
+      iApply (wp_wand with "Hd"). iIntros (dv).
+      iDestruct 1 as (dv') "[Hj HD]".
+      wp_pures. wp_apply (join_spec with "Hdl").
+      iIntros (cv). iDestruct 1 as (cv') "[Hi HC]".
+      iApply wp_fupd.
+      wp_pures. iExists (cv', dv')%V. simpl.
+      tp_pure i (InjR _). tp_store i.
+      tp_pure j (Lam _ _). tp_pure j _. simpl.
+      rewrite /join. tp_pure j (App _ #c2). simpl.
+      tp_load j. tp_case j. simpl.
+      tp_pure j (Lam _ _). tp_pure j (App _ cv'). simpl.
+      tp_pure j (Lam _ _). tp_pure j (App _ cv'). simpl.
+      tp_pure j (Pair _ _). eauto with iFrame.
+  Qed.
 End rules.
