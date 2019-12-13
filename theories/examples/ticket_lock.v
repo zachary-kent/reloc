@@ -104,8 +104,8 @@ Section refinement.
   Lemma newlock_refinement :
     REL newlock << reloc.lib.lock.newlock : () → lockInt.
   Proof.
-    iApply refines_arrow_val; [done|done|].
-    iAlways. iIntros (? ?) "/= [% %]"; simplify_eq.
+    rel_arrow_val.
+    iIntros (? ?) "/= [% %]"; simplify_eq.
     (* Reducing to a value on the LHS *)
     rel_rec_l.
     rel_alloc_l ln as "Hln".
@@ -209,8 +209,8 @@ Section refinement.
   Lemma acquire_refinement :
     REL acquire << reloc.lib.lock.acquire : lockInt → ().
   Proof.
-    iApply refines_arrow_val; [done|done|].
-    iAlways. iIntros (? lk) "/= #Hl".
+    rel_arrow_val.
+    iIntros (? lk) "/= #Hl".
     iDestruct "Hl" as (lo ln γ) "(% & Hin)". simplify_eq/=.
     rel_apply_l (acquire_l_logatomic
                    (fun o => ∃ st, is_locked_r lk st ∗
@@ -241,8 +241,8 @@ Section refinement.
   Lemma acquire_refinement_direct :
     REL acquire << reloc.lib.lock.acquire : lockInt → ().
   Proof.
-    iApply refines_arrow_val; [done|done|].
-    iAlways. iIntros (? ?) "/= #Hl".
+    rel_arrow_val.
+    iIntros (? ?) "/= #Hl".
     iDestruct "Hl" as (lo ln γ) "(% & Hin)". simplify_eq.
     rel_rec_l. repeat rel_proj_l.
     rel_apply_l (FG_increment_atomic_l (issuedTickets γ)%I True%I); first done.
@@ -307,8 +307,8 @@ Section refinement.
   Lemma release_refinement :
     REL release << reloc.lib.lock.release : lockInt → ().
   Proof.
-    iApply refines_arrow_val; [done|done|].
-    iAlways. iIntros (? lk) "/= #Hl".
+    rel_arrow_val.
+    iIntros (? lk) "/= #Hl".
     iDestruct "Hl" as (lo ln γ) "(% & Hin)". simplify_eq.
     rel_rec_l. rel_proj_l.
     pose (R := fun (o : nat) =>

@@ -19,8 +19,8 @@ Definition flip_lazy' : val := λ: "c" "lk" "p" <>,
 
 Definition read_lazy : val := rec: "read" "c" <> :=
   match: !"c" with
-    InjR "v" => "v"
-  | InjL <>  =>
+    SOME "v" => "v"
+  | NONE  =>
       let: "x" := rand #() in
       if: CAS "c" NONEV (SOME "x")
       then "x"

@@ -218,7 +218,7 @@ Section proof.
   Lemma refinement1 :
     REL symbol1 << symbol2 : () → lrel_symbol.
   Proof.
-    iApply refines_arrow_val; [done|done|].
+    iApply refines_arrow_val.
     iAlways. iIntros (? ?) "[% %]"; simplify_eq/=.
     rel_rec_l. rel_rec_r.
     rel_alloc_l size1 as "[Hs1 Hs1']"; repeat rel_pure_l.
@@ -297,7 +297,7 @@ Section proof.
   Lemma refinement2 :
     REL symbol2 << symbol1 : () → lrel_symbol.
   Proof.
-    iApply refines_arrow_val; [done|done|].
+    iApply refines_arrow_val.
     iAlways. iIntros (? ?) "[% %]"; simplify_eq/=.
     rel_rec_l. rel_rec_r.
     rel_alloc_l size1 as "[Hs1 Hs1']"; repeat rel_pure_l.
