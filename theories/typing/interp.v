@@ -186,16 +186,7 @@ Section env_typed.
   Global Instance env_ltyped2_ne n :
     Proper (dist n ==> (=) ==> dist n) env_ltyped2.
   Proof.
-    intros Γ Γ' HΓ ? vvs ->.
-    rewrite /env_ltyped2 /big_sepM2.
-    f_equiv.
-    - f_equiv.
-      split;
-        intros Hvvs x; specialize (HΓ x); rewrite -(Hvvs x);
-          by apply (is_Some_ne n).
-    - apply big_opM_ne2; first apply _.
-      + by intros x A B ->.
-      + apply map_zip_with_ne=>//. apply _.
+    intros Γ Γ' HΓ ? vvs ->. apply big_sepM2_ne_2; [done..|solve_proper].
   Qed.
 
   Global Instance env_ltyped2_proper :
