@@ -1,12 +1,11 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Compatibility lemmas for the logical relation *)
+From Autosubst Require Import Autosubst.
 From iris.heap_lang Require Import proofmode.
 From reloc.logic Require Import model.
 From reloc.logic Require Export rules derived compatibility proofmode.tactics.
 From reloc.typing Require Export interp.
-
 From iris.proofmode Require Export tactics.
-From Autosubst Require Import Autosubst.
 
 Section fundamental.
   Context `{relocG Σ}.
@@ -450,7 +449,7 @@ Section fundamental.
     ({Δ;Γ} ⊨ e1 ≤log≤ e1' : ∃: τ) -∗
     (∀ τi : lrel Σ,
       {τi::Δ;<[x:=τ]>(⤉Γ)} ⊨
-        e2 ≤log≤ e2' : (subst (ren (+1)%nat) τ2)) -∗
+        e2 ≤log≤ e2' : (Autosubst_Classes.subst (ren (+1)%nat) τ2)) -∗
     {Δ;Γ} ⊨ (unpack: x := e1 in e2) ≤log≤ (unpack: x := e1' in e2') : τ2.
   Proof.
     iIntros "IH1 IH2".

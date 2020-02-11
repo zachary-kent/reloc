@@ -216,7 +216,7 @@ Section rules.
       iMod ("Hb" with "Hs Hi") as "Hb".
       iApply (wp_wand with "Hb").
       iIntros (bv). iDestruct 1 as (bv') "[Hi HB]". simpl.
-      wp_pures. wp_bind (join _).
+      wp_pures. wp_bind (spawn.join _).
       iApply (join_spec with "Hdl").
       iNext. iIntros (av). iDestruct 1 as (av') "[Hj HA]".
       wp_pures.
@@ -244,7 +244,7 @@ Section rules.
       wp_pures. iExists (cv', dv')%V. simpl.
       tp_pure i (InjR _). tp_store i.
       tp_pure j (Lam _ _). tp_pure j _. simpl.
-      rewrite /join. tp_pure j (App _ #c2). simpl.
+      rewrite /spawn.join. tp_pure j (App _ #c2). simpl.
       tp_load j. tp_case j. simpl.
       tp_pure j (Lam _ _). tp_pure j (App _ cv'). simpl.
       tp_pure j (Lam _ _). tp_pure j (App _ cv'). simpl.

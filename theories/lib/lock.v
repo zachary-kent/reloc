@@ -1,5 +1,5 @@
-From reloc Require Export reloc.
 From iris.algebra Require Import excl.
+From reloc Require Export reloc.
 Set Default Proof Using "Type".
 
 
