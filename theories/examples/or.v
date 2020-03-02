@@ -96,7 +96,7 @@ Section rules.
   Qed.
 
   (** Choice on the RHS *)
-  Lemma or_choice_1_r (e1 e1' e2 : val) A :
+  Lemma or_choice_1_r (e1 e1' e2 : expr) A :
     (REL e1 << e1' : A) -∗
     REL e1 << (e1' ⊕ e2)%V : A. (* TODO: in the value scope *)
   Proof.
