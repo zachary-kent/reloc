@@ -503,12 +503,12 @@ Section fundamental.
     - by iApply (bin_log_related_CmpXchg with "[] []").
   Qed.
 
-  Theorem refines_typed e τ :
+  Theorem refines_typed τ Δ e :
     ∅ ⊢ₜ e : τ →
-    REL e << e : (interp τ []).
+    REL e << e : (interp τ Δ ).
   Proof.
     move=> /binary_fundamental Hty.
-    iPoseProof (Hty [] with "[]") as "H".
+    iPoseProof (Hty Δ with "[]") as "H".
     { rewrite fmap_empty. iApply env_ltyped2_empty. }
     by rewrite !fmap_empty !subst_map_empty.
   Qed.
