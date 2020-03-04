@@ -470,44 +470,91 @@ Section fundamental.
     asimpl. eauto.
   Qed.
 
-  Theorem binary_fundamental Δ Γ e τ :
-    Γ ⊢ₜ e : τ → ({Δ;Γ} ⊨ e ≤log≤ e : τ)%I.
+  Theorem fundamental Δ Γ e τ :
+    Γ ⊢ₜ e : τ → ({Δ;Γ} ⊨ e ≤log≤ e : τ)%I
+  with fundamental_val Δ v τ :
+    ⊢ᵥ v : τ → (interp τ Δ v v).
   Proof.
-    intros Ht. iInduction Ht as [] "IH" forall (Δ).
-    - by iApply bin_log_related_var.
-    - iApply bin_log_related_unit.
-    - by iApply bin_log_related_nat.
-    - by iApply bin_log_related_bool.
-    - by iApply (bin_log_related_nat_binop with "[]").
-    - by iApply (bin_log_related_bool_binop with "[]").
-    - by iApply bin_log_related_ref_binop.
-    - by iApply (bin_log_related_pair with "[]").
-    - by iApply bin_log_related_fst.
-    - by iApply bin_log_related_snd.
-    - by iApply bin_log_related_injl.
-    - by iApply bin_log_related_injr.
-    - by iApply (bin_log_related_case with "[] []").
-    - by iApply (bin_log_related_if with "[] []").
-    - iApply (bin_log_related_rec with "[]"); eauto.
-    - by iApply (bin_log_related_app with "[] []").
-    - iApply bin_log_related_tlam; eauto.
-    - by iApply bin_log_related_tapp'.
-    - by iApply bin_log_related_fold.
-    - by iApply bin_log_related_unfold.
-    - by iApply bin_log_related_pack'.
-    - iApply (bin_log_related_unpack with "[]"); eauto.
-    - by iApply bin_log_related_fork.
-    - by iApply bin_log_related_alloc.
-    - by iApply bin_log_related_load.
-    - by iApply (bin_log_related_store with "[]").
-    - by iApply (bin_log_related_CmpXchg with "[] []").
+    - intros Ht. destruct Ht.
+      + by iApply bin_log_related_var.
+      + iIntros (γ) "#H". simpl. rel_values.
+        iModIntro. by iApply fundamental_val.
+      + iApply bin_log_related_unit.
+      + by iApply bin_log_related_nat.
+      + by iApply bin_log_related_bool.
+      + iApply bin_log_related_nat_binop; first done;
+          by iApply fundamental.
+      + iApply bin_log_related_bool_binop; first done;
+          by iApply fundamental.
+      + iApply bin_log_related_ref_binop;
+          by iApply fundamental.
+      + iApply bin_log_related_pair;
+          by iApply fundamental.
+      + iApply bin_log_related_fst;
+          by iApply fundamental.
+      + iApply bin_log_related_snd;
+          by iApply fundamental.
+      + iApply bin_log_related_injl;
+          by iApply fundamental.
+      + iApply bin_log_related_injr;
+          by iApply fundamental.
+      + iApply bin_log_related_case;
+          by iApply fundamental.
+      + iApply bin_log_related_if;
+          by iApply fundamental.
+      + iApply bin_log_related_rec.
+        iAlways. by iApply fundamental.
+      + iApply bin_log_related_app;
+          by iApply fundamental.
+      + iApply bin_log_related_tlam.
+        iIntros (A). iAlways. by iApply fundamental.
+      + iApply bin_log_related_tapp'; by iApply fundamental.
+      + iApply bin_log_related_fold; by iApply fundamental.
+      + iApply bin_log_related_unfold; by iApply fundamental.
+      + iApply bin_log_related_pack'; by iApply fundamental.
+      + iApply bin_log_related_unpack; try by iApply fundamental.
+        iIntros (A). by iApply fundamental.
+      + iApply bin_log_related_fork; by iApply fundamental.
+      + iApply bin_log_related_alloc; by iApply fundamental.
+      + iApply bin_log_related_load; by iApply fundamental.
+      + iApply bin_log_related_store; by iApply fundamental.
+      + iApply bin_log_related_CmpXchg; eauto;
+          by iApply fundamental.
+    - intros Hv. destruct Hv; simpl.
+      + iSplit; eauto.
+      + iExists _; iSplit; eauto.
+      + iExists _; iSplit; eauto.
+      + iExists _,_,_,_.
+        repeat iSplit; eauto; by iApply fundamental_val.
+      + iExists _,_. iLeft.
+        repeat iSplit; eauto; by iApply fundamental_val.
+      + iExists _,_. iRight.
+        repeat iSplit; eauto; by iApply fundamental_val.
+      + iLöb as "IH". iAlways.
+        iIntros (v1 v2) "#Hv".
+        pose (Γ := (<[f:=(τ1 → τ2)%ty]> (<[x:=τ1]> ∅)):stringmap type).
+        pose (γ := (binder_insert f ((rec: f x := e)%V,(rec: f x := e)%V)
+                     (binder_insert x (v1, v2) ∅)):stringmap (val*val)).
+        rel_pure_l. rel_pure_r.
+        iPoseProof (fundamental Δ Γ e τ2 $! γ with "[]") as "H"; eauto.
+        { rewrite /γ /Γ. rewrite !binder_insert_fmap fmap_empty.
+          iApply (env_ltyped2_insert with "IH").
+          iApply (env_ltyped2_insert with "Hv").
+          iApply env_ltyped2_empty. }
+        rewrite /γ /=. rewrite !binder_insert_fmap !fmap_empty /=.
+        by rewrite !subst_map_binder_insert_2_empty.
+      + iIntros (A). iAlways. iIntros (v1 v2) "_".
+        rel_pures_l. rel_pures_r.
+        iPoseProof (fundamental (A::Δ) ∅ e τ $! ∅ with "[]") as "H"; eauto.
+        { rewrite fmap_empty. iApply env_ltyped2_empty. }
+        by rewrite !fmap_empty subst_map_empty.
   Qed.
 
   Theorem refines_typed τ Δ e :
     ∅ ⊢ₜ e : τ →
     REL e << e : (interp τ Δ ).
   Proof.
-    move=> /binary_fundamental Hty.
+    move=> /fundamental Hty.
     iPoseProof (Hty Δ with "[]") as "H".
     { rewrite fmap_empty. iApply env_ltyped2_empty. }
     by rewrite !fmap_empty !subst_map_empty.

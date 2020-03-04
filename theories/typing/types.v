@@ -72,6 +72,7 @@ Notation "'ref' τ" := (Tref τ%ty) (at level 10, τ at next level, right associ
 
 (** * Typing judgements *)
 Reserved Notation "Γ ⊢ₜ e : τ" (at level 74, e, τ at next level).
+Reserved Notation "⊢ᵥ v : τ" (at level 20, v, τ at next level).
 
 (* Shift all the indices in the context by one,
    used when inserting a new type interpretation in Δ. *)
@@ -100,60 +101,84 @@ Instance insert_binder (A : Type): Insert binder A (stringmap A) :=
   binder_insert.
 
 (** Typing itself *)
-Inductive typed (Γ : stringmap type) : expr → type → Prop :=
-  | Var_typed x τ : Γ !! x = Some τ → Γ ⊢ₜ Var x : τ
-  | Unit_typed : Γ ⊢ₜ #() : TUnit
-  | Nat_typed (n : nat) : Γ ⊢ₜ # n : TNat
-  | Bool_typed (b : bool) : Γ ⊢ₜ # b : TBool
-  | BinOp_typed_nat op e1 e2 τ :
+Inductive typed : stringmap type → expr → type → Prop :=
+  | Var_typed Γ x τ : Γ !! x = Some τ → Γ ⊢ₜ Var x : τ
+  | Val_typed Γ v τ :
+      ⊢ᵥ v : τ →
+      Γ ⊢ₜ Val v : τ
+  | Unit_typed Γ : Γ ⊢ₜ #() : TUnit
+  | Nat_typed Γ (n : nat) : Γ ⊢ₜ # n : TNat
+  | Bool_typed Γ (b : bool) : Γ ⊢ₜ # b : TBool
+  | BinOp_typed_nat Γ op e1 e2 τ :
      Γ ⊢ₜ e1 : TNat → Γ ⊢ₜ e2 : TNat →
      binop_nat_res_type op = Some τ →
      Γ ⊢ₜ BinOp op e1 e2 : τ
-  | BinOp_typed_bool op e1 e2 τ :
+  | BinOp_typed_bool Γ op e1 e2 τ :
      Γ ⊢ₜ e1 : TBool → Γ ⊢ₜ e2 : TBool →
      binop_bool_res_type op = Some τ →
      Γ ⊢ₜ BinOp op e1 e2 : τ
-  | RefEq_typed e1 e2 τ :
+  | RefEq_typed Γ e1 e2 τ :
      Γ ⊢ₜ e1 : Tref τ → Γ ⊢ₜ e2 : Tref τ →
      Γ ⊢ₜ BinOp EqOp e1 e2 : TBool
-  | Pair_typed e1 e2 τ1 τ2 : Γ ⊢ₜ e1 : τ1 → Γ ⊢ₜ e2 : τ2 → Γ ⊢ₜ Pair e1 e2 : TProd τ1 τ2
-  | Fst_typed e τ1 τ2 : Γ ⊢ₜ e : TProd τ1 τ2 → Γ ⊢ₜ Fst e : τ1
-  | Snd_typed e τ1 τ2 : Γ ⊢ₜ e : TProd τ1 τ2 → Γ ⊢ₜ Snd e : τ2
-  | InjL_typed e τ1 τ2 : Γ ⊢ₜ e : τ1 → Γ ⊢ₜ InjL e : TSum τ1 τ2
-  | InjR_typed e τ1 τ2 : Γ ⊢ₜ e : τ2 → Γ ⊢ₜ InjR e : TSum τ1 τ2
-  | Case_typed e0 e1 e2 τ1 τ2 τ3 :
+  | Pair_typed Γ e1 e2 τ1 τ2 : Γ ⊢ₜ e1 : τ1 → Γ ⊢ₜ e2 : τ2 → Γ ⊢ₜ Pair e1 e2 : TProd τ1 τ2
+  | Fst_typed Γ e τ1 τ2 : Γ ⊢ₜ e : TProd τ1 τ2 → Γ ⊢ₜ Fst e : τ1
+  | Snd_typed Γ e τ1 τ2 : Γ ⊢ₜ e : TProd τ1 τ2 → Γ ⊢ₜ Snd e : τ2
+  | InjL_typed Γ e τ1 τ2 : Γ ⊢ₜ e : τ1 → Γ ⊢ₜ InjL e : TSum τ1 τ2
+  | InjR_typed Γ e τ1 τ2 : Γ ⊢ₜ e : τ2 → Γ ⊢ₜ InjR e : TSum τ1 τ2
+  | Case_typed Γ e0 e1 e2 τ1 τ2 τ3 :
      Γ ⊢ₜ e0 : TSum τ1 τ2 →
      Γ ⊢ₜ e1 : TArrow τ1 τ3 →
      Γ ⊢ₜ e2 : TArrow τ2 τ3 →
      Γ ⊢ₜ Case e0 e1 e2 : τ3
-  | If_typed e0 e1 e2 τ :
+  | If_typed Γ e0 e1 e2 τ :
      Γ ⊢ₜ e0 : TBool → Γ ⊢ₜ e1 : τ → Γ ⊢ₜ e2 : τ → Γ ⊢ₜ If e0 e1 e2 : τ
-  | Rec_typed f x e τ1 τ2 :
+  | Rec_typed Γ f x e τ1 τ2 :
      <[f:=TArrow τ1 τ2]>(<[x:=τ1]>Γ) ⊢ₜ e : τ2 →
      Γ ⊢ₜ Rec f x e : TArrow τ1 τ2
-  | App_typed e1 e2 τ1 τ2 :
+  | App_typed Γ e1 e2 τ1 τ2 :
      Γ ⊢ₜ e1 : TArrow τ1 τ2 → Γ ⊢ₜ e2 : τ1 → Γ ⊢ₜ App e1 e2 : τ2
-  | TLam_typed e τ :
+  | TLam_typed Γ e τ :
      ⤉ Γ ⊢ₜ e : τ →
      Γ ⊢ₜ (Λ: e) : TForall τ
-  | TApp_typed e τ τ' : Γ ⊢ₜ e : TForall τ →
+  | TApp_typed Γ e τ τ' : Γ ⊢ₜ e : TForall τ →
      Γ ⊢ₜ e #() : τ.[τ'/]
-  | TFold e τ : Γ ⊢ₜ e : τ.[TRec τ/] → Γ ⊢ₜe : TRec τ
-  | TUnfold e τ : Γ ⊢ₜ e : TRec τ → Γ ⊢ₜ rec_unfold e : τ.[TRec τ/]
-  | TPack e τ τ' : Γ ⊢ₜ e : τ.[τ'/] → Γ ⊢ₜ e : TExists τ
-  | TUnpack e1 x e2 τ τ2 :
+  | TFold Γ e τ : Γ ⊢ₜ e : τ.[TRec τ/] → Γ ⊢ₜe : TRec τ
+  | TUnfold Γ e τ : Γ ⊢ₜ e : TRec τ → Γ ⊢ₜ rec_unfold e : τ.[TRec τ/]
+  | TPack Γ e τ τ' : Γ ⊢ₜ e : τ.[τ'/] → Γ ⊢ₜ e : TExists τ
+  | TUnpack Γ e1 x e2 τ τ2 :
       Γ ⊢ₜ e1 : TExists τ →
       <[x:=τ]>(⤉ Γ) ⊢ₜ e2 : (Autosubst_Classes.subst (ren (+1%nat)) τ2) →
       Γ ⊢ₜ (unpack: x := e1 in e2) : τ2
-  | TFork e : Γ ⊢ₜ e : TUnit → Γ ⊢ₜ Fork e : TUnit
-  | TAlloc e τ : Γ ⊢ₜ e : τ → Γ ⊢ₜ Alloc e : Tref τ
-  | TLoad e τ : Γ ⊢ₜ e : Tref τ → Γ ⊢ₜ Load e : τ
-  | TStore e e' τ : Γ ⊢ₜ e : Tref τ → Γ ⊢ₜ e' : τ → Γ ⊢ₜ Store e e' : TUnit
-  | TCmpXchg e1 e2 e3 τ :
+  | TFork Γ e : Γ ⊢ₜ e : TUnit → Γ ⊢ₜ Fork e : TUnit
+  | TAlloc Γ e τ : Γ ⊢ₜ e : τ → Γ ⊢ₜ Alloc e : Tref τ
+  | TLoad Γ e τ : Γ ⊢ₜ e : Tref τ → Γ ⊢ₜ Load e : τ
+  | TStore Γ e e' τ : Γ ⊢ₜ e : Tref τ → Γ ⊢ₜ e' : τ → Γ ⊢ₜ Store e e' : TUnit
+  | TCmpXchg Γ e1 e2 e3 τ :
      EqType τ → UnboxedType τ →
      Γ ⊢ₜ e1 : Tref τ → Γ ⊢ₜ e2 : τ → Γ ⊢ₜ e3 : τ →
      Γ ⊢ₜ CmpXchg e1 e2 e3 : TProd τ TBool
-where "Γ ⊢ₜ e : τ" := (typed Γ e τ).
+with val_typed : val → type → Prop :=
+  | Unit_val_typed : ⊢ᵥ #() : TUnit
+  | Nat_val_typed (n : nat) : ⊢ᵥ #n : TNat
+  | Bool_val_typed (b : bool) : ⊢ᵥ #b : TBool
+  | Pair_val_typed v1 v2 τ1 τ2 :
+      ⊢ᵥ v1 : τ1 →
+      ⊢ᵥ v2 : τ2 →
+      ⊢ᵥ PairV v1 v2 : TProd τ1 τ2
+  | InjL_val_typed v τ1 τ2 :
+      ⊢ᵥ v : τ1 →
+      ⊢ᵥ InjLV v : TSum τ1 τ2
+  | InjR_val_typed v τ1 τ2 :
+      ⊢ᵥ v : τ2 →
+      ⊢ᵥ InjRV v : TSum τ1 τ2
+  | Rec_val_typed f x e τ1 τ2 :
+     <[f:=TArrow τ1 τ2]>(<[x:=τ1]>∅) ⊢ₜ e : τ2 →
+     ⊢ᵥ RecV f x e : TArrow τ1 τ2
+  | TLam_val_typed e τ :
+     ∅ ⊢ₜ e : τ →
+     ⊢ᵥ (Λ: e) : TForall τ
+where "Γ ⊢ₜ e : τ" := (typed Γ e τ)
+and "⊢ᵥ e : τ" := (val_typed e τ).
 
 Lemma binop_nat_typed_safe (op : bin_op) (n1 n2 : Z) τ :
   binop_nat_res_type op = Some τ → is_Some (bin_op_eval op #n1 #n2).
