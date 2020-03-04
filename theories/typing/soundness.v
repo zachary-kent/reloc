@@ -41,7 +41,7 @@ Theorem F_mu_ref_conc_typesfety e e' τ σ thp σ' :
 Proof.
   intros.
   eapply (logrel_typesafety relocΣ); eauto.
-  intros. by apply binary_fundamental.
+  intros. by apply fundamental.
 Qed.
 
 Lemma logrel_simul Σ `{relocPreG Σ}

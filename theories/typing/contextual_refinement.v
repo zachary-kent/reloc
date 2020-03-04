@@ -88,6 +88,7 @@ Fixpoint fill_ctx_item (ctx : ctx_item) (e : expr) : expr :=
 
 Definition ctx := list ctx_item.
 
+(* TODO: consider using foldl here *)
 Definition fill_ctx (K : ctx) (e : expr) : expr := foldr fill_ctx_item e K.
 
 (** typed ctx *)
@@ -283,15 +284,15 @@ Section bin_log_related_under_typed_ctx.
         iAlways. iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_app with "[]").
         iApply (IHK with "[Hrel]"); auto.
-        by iApply binary_fundamental.
+        by iApply fundamental.
       + iApply (bin_log_related_app _ _ _ _ _ _ τ2 with "[]").
-        by iApply binary_fundamental.
+        by iApply fundamental.
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_pair with "[]").
         iApply (IHK with "[Hrel]"); auto.
-        by iApply binary_fundamental.
+        by iApply fundamental.
       + iApply (bin_log_related_pair with "[]").
-        by iApply binary_fundamental.
+        by iApply fundamental.
         iApply (IHK with "[Hrel]"); auto.
       + iApply bin_log_related_fst.
         iApply (IHK with "[Hrel]"); auto.
@@ -303,36 +304,36 @@ Section bin_log_related_under_typed_ctx.
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_case with "[] []").
         iApply (IHK with "[Hrel]"); auto.
-        by iApply binary_fundamental.
-        by iApply binary_fundamental.
+        by iApply fundamental.
+        by iApply fundamental.
       + iApply (bin_log_related_case with "[] []").
-        by iApply binary_fundamental.
+        by iApply fundamental.
         iApply (IHK with "[Hrel]"); auto.
-        by iApply binary_fundamental.
+        by iApply fundamental.
       + iApply (bin_log_related_case with "[] []").
-        by iApply binary_fundamental.
-        by iApply binary_fundamental.
+        by iApply fundamental.
+        by iApply fundamental.
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_if with "[] []");
-          try by iApply binary_fundamental.
+          try by iApply fundamental.
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_if with "[] []");
-          try by iApply binary_fundamental.
+          try by iApply fundamental.
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_if with "[] []");
-          try by iApply binary_fundamental.
+          try by iApply fundamental.
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_nat_binop with "[]");
-          try (by iApply binary_fundamental); eauto.
+          try (by iApply fundamental); eauto.
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_nat_binop with "[]");
-          try (by iApply binary_fundamental); eauto.
+          try (by iApply fundamental); eauto.
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_bool_binop with "[]");
-          try (by iApply binary_fundamental); eauto.
+          try (by iApply fundamental); eauto.
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_bool_binop with "[]");
-          try (by iApply binary_fundamental); eauto.
+          try (by iApply fundamental); eauto.
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_fold with "[]").
         iApply (IHK with "[Hrel]"); auto.
@@ -356,19 +357,19 @@ Section bin_log_related_under_typed_ctx.
       + iApply (bin_log_related_load with "[]").
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_store with "[]");
-          try by iApply binary_fundamental.
+          try by iApply fundamental.
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_store with "[]");
-          try by iApply binary_fundamental.
+          try by iApply fundamental.
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_CmpXchg with "[] []");
-          try (by iApply binary_fundamental); eauto.
+          try (by iApply fundamental); eauto.
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_CmpXchg with "[] []");
-          try (by iApply binary_fundamental); eauto.
+          try (by iApply fundamental); eauto.
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_CmpXchg with "[] []");
-          try (by iApply binary_fundamental); eauto.
+          try (by iApply fundamental); eauto.
         iApply (IHK with "[Hrel]"); auto.
   Qed.
 End bin_log_related_under_typed_ctx.
