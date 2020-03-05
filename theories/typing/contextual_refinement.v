@@ -49,10 +49,9 @@ Inductive ctx_item :=
   | CTX_TLam
   | CTX_TApp
   (* Existential types *)
-  (* | CTX_Pack *)
-  (* TODO: Unpack contexts are still relevant *)
-  (* | CTX_UnpackL (e' : expr) *)
-  (* | CTX_UnpackR (e : expr) *)
+    (* Nb: we do not have an explicit PACK operation *)
+  | CTX_UnpackL (x : binder) (e2 : expr)
+  | CTX_UnpackR (x : binder) (e1 : expr)
 .
 
 Fixpoint fill_ctx_item (ctx : ctx_item) (e : expr) : expr :=
@@ -97,9 +96,8 @@ Fixpoint fill_ctx_item (ctx : ctx_item) (e : expr) : expr :=
   | CTX_Unfold => rec_unfold e
   | CTX_TLam => Λ: e
   | CTX_TApp => TApp e
-  (* | CTX_Pack => Pack e *)
-  (* | CTX_UnpackL e1 => Unpack e e1 *)
-  (* | CTX_UnpackR e0 => Unpack e0 e *)
+  | CTX_UnpackL x e1 => unpack: x:=e in e1
+  | CTX_UnpackR x e0 => unpack: x:=e0 in e
   end.
 
 Definition ctx := list ctx_item.
@@ -206,12 +204,14 @@ Inductive typed_ctx_item :
      typed_ctx_item CTX_TApp Γ (TForall τ) Γ τ.[τ'/]
   (* | TP_CTX_Pack Γ τ τ' : *)
   (*    typed_ctx_item CTX_Pack Γ τ.[τ'/] Γ (TExists τ) *)
-  (* | TP_CTX_UnpackL e2 Γ τ τ2 : *)
-  (*    typed (subst (ren (+1)) <$> Γ) e2 (TArrow τ (subst (ren (+1)) τ2)) → *)
-  (*    typed_ctx_item (CTX_UnpackL e2) Γ (TExists τ) Γ τ2 *)
-  (* | TP_CTX_UnpackR e1 Γ τ τ2 : *)
-  (*    typed Γ e1 (TExists τ) → *)
-  (*    typed_ctx_item (CTX_UnpackR e1) (subst (ren (+1)) <$> Γ) (TArrow τ (subst (ren (+1)) τ2))  Γ τ2 *)
+  | TP_CTX_UnpackL x e2 Γ τ τ2 :
+     <[x:=τ]>(⤉ Γ) ⊢ₜ e2 : (Autosubst_Classes.subst (ren (+1%nat)) τ2) →
+     typed_ctx_item (CTX_UnpackL x e2) Γ (TExists τ) Γ τ2
+  | TP_CTX_UnpackR x e1 Γ τ τ2 :
+      Γ ⊢ₜ e1 : TExists τ →
+     typed_ctx_item (CTX_UnpackR x e1)
+                    (<[x:=τ]>(⤉ Γ)) (Autosubst_Classes.subst (ren (+1%nat)) τ2)
+                    Γ τ2
 .
 
 Inductive typed_ctx: ctx → stringmap type → type → stringmap type → type → Prop :=
@@ -389,11 +389,11 @@ Section bin_log_related_under_typed_ctx.
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_tapp' with "[]").
         iApply (IHK with "[Hrel]"); auto.
-      (* + iApply bin_log_related_pack'. *)
-      (*   iApply (IHK with "[Hrel]"); auto. *)
-      (* + iApply bin_log_related_unpack; try by (iIntros; fundamental). *)
-      (*   iApply (IHK with "[Hrel]"); auto. *)
-      (* + iApply bin_log_related_unpack; try by (iIntros; fundamental). *)
-      (*   iIntros. iApply (IHK with "[Hrel]"); auto. *)
+      + iApply bin_log_related_unpack.
+        * iApply (IHK with "[Hrel]"); auto.
+        * iIntros (A). by iApply fundamental.
+      + iApply bin_log_related_unpack.
+        * by iApply fundamental.
+        * iIntros (A). iApply (IHK with "[Hrel]"); auto.
   Qed.
 End bin_log_related_under_typed_ctx.
