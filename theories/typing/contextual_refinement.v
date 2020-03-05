@@ -6,14 +6,14 @@ From iris.proofmode Require Import tactics.
 From reloc.typing Require Export types interp fundamental.
 
 Inductive ctx_item :=
-  (* λ-rec *)
-  | CTX_Rec (f x: binder)
+  (* Base lambda calculus *)
+  | CTX_Rec (f x : binder)
   | CTX_AppL (e2 : expr)
   | CTX_AppR (e1 : expr)
-  (* Bin op *)
+  (* Base types and their operations *)
+  | CTX_UnOp (op : un_op)
   | CTX_BinOpL (op : bin_op) (e2 : expr)
   | CTX_BinOpR (op : bin_op) (e1 : expr)
-  (* If *)
   | CTX_IfL (e1 : expr) (e2 : expr)
   | CTX_IfM (e0 : expr) (e2 : expr)
   | CTX_IfR (e0 : expr) (e1 : expr)
@@ -28,6 +28,20 @@ Inductive ctx_item :=
   | CTX_CaseL (e1 : expr) (e2 : expr)
   | CTX_CaseM (e0 : expr) (e2 : expr)
   | CTX_CaseR (e0 : expr) (e1 : expr)
+  (* Concurrency *)
+  | CTX_Fork
+  (* Heap *)
+  | CTX_Alloc
+  | CTX_Load
+  | CTX_StoreL (e2 : expr)
+  | CTX_StoreR (e1 : expr)
+  (* Compare-exchange and FAA *)
+  | CTX_CmpXchgL (e1 : expr) (e2 : expr)
+  | CTX_CmpXchgM (e0 : expr) (e2 : expr)
+  | CTX_CmpXchgR (e0 : expr) (e1 : expr)
+  | CTX_FAAL (e1 : expr) (e2 : expr)
+  | CTX_FAAM (e0 : expr) (e2 : expr)
+  | CTX_FAAR (e0 : expr) (e1 : expr)
   (* Recursive Types *)
   | CTX_Fold
   | CTX_Unfold
@@ -36,39 +50,49 @@ Inductive ctx_item :=
   | CTX_TApp
   (* Existential types *)
   (* | CTX_Pack *)
+  (* TODO: Unpack contexts are still relevant *)
   (* | CTX_UnpackL (e' : expr) *)
   (* | CTX_UnpackR (e : expr) *)
-  (* Concurrency *)
-  | CTX_Fork
-  (* Reference Types *)
-  | CTX_Alloc
-  | CTX_Load
-  | CTX_StoreL (e2 : expr)
-  | CTX_StoreR (e1 : expr)
-  (* Compare-exchange used for fine-grained concurrency *)
-  | CTX_CmpXchg_L (e1 : expr) (e2 : expr)
-  | CTX_CmpXchg_M (e0 : expr) (e2 : expr)
-  | CTX_CmpXchg_R (e0 : expr) (e1 : expr).
+.
 
 Fixpoint fill_ctx_item (ctx : ctx_item) (e : expr) : expr :=
   match ctx with
+  (* Base lambda calculus *)
   | CTX_Rec f x => Rec f x e
   | CTX_AppL e2 => App e e2
   | CTX_AppR e1 => App e1 e
-  | CTX_PairL e2 => Pair e e2
-  | CTX_PairR e1 => Pair e1 e
-  | CTX_Fst => Fst e
-  | CTX_Snd => Snd e
-  | CTX_InjL => InjL e
-  | CTX_InjR => InjR e
-  | CTX_CaseL e1 e2 => Case e e1 e2
-  | CTX_CaseM e0 e2 => Case e0 e e2
-  | CTX_CaseR e0 e1 => Case e0 e1 e
+  (* Base types and operations *)
+  | CTX_UnOp op => UnOp op e
   | CTX_BinOpL op e2 => BinOp op e e2
   | CTX_BinOpR op e1 => BinOp op e1 e
   | CTX_IfL e1 e2 => If e e1 e2
   | CTX_IfM e0 e2 => If e0 e e2
   | CTX_IfR e0 e1 => If e0 e1 e
+  (* Products *)
+  | CTX_PairL e2 => Pair e e2
+  | CTX_PairR e1 => Pair e1 e
+  | CTX_Fst => Fst e
+  | CTX_Snd => Snd e
+  (* Sums *)
+  | CTX_InjL => InjL e
+  | CTX_InjR => InjR e
+  | CTX_CaseL e1 e2 => Case e e1 e2
+  | CTX_CaseM e0 e2 => Case e0 e e2
+  | CTX_CaseR e0 e1 => Case e0 e1 e
+  (* Concurrency *)
+  | CTX_Fork => Fork e
+  (* Heap & atomic CAS/FAA *)
+  | CTX_Alloc => Alloc e
+  | CTX_Load => Load e
+  | CTX_StoreL e2 => Store e e2
+  | CTX_StoreR e1 => Store e1 e
+  | CTX_CmpXchgL e1 e2 => CmpXchg e e1 e2
+  | CTX_CmpXchgM e0 e2 => CmpXchg e0 e e2
+  | CTX_CmpXchgR e0 e1 => CmpXchg e0 e1 e
+  | CTX_FAAL e1 e2 => FAA e e1 e2
+  | CTX_FAAM e0 e2 => FAA e0 e e2
+  | CTX_FAAR e0 e1 => FAA e0 e1 e
+  (* Recursive & polymorphic types *)
   | CTX_Fold => e
   | CTX_Unfold => rec_unfold e
   | CTX_TLam => Λ: e
@@ -76,14 +100,6 @@ Fixpoint fill_ctx_item (ctx : ctx_item) (e : expr) : expr :=
   (* | CTX_Pack => Pack e *)
   (* | CTX_UnpackL e1 => Unpack e e1 *)
   (* | CTX_UnpackR e0 => Unpack e0 e *)
-  | CTX_Fork => Fork e
-  | CTX_Alloc => Alloc e
-  | CTX_Load => Load e
-  | CTX_StoreL e2 => Store e e2
-  | CTX_StoreR e1 => Store e1 e
-  | CTX_CmpXchg_L e1 e2 => CmpXchg e e1 e2
-  | CTX_CmpXchg_M e0 e2 => CmpXchg e0 e e2
-  | CTX_CmpXchg_R e0 e1 => CmpXchg e0 e1 e
   end.
 
 Definition ctx := list ctx_item.
@@ -94,6 +110,7 @@ Definition fill_ctx (K : ctx) (e : expr) : expr := foldr fill_ctx_item e K.
 (** typed ctx *)
 Inductive typed_ctx_item :
     ctx_item → stringmap type → type → stringmap type → type → Prop :=
+  (* Base lambda calculus *)
   | TP_CTX_Rec Γ τ τ' f x :
      typed_ctx_item (CTX_Rec f x) (<[f:=TArrow τ τ']>(<[x:=τ]>Γ)) τ' Γ (TArrow τ τ')
   | TP_CTX_AppL Γ e2 τ τ' :
@@ -102,38 +119,7 @@ Inductive typed_ctx_item :
   | TP_CTX_AppR Γ e1 τ τ' :
      typed Γ e1 (TArrow τ τ') →
      typed_ctx_item (CTX_AppR e1) Γ τ Γ τ'
-  | TP_CTX_PairL Γ e2 τ τ' :
-     typed Γ e2 τ' →
-     typed_ctx_item (CTX_PairL e2) Γ τ Γ (TProd τ τ')
-  | TP_CTX_PairR Γ e1 τ τ' :
-     typed Γ e1 τ →
-     typed_ctx_item (CTX_PairR e1) Γ τ' Γ (TProd τ τ')
-  | TP_CTX_Fst Γ τ τ' :
-     typed_ctx_item CTX_Fst Γ (TProd τ τ') Γ τ
-  | TP_CTX_Snd Γ τ τ' :
-     typed_ctx_item CTX_Snd Γ (TProd τ τ') Γ τ'
-  | TP_CTX_InjL Γ τ τ' :
-     typed_ctx_item CTX_InjL Γ τ Γ (TSum τ τ')
-  | TP_CTX_InjR Γ τ τ' :
-     typed_ctx_item CTX_InjR Γ τ' Γ (TSum τ τ')
-  | TP_CTX_CaseL Γ e1 e2 τ1 τ2 τ' :
-     typed Γ e1 (TArrow τ1 τ') → typed Γ e2 (TArrow τ2 τ') →
-     typed_ctx_item (CTX_CaseL e1 e2) Γ (TSum τ1 τ2) Γ τ'
-  | TP_CTX_CaseM Γ e0 e2 τ1 τ2 τ' :
-     typed Γ e0 (TSum τ1 τ2) → typed Γ e2 (TArrow τ2 τ') →
-     typed_ctx_item (CTX_CaseM e0 e2) Γ (TArrow τ1 τ') Γ τ'
-  | TP_CTX_CaseR Γ e0 e1 τ1 τ2 τ' :
-     typed Γ e0 (TSum τ1 τ2) → typed Γ e1 (TArrow τ1 τ') →
-     typed_ctx_item (CTX_CaseR e0 e1) Γ (TArrow τ2 τ') Γ τ'
-  | TP_CTX_IfL Γ e1 e2 τ :
-     typed Γ e1 τ → typed Γ e2 τ →
-     typed_ctx_item (CTX_IfL e1 e2) Γ (TBool) Γ τ
-  | TP_CTX_IfM Γ e0 e2 τ :
-     typed Γ e0 (TBool) → typed Γ e2 τ →
-     typed_ctx_item (CTX_IfM e0 e2) Γ τ Γ τ
-  | TP_CTX_IfR Γ e0 e1 τ :
-     typed Γ e0 (TBool) → typed Γ e1 τ →
-     typed_ctx_item (CTX_IfR e0 e1) Γ τ Γ τ
+  (* Base types and operations *)
   | TP_CTX_BinOpL_Nat op Γ e2 τ :
      typed Γ e2 TNat →
      binop_nat_res_type op = Some τ →
@@ -150,6 +136,66 @@ Inductive typed_ctx_item :
      typed Γ e1 TBool →
      binop_bool_res_type op = Some τ →
      typed_ctx_item (CTX_BinOpR op e1) Γ TBool Γ τ
+  | TP_CTX_IfL Γ e1 e2 τ :
+     typed Γ e1 τ → typed Γ e2 τ →
+     typed_ctx_item (CTX_IfL e1 e2) Γ (TBool) Γ τ
+  | TP_CTX_IfM Γ e0 e2 τ :
+     typed Γ e0 (TBool) → typed Γ e2 τ →
+     typed_ctx_item (CTX_IfM e0 e2) Γ τ Γ τ
+  | TP_CTX_IfR Γ e0 e1 τ :
+     typed Γ e0 (TBool) → typed Γ e1 τ →
+     typed_ctx_item (CTX_IfR e0 e1) Γ τ Γ τ
+  (* Products *)
+  | TP_CTX_PairL Γ e2 τ τ' :
+     typed Γ e2 τ' →
+     typed_ctx_item (CTX_PairL e2) Γ τ Γ (TProd τ τ')
+  | TP_CTX_PairR Γ e1 τ τ' :
+     typed Γ e1 τ →
+     typed_ctx_item (CTX_PairR e1) Γ τ' Γ (TProd τ τ')
+  | TP_CTX_Fst Γ τ τ' :
+     typed_ctx_item CTX_Fst Γ (TProd τ τ') Γ τ
+  | TP_CTX_Snd Γ τ τ' :
+     typed_ctx_item CTX_Snd Γ (TProd τ τ') Γ τ'
+  (* Sums *)
+  | TP_CTX_InjL Γ τ τ' :
+     typed_ctx_item CTX_InjL Γ τ Γ (TSum τ τ')
+  | TP_CTX_InjR Γ τ τ' :
+     typed_ctx_item CTX_InjR Γ τ' Γ (TSum τ τ')
+  | TP_CTX_CaseL Γ e1 e2 τ1 τ2 τ' :
+     typed Γ e1 (TArrow τ1 τ') → typed Γ e2 (TArrow τ2 τ') →
+     typed_ctx_item (CTX_CaseL e1 e2) Γ (TSum τ1 τ2) Γ τ'
+  | TP_CTX_CaseM Γ e0 e2 τ1 τ2 τ' :
+     typed Γ e0 (TSum τ1 τ2) → typed Γ e2 (TArrow τ2 τ') →
+     typed_ctx_item (CTX_CaseM e0 e2) Γ (TArrow τ1 τ') Γ τ'
+  | TP_CTX_CaseR Γ e0 e1 τ1 τ2 τ' :
+     typed Γ e0 (TSum τ1 τ2) → typed Γ e1 (TArrow τ1 τ') →
+     typed_ctx_item (CTX_CaseR e0 e1) Γ (TArrow τ2 τ') Γ τ'
+  (* Concurrency *)
+  | TP_CTX_Fork Γ :
+     typed_ctx_item CTX_Fork Γ TUnit Γ TUnit
+  (* Heap *)
+  | TPCTX_Alloc Γ τ :
+     typed_ctx_item CTX_Alloc Γ τ Γ (Tref τ)
+  | TP_CTX_Load Γ τ :
+     typed_ctx_item CTX_Load Γ (Tref τ) Γ τ
+  | TP_CTX_StoreL Γ e2 τ :
+     typed Γ e2 τ → typed_ctx_item (CTX_StoreL e2) Γ (Tref τ) Γ TUnit
+  | TP_CTX_StoreR Γ e1 τ :
+     typed Γ e1 (Tref τ) →
+     typed_ctx_item (CTX_StoreR e1) Γ τ Γ TUnit
+  | TP_CTX_CasL Γ e1  e2 τ :
+     EqType τ → UnboxedType τ →
+     typed Γ e1 τ → typed Γ e2 τ →
+     typed_ctx_item (CTX_CmpXchgL e1 e2) Γ (Tref τ) Γ (TProd τ TBool)
+  | TP_CTX_CasM Γ e0 e2 τ :
+     EqType τ → UnboxedType τ →
+     typed Γ e0 (Tref τ) → typed Γ e2 τ →
+     typed_ctx_item (CTX_CmpXchgM e0 e2) Γ τ Γ (TProd τ TBool)
+  | TP_CTX_CasR Γ e0 e1 τ :
+     EqType τ → UnboxedType τ →
+     typed Γ e0 (Tref τ) → typed Γ e1 τ →
+     typed_ctx_item (CTX_CmpXchgR e0 e1) Γ τ Γ (TProd τ TBool)
+  (* Polymorphic & recursive types *)
   | TP_CTX_Fold Γ τ :
      typed_ctx_item CTX_Fold Γ τ.[(TRec τ)/] Γ (TRec τ)
   | TP_CTX_Unfold Γ τ :
@@ -166,29 +212,7 @@ Inductive typed_ctx_item :
   (* | TP_CTX_UnpackR e1 Γ τ τ2 : *)
   (*    typed Γ e1 (TExists τ) → *)
   (*    typed_ctx_item (CTX_UnpackR e1) (subst (ren (+1)) <$> Γ) (TArrow τ (subst (ren (+1)) τ2))  Γ τ2 *)
-  | TP_CTX_Fork Γ :
-     typed_ctx_item CTX_Fork Γ TUnit Γ TUnit
-  | TPCTX_Alloc Γ τ :
-     typed_ctx_item CTX_Alloc Γ τ Γ (Tref τ)
-  | TP_CTX_Load Γ τ :
-     typed_ctx_item CTX_Load Γ (Tref τ) Γ τ
-  | TP_CTX_StoreL Γ e2 τ :
-     typed Γ e2 τ → typed_ctx_item (CTX_StoreL e2) Γ (Tref τ) Γ TUnit
-  | TP_CTX_StoreR Γ e1 τ :
-     typed Γ e1 (Tref τ) →
-     typed_ctx_item (CTX_StoreR e1) Γ τ Γ TUnit
-  | TP_CTX_CasL Γ e1  e2 τ :
-     EqType τ → UnboxedType τ →
-     typed Γ e1 τ → typed Γ e2 τ →
-     typed_ctx_item (CTX_CmpXchg_L e1 e2) Γ (Tref τ) Γ (TProd τ TBool)
-  | TP_CTX_CasM Γ e0 e2 τ :
-     EqType τ → UnboxedType τ →
-     typed Γ e0 (Tref τ) → typed Γ e2 τ →
-     typed_ctx_item (CTX_CmpXchg_M e0 e2) Γ τ Γ (TProd τ TBool)
-  | TP_CTX_CasR Γ e0 e1 τ :
-     EqType τ → UnboxedType τ →
-     typed Γ e0 (Tref τ) → typed Γ e1 τ →
-     typed_ctx_item (CTX_CmpXchg_R e0 e1) Γ τ Γ (TProd τ TBool).
+.
 
 Inductive typed_ctx: ctx → stringmap type → type → stringmap type → type → Prop :=
   | TPCTX_nil Γ τ :
@@ -288,6 +312,27 @@ Section bin_log_related_under_typed_ctx.
       + iApply (bin_log_related_app _ _ _ _ _ _ τ2 with "[]").
         by iApply fundamental.
         iApply (IHK with "[Hrel]"); auto.
+      + iApply (bin_log_related_nat_binop with "[]");
+          try (by iApply fundamental); eauto.
+        iApply (IHK with "[Hrel]"); auto.
+      + iApply (bin_log_related_nat_binop with "[]");
+          try (by iApply fundamental); eauto.
+        iApply (IHK with "[Hrel]"); auto.
+      + iApply (bin_log_related_bool_binop with "[]");
+          try (by iApply fundamental); eauto.
+        iApply (IHK with "[Hrel]"); auto.
+      + iApply (bin_log_related_bool_binop with "[]");
+          try (by iApply fundamental); eauto.
+        iApply (IHK with "[Hrel]"); auto.
+      + iApply (bin_log_related_if with "[] []");
+          try by iApply fundamental.
+        iApply (IHK with "[Hrel]"); auto.
+      + iApply (bin_log_related_if with "[] []");
+          try by iApply fundamental.
+        iApply (IHK with "[Hrel]"); auto.
+      + iApply (bin_log_related_if with "[] []");
+          try by iApply fundamental.
+        iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_pair with "[]").
         iApply (IHK with "[Hrel]"); auto.
         by iApply fundamental.
@@ -314,42 +359,6 @@ Section bin_log_related_under_typed_ctx.
         by iApply fundamental.
         by iApply fundamental.
         iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_if with "[] []");
-          try by iApply fundamental.
-        iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_if with "[] []");
-          try by iApply fundamental.
-        iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_if with "[] []");
-          try by iApply fundamental.
-        iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_nat_binop with "[]");
-          try (by iApply fundamental); eauto.
-        iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_nat_binop with "[]");
-          try (by iApply fundamental); eauto.
-        iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_bool_binop with "[]");
-          try (by iApply fundamental); eauto.
-        iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_bool_binop with "[]");
-          try (by iApply fundamental); eauto.
-        iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_fold with "[]").
-        iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_unfold with "[]").
-        iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_tlam with "[]").
-        iIntros (τi). iAlways.
-        iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_tapp' with "[]").
-        iApply (IHK with "[Hrel]"); auto.
-      (* + iApply bin_log_related_pack'. *)
-      (*   iApply (IHK with "[Hrel]"); auto. *)
-      (* + iApply bin_log_related_unpack; try by (iIntros; fundamental). *)
-      (*   iApply (IHK with "[Hrel]"); auto. *)
-      (* + iApply bin_log_related_unpack; try by (iIntros; fundamental). *)
-      (*   iIntros. iApply (IHK with "[Hrel]"); auto. *)
       + iApply (bin_log_related_fork with "[]").
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_alloc with "[]").
@@ -371,5 +380,20 @@ Section bin_log_related_under_typed_ctx.
       + iApply (bin_log_related_CmpXchg with "[] []");
           try (by iApply fundamental); eauto.
         iApply (IHK with "[Hrel]"); auto.
+      + iApply (bin_log_related_fold with "[]").
+        iApply (IHK with "[Hrel]"); auto.
+      + iApply (bin_log_related_unfold with "[]").
+        iApply (IHK with "[Hrel]"); auto.
+      + iApply (bin_log_related_tlam with "[]").
+        iIntros (τi). iAlways.
+        iApply (IHK with "[Hrel]"); auto.
+      + iApply (bin_log_related_tapp' with "[]").
+        iApply (IHK with "[Hrel]"); auto.
+      (* + iApply bin_log_related_pack'. *)
+      (*   iApply (IHK with "[Hrel]"); auto. *)
+      (* + iApply bin_log_related_unpack; try by (iIntros; fundamental). *)
+      (*   iApply (IHK with "[Hrel]"); auto. *)
+      (* + iApply bin_log_related_unpack; try by (iIntros; fundamental). *)
+      (*   iIntros. iApply (IHK with "[Hrel]"); auto. *)
   Qed.
 End bin_log_related_under_typed_ctx.
