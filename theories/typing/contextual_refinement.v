@@ -39,9 +39,8 @@ Inductive ctx_item :=
   | CTX_CmpXchgL (e1 : expr) (e2 : expr)
   | CTX_CmpXchgM (e0 : expr) (e2 : expr)
   | CTX_CmpXchgR (e0 : expr) (e1 : expr)
-  | CTX_FAAL (e1 : expr) (e2 : expr)
-  | CTX_FAAM (e0 : expr) (e2 : expr)
-  | CTX_FAAR (e0 : expr) (e1 : expr)
+  | CTX_FAAL (e1 : expr)
+  | CTX_FAAR (e0 : expr)
   (* Recursive Types *)
   | CTX_Fold
   | CTX_Unfold
@@ -88,9 +87,8 @@ Fixpoint fill_ctx_item (ctx : ctx_item) (e : expr) : expr :=
   | CTX_CmpXchgL e1 e2 => CmpXchg e e1 e2
   | CTX_CmpXchgM e0 e2 => CmpXchg e0 e e2
   | CTX_CmpXchgR e0 e1 => CmpXchg e0 e1 e
-  | CTX_FAAL e1 e2 => FAA e e1 e2
-  | CTX_FAAM e0 e2 => FAA e0 e e2
-  | CTX_FAAR e0 e1 => FAA e0 e1 e
+  | CTX_FAAL e1 => FAA e e1
+  | CTX_FAAR e0 => FAA e0 e
   (* Recursive & polymorphic types *)
   | CTX_Fold => e
   | CTX_Unfold => rec_unfold e
@@ -181,7 +179,13 @@ Inductive typed_ctx_item :
   | TP_CTX_StoreR Γ e1 τ :
      typed Γ e1 (Tref τ) →
      typed_ctx_item (CTX_StoreR e1) Γ τ Γ TUnit
-  | TP_CTX_CasL Γ e1  e2 τ :
+  | TP_CTX_FAAL Γ e2 :
+     Γ ⊢ₜ e2 : TNat →
+     typed_ctx_item (CTX_FAAL e2) Γ (Tref TNat) Γ TNat
+  | TP_CTX_FAAR Γ e1 :
+     Γ ⊢ₜ e1 : Tref TNat →
+     typed_ctx_item (CTX_FAAR e1) Γ TNat Γ TNat
+  | TP_CTX_CasL Γ e1 e2 τ :
      EqType τ → UnboxedType τ →
      typed Γ e1 τ → typed Γ e2 τ →
      typed_ctx_item (CTX_CmpXchgL e1 e2) Γ (Tref τ) Γ (TProd τ TBool)
@@ -287,6 +291,14 @@ Proof.
   eapply typed_ctx_compose; eauto.
 Qed.
 
+
+Definition ctx_equiv Γ e1 e2 τ :=
+  (Γ ⊨ e1 ≤ctx≤ e2 : τ) ∧ (Γ ⊨ e2 ≤ctx≤ e1 : τ).
+
+Notation "Γ ⊨ e '=ctx=' e' : τ" :=
+  (ctx_equiv Γ e e' τ) (at level 100, e, e' at next level, τ at level 200).
+
+
 Section bin_log_related_under_typed_ctx.
   Context `{relocG Σ}.
 
@@ -371,6 +383,12 @@ Section bin_log_related_under_typed_ctx.
       + iApply (bin_log_related_store with "[]");
           try by iApply fundamental.
         iApply (IHK with "[Hrel]"); auto.
+      + iApply bin_log_related_FAA;
+          try (by iApply fundamental); eauto.
+        iApply (IHK with "Hrel").
+      + iApply bin_log_related_FAA;
+          try (by iApply fundamental); eauto.
+        iApply (IHK with "Hrel").
       + iApply (bin_log_related_CmpXchg with "[] []");
           try (by iApply fundamental); eauto.
         iApply (IHK with "[Hrel]"); auto.

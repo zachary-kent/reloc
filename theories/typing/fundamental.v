@@ -274,6 +274,29 @@ Section fundamental.
     - by iApply "IH2".
   Qed.
 
+  Lemma bin_log_related_FAA Δ Γ e1 e2 e1' e2' :
+    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : Tref TNat) -∗
+    ({Δ;Γ} ⊨ e2 ≤log≤ e2' : TNat) -∗
+    {Δ;Γ} ⊨ FAA e1 e2 ≤log≤ FAA e1' e2' : TNat.
+  Proof.
+    iIntros "IH1 IH2".
+    intro_clause.
+    rel_bind_ap e2 e2' "IH2" v2 v2' "#IH2".
+    rel_bind_ap e1 e1' "IH1" v1 v1' "#IH1".
+    iDestruct "IH1" as (l l') "(% & % & Hinv)"; simplify_eq/=.
+    iDestruct "IH2" as (n) "[% %]". simplify_eq.
+    rel_apply_l refines_faa_l.
+    iInv (relocN .@ "ref" .@ (l,l')) as (v1 v1') "[Hv1 [>Hv2 #>Hv]]" "Hclose".
+    iDestruct "Hv" as (n1) "[% %]"; simplify_eq.
+    iModIntro. iExists _; iFrame. iNext.
+    iIntros "Hl".
+    (* TODO: tactics for these operations *)
+    rel_apply_r (refines_faa_r with "Hv2"). iIntros "Hv2".
+    iMod ("Hclose" with "[-]") as "_".
+    { iNext. iExists _,_. iFrame. iExists _; iSplit; eauto. }
+    rel_values.
+  Qed.
+
   Lemma bin_log_related_CmpXchg Δ Γ e1 e2 e3 e1' e2' e3' τ
     (HEqτ : EqType τ)
     (HUbτ : UnboxedType τ) :
@@ -518,6 +541,8 @@ Section fundamental.
       + iApply bin_log_related_alloc; by iApply fundamental.
       + iApply bin_log_related_load; by iApply fundamental.
       + iApply bin_log_related_store; by iApply fundamental.
+      + iApply bin_log_related_FAA; eauto;
+          by iApply fundamental.
       + iApply bin_log_related_CmpXchg; eauto;
           by iApply fundamental.
     - intros Hv. destruct Hv; simpl.
