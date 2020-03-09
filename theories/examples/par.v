@@ -46,43 +46,42 @@ Section rules.
   (* this one we can prove without unfolding *)
   Lemma par_unit_1 e A :
     (REL e << e : A) -∗
-    REL (#() ||| e)%V << e : lrel_true.
+    REL (#() ||| e) << e : lrel_true.
   Proof.
     iIntros "He".
-    rel_rec_l. repeat rel_pure_l.
+    rel_pures_l. rel_rec_l. rel_pures_l.
     rel_bind_l (spawn _).
     iApply refines_wp_l.
     pose (N:=nroot.@"par").
     iApply (spawn_spec N (λ v, True)%I).
     - by wp_pures.
     - iNext. iIntros (l) "hndl". iSimpl.
-      repeat rel_pure_l. rel_bind_l e. rel_bind_r e.
+      rel_pures_l. rel_bind_l e. rel_bind_r e.
       iApply (refines_bind with "He").
       iIntros (v v') "Hv". simpl.
-      repeat rel_pure_l.
+      rel_pures_l.
       rel_bind_l (spawn.join _).
       iApply refines_wp_l.
       iApply (join_spec with "hndl").
       iNext. iIntros (?) "_". simpl.
-      repeat rel_pure_l. rel_values.
+      rel_pures_l. rel_values.
   Qed.
   Lemma par_unit_2 e A :
     (REL e << e : A) -∗
-    REL e << (#() ||| e)%V : lrel_true.
+    REL e << (#() ||| e) : lrel_true.
   Proof.
     iIntros "H".
-    rel_rec_r. repeat rel_pure_r.
-    rel_rec_r.
-    repeat rel_pure_r. rel_alloc_r c2 as "Hc2".
-    repeat rel_pure_r. rel_fork_r i as "Hi".
-    repeat rel_pure_r.
+    rel_pures_r. rel_rec_r. rel_pures_r. rel_rec_r.
+    rel_pures_r. rel_alloc_r c2 as "Hc2".
+    rel_pures_r. rel_fork_r i as "Hi".
+    rel_pures_r.
     tp_rec i. simpl.
     tp_pure i (InjR _). tp_store i.
     rel_bind_l e. rel_bind_r e.
     iApply (refines_bind with "H").
     iIntros (v v') "Hv". simpl.
-    repeat rel_pure_r.
-    rel_rec_r. rel_load_r. repeat rel_pure_r.
+    rel_pures_r.
+    rel_rec_r. rel_load_r. rel_pures_r.
     rel_values.
   Qed.
 
