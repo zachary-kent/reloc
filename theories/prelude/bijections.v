@@ -63,7 +63,7 @@ Section logic.
   Global Instance BIJ_timeless γ L : Timeless (BIJ γ L).
   Proof. rewrite BIJ_eq /BIJ_def. apply _. Qed.
 
-  Lemma alloc_empty_bij : (|==> ∃ γ, BIJ γ ∅)%I.
+  Lemma alloc_empty_bij : ⊢ |==> ∃ γ, BIJ γ ∅.
   Proof.
     rewrite BIJ_eq /BIJ_def.
     iMod (own_alloc (● (∅ : bijUR))) as (γ) "H".

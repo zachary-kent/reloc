@@ -87,7 +87,7 @@ Section rules.
   Qed.
 
   Lemma conjure_0 :
-    (|==> own γ (◯ (O : mnat)))%I.
+    ⊢ |==> own γ (◯ (O : mnat)).
   Proof. by apply own_unit. Qed.
 
   Lemma inc_size (n : nat) :
@@ -117,7 +117,7 @@ Section proof.
   Context `{!relocG Σ, !msizeG Σ, !lockG Σ}.
 
   Lemma eqKey_refinement γ :
-    REL eqKey << eqKey : tableR γ → tableR γ → lrel_bool.
+    ⊢ REL eqKey << eqKey : tableR γ → tableR γ → lrel_bool.
   Proof.
     unfold eqKey.
     iApply refines_arrow_val.
@@ -216,7 +216,7 @@ Section proof.
   Qed.
 
   Lemma refinement1 :
-    REL symbol1 << symbol2 : () → lrel_symbol.
+    ⊢ REL symbol1 << symbol2 : () → lrel_symbol.
   Proof.
     iApply refines_arrow_val.
     iAlways. iIntros (? ?) "[% %]"; simplify_eq/=.
@@ -295,7 +295,7 @@ Section proof.
   Qed.
 
   Lemma refinement2 :
-    REL symbol2 << symbol1 : () → lrel_symbol.
+    ⊢ REL symbol2 << symbol1 : () → lrel_symbol.
   Proof.
     iApply refines_arrow_val.
     iAlways. iIntros (? ?) "[% %]"; simplify_eq/=.

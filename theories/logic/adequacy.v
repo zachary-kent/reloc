@@ -22,7 +22,7 @@ Lemma refines_adequate Σ `{relocPreG Σ}
   (A : ∀ `{relocG Σ}, lrel Σ)
   (P : val → val → Prop) e e' σ :
   (∀ `{relocG Σ}, ∀ v v', A v v' -∗ pure_lrel P v v') →
-  (∀ `{relocG Σ}, REL e << e' : A) →
+  (∀ `{relocG Σ}, ⊢ REL e << e' : A) →
   adequate NotStuck e σ
     (λ v _, ∃ thp' h v', rtc erased_step ([e'], σ) (of_val v' :: thp', h)
             ∧ P v v').
@@ -65,7 +65,7 @@ Qed.
 
 Theorem refines_typesafety Σ `{relocPreG Σ} e e' e1
         (A : ∀ `{relocG Σ}, lrel Σ) thp σ σ' :
-  (∀ `{relocG Σ}, REL e << e' : A) →
+  (∀ `{relocG Σ}, ⊢ REL e << e' : A) →
   rtc erased_step ([e], σ) (thp, σ') → e1 ∈ thp →
   not_stuck e1 σ'.
 Proof.

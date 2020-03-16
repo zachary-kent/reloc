@@ -6,7 +6,7 @@ From reloc.typing Require Export contextual_refinement.
 
 Lemma logrel_adequate Σ `{relocPreG Σ}
    e e' τ (σ : state) :
-  (∀ `{relocG Σ} Δ, {⊤;Δ;∅} ⊨ e ≤log≤ e' : τ) →
+  (∀ `{relocG Σ} Δ, ⊢ {⊤;Δ;∅} ⊨ e ≤log≤ e' : τ) →
   adequate NotStuck e σ (λ v _, ∃ thp' h v', rtc erased_step ([e'], σ) (of_val v' :: thp', h)
     ∧ (ObsType τ → v = v')).
 Proof.
@@ -25,7 +25,7 @@ Proof.
 Qed.
 
 Theorem logrel_typesafety Σ `{relocPreG Σ} e e' τ thp σ σ' :
-  (∀ `{relocG Σ} Δ, {⊤;Δ;∅} ⊨ e ≤log≤ e : τ) →
+  (∀ `{relocG Σ} Δ, ⊢ {⊤;Δ;∅} ⊨ e ≤log≤ e : τ) →
   rtc erased_step ([e], σ) (thp, σ') → e' ∈ thp →
   not_stuck e' σ'.
 Proof.
@@ -46,7 +46,7 @@ Qed.
 
 Lemma logrel_simul Σ `{relocPreG Σ}
   e e' τ v thp hp σ :
-  (∀ `{relocG Σ} Δ, {⊤;Δ;∅} ⊨ e ≤log≤ e' : τ) →
+  (∀ `{relocG Σ} Δ, ⊢ {⊤;Δ;∅} ⊨ e ≤log≤ e' : τ) →
   rtc erased_step ([e], σ) (of_val v :: thp, hp) →
   (∃ thp' hp' v', rtc erased_step ([e'], σ) (of_val v' :: thp', hp') ∧ (ObsType τ → v = v')).
 Proof.
@@ -57,7 +57,7 @@ Proof.
 Qed.
 
 Lemma logrel_ctxequiv Σ `{relocPreG Σ} Γ e e' τ :
-  (∀ `{relocG Σ} Δ, {⊤;Δ;Γ} ⊨ e ≤log≤ e' : τ) →
+  (∀ `{relocG Σ} Δ, ⊢ {⊤;Δ;Γ} ⊨ e ≤log≤ e' : τ) →
   Γ ⊨ e ≤ctx≤ e' : τ.
 Proof.
   intros Hlog K thp σ₀ σ₁ v τ' ? Htyped Hstep.
@@ -70,7 +70,7 @@ Proof.
 Qed.
 
 Lemma refines_sound Σ `{relocPreG Σ} e e' τ :
-  (∀ `{relocG Σ} Δ, REL e << e' : (interp τ Δ)) →
+  (∀ `{relocG Σ} Δ, ⊢ REL e << e' : (interp τ Δ)) →
   ∅ ⊨ e ≤ctx≤ e' : τ.
 Proof.
   intros Hlog. eapply logrel_ctxequiv. apply _.

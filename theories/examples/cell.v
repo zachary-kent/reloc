@@ -56,7 +56,7 @@ Section cell_refinement.
      ∗ cellInt R r1 r2 r3 l r)%I.
 
   Lemma cell2_cell1_refinement :
-    REL cell2 << cell1 : ∀ α, ∃ β, (α → β) * (β → α) * (β → α → ()).
+    ⊢ REL cell2 << cell1 : ∀ α, ∃ β, (α → β) * (β → α) * (β → α → ()).
   Proof.
     unfold cell1, cell2.
     iApply refines_forall. iIntros "!#" (R).

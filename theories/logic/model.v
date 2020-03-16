@@ -211,8 +211,7 @@ Section related_facts.
 
   (* We need this to be able to open and closed invariants in front of logrels *)
   Lemma fupd_refines E1 E2 e e' A :
-    ((|={E1,E2}=> REL e << e' @ E2 : A)
-     -∗ (REL e << e' @ E1 : A))%I.
+    (|={E1,E2}=> REL e << e' @ E2 : A) -∗ REL e << e' @ E1 : A.
   Proof.
     rewrite refines_eq /refines_def.
     iIntros "H". iIntros (j K) "#Hs Hj /=".

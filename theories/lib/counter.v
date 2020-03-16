@@ -34,10 +34,10 @@ Section CG_Counter.
 
   Lemma CG_increment_r K E t A (x : loc) (lk : val) (n : nat) :
     nclose specN ⊆ E →
-    (x ↦ₛ # n -∗ is_locked_r lk false -∗
+    x ↦ₛ # n -∗ is_locked_r lk false -∗
     (x ↦ₛ # (n + 1) -∗ is_locked_r lk false -∗
       (REL t << fill K (of_val #n) @ E : A)) -∗
-    REL t << fill K (CG_increment #x lk) @ E : A)%I.
+    REL t << fill K (CG_increment #x lk) @ E : A.
   Proof.
     iIntros (?) "Hx Hl Hlog".
     rel_rec_r.
@@ -66,10 +66,10 @@ Section CG_Counter.
 
   Lemma FG_increment_r K E t A (x : loc) (n : nat) :
     nclose specN ⊆ E →
-    (x ↦ₛ # n -∗
+    x ↦ₛ # n -∗
     (x ↦ₛ #(n + 1) -∗
       REL t << fill K (of_val #n) @ E : A) -∗
-    REL t << fill K (FG_increment #x) @ E : A)%I.
+    REL t << fill K (FG_increment #x) @ E : A.
   Proof.
     iIntros (?) "Hx Hlog".
     rel_rec_r. repeat rel_pure_r.
@@ -192,7 +192,7 @@ Section CG_Counter.
   Qed.
 
   Lemma FG_CG_counter_refinement :
-    REL FG_counter << CG_counter : () → (() → lrel_int) * (() → lrel_int).
+    ⊢ REL FG_counter << CG_counter : () → (() → lrel_int) * (() → lrel_int).
   Proof.
     unfold FG_counter, CG_counter.
     iApply refines_arrow_val.

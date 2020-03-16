@@ -22,7 +22,7 @@ Section contents.
   Context `{relocG Σ}.
 
   Lemma bot_l K t A :
-    REL fill K (bot #()) << t : A.
+    ⊢ REL fill K (bot #()) << t : A.
   Proof.
     iLöb as "IH".
     rel_rec_l.
@@ -30,7 +30,7 @@ Section contents.
   Qed.
 
   Lemma Y_semtype A :
-    REL Y << Y : (A → A) → A.
+    ⊢ REL Y << Y : (A → A) → A.
   Proof.
     unfold Y.
     iApply refines_arrow.
@@ -45,7 +45,7 @@ Section contents.
   Qed.
 
   Lemma FIX_semtype A :
-    REL F << F : (A → A) → A.
+    ⊢ REL F << F : (A → A) → A.
   Proof.
     unfold F.
     iApply refines_arrow.
@@ -58,7 +58,7 @@ Section contents.
 
   (** Landin's knot is equivalent to the Y combinator *)
   Lemma KNOT_Y A :
-    REL Knot << Y : (A → A) → A.
+    ⊢ REL Knot << Y : (A → A) → A.
   Proof.
     unfold Y, Knot.
     iApply refines_arrow.
@@ -75,7 +75,7 @@ Section contents.
   Qed.
 
   Lemma Y_KNOT A :
-    REL Y << Knot : (A → A) → A.
+    ⊢ REL Y << Knot : (A → A) → A.
   Proof.
     unfold Y, Knot.
     iApply refines_arrow.
@@ -93,7 +93,7 @@ Section contents.
 
   (** Native recursion is equivalent to the Y-combinator *)
   Lemma FIX_Y A :
-    REL F << Y : (A → A) → A.
+    ⊢ REL F << Y : (A → A) → A.
   Proof.
     unfold Y, F.
     iApply refines_arrow.
@@ -106,7 +106,7 @@ Section contents.
   Qed.
 
   Lemma Y_FIX A :
-    REL Y << F : (A → A) → A.
+    ⊢ REL Y << F : (A → A) → A.
   Proof.
     unfold Y, F.
     iApply refines_arrow.

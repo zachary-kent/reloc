@@ -69,7 +69,7 @@ Section proof.
     end.
 
   Lemma late'_early_choice :
-    REL lateChoice' << earlyChoice : ref lrel_int → lrel_bool.
+    ⊢ REL lateChoice' << earlyChoice : ref lrel_int → lrel_bool.
   Proof.
     unfold lateChoice', earlyChoice.
     iApply refines_arrow_val.
@@ -91,7 +91,7 @@ Section proof.
   Qed.
 
   Lemma early_late_choice :
-    REL earlyChoice << lateChoice : ref lrel_int → lrel_bool.
+    ⊢ REL earlyChoice << lateChoice : ref lrel_int → lrel_bool.
   Proof.
     unfold lateChoice, earlyChoice.
     iApply refines_arrow_val.
@@ -108,7 +108,7 @@ Section proof.
   Qed.
 
   Lemma late_late'_choice :
-    REL lateChoice << lateChoice' : ref lrel_int → lrel_bool.
+    ⊢ REL lateChoice << lateChoice' : ref lrel_int → lrel_bool.
   Proof.
     unfold lateChoice, lateChoice'.
     iApply refines_arrow_val.

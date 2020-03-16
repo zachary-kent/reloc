@@ -53,7 +53,7 @@ Proof.
 Qed.
 
 Lemma lrel_list_nil `{relocG Σ} A :
-  lrel_list A NILV NILV.
+  ⊢ lrel_list A NILV NILV.
 Proof.
   rewrite lrel_list_unfold.
   iNext. by iLeft.
@@ -114,7 +114,7 @@ Proof.
 Qed.
 
 Lemma nth_int_typed `{relocG Σ} :
-  REL nth << nth : lrel_list lrel_int → lrel_int → lrel_int.
+  ⊢ REL nth << nth : lrel_list lrel_int → lrel_int → lrel_int.
 (* XXX derive this from the fundamental property *)
 Proof.
   unfold nth.

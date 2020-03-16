@@ -189,7 +189,7 @@ Section refinement.
      end)%I.
 
   Lemma offerInv_empty (st' : val) :
-    offerInv ∅ st'.
+    ⊢ offerInv ∅ st'.
   Proof. by rewrite /offerInv big_sepM_empty. Qed.
 
   Lemma offerInv_excl (N : offerReg) (st' : val) (o : loc) (v : val) :
@@ -251,7 +251,7 @@ Section refinement.
      end%I).
   Proof. apply (fixpoint_unfold (stack_link_pre A)). Qed.
 
-  Lemma stack_link_empty A : stack_link A None NILV.
+  Lemma stack_link_empty A : ⊢ stack_link A None NILV.
   Proof. rewrite stack_link_unfold; by iPureIntro. Qed.
 
   Lemma stack_link_cons A l h h' t t' q :
@@ -597,7 +597,7 @@ Section refinement.
   Qed.
 
   Lemma refinement A :
-    REL mk_stack #() << CG_mkstack #() :
+    ⊢ REL mk_stack #() << CG_mkstack #() :
       (() → () + A) * (A → ()).
   Proof.
     rel_rec_r. rel_pures_r. rel_rec_r.

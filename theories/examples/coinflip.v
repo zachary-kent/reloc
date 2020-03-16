@@ -64,7 +64,7 @@ Section proofs.
     ∨ ∃ (b:bool), cl ↦ SOMEV #b ∗ ce ↦ₛ #b))%I.
 
   Lemma coin_lazy'_eager_refinement :
-    REL coin2' << coin1 : (() → lrel_bool) * (() → ()).
+    ⊢ REL coin2' << coin1 : (() → lrel_bool) * (() → ()).
   Proof.
     unfold coin1, coin2'.
     rel_rec_r. rel_alloc_r ce as "Hce". do 2 rel_pure_r.
@@ -120,7 +120,7 @@ Section proofs.
   (** Eager coin refines lazy coin (with prophecies).
       This part is easier. *)
   Lemma coin_eager_lazy'_refinement :
-    REL coin1 << coin2' : (() → lrel_bool) * (() → ()).
+    ⊢ REL coin1 << coin2' : (() → lrel_bool) * (() → ()).
   Proof.
     unfold coin1, coin2'.
     rel_rec_l. rel_alloc_l ce as "Hce". do 2 rel_pure_l.
@@ -179,7 +179,7 @@ Section proofs.
 
   (** Finally we show that we can get rid of prophecy instrumentation. *)
   Lemma coin_lazy'_lazy_refinement :
-    REL coin2' << coin2 : (() → lrel_bool) * (() → ()).
+    ⊢ REL coin2' << coin2 : (() → lrel_bool) * (() → ()).
   Proof.
     unfold coin2, coin2'.
     rel_rec_l. rel_pure_l. rel_alloc_l c' as "Hc'".
@@ -239,7 +239,7 @@ Section proofs.
   Qed.
 
   Lemma coin_lazy_lazy'_refinement :
-    REL coin2 << coin2' : (() → lrel_bool) * (() → ()).
+    ⊢ REL coin2 << coin2' : (() → lrel_bool) * (() → ()).
   Proof.
     unfold coin2, coin2'.
     rel_rec_l. rel_pure_l. rel_alloc_l c as "Hc".

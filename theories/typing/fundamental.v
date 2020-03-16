@@ -26,7 +26,7 @@ Section fundamental.
 
   Lemma bin_log_related_var Δ Γ x τ :
     Γ !! x = Some τ →
-    {Δ;Γ} ⊨ Var x ≤log≤ Var x : τ.
+    ⊢ {Δ;Γ} ⊨ Var x ≤log≤ Var x : τ.
   Proof.
     iIntros (Hx). iIntros (vs) "#Hvs". simpl.
     rewrite (env_ltyped2_lookup _ vs x); last first.
@@ -36,13 +36,13 @@ Section fundamental.
     by iApply refines_ret.
   Qed.
 
-  Lemma bin_log_related_unit Δ Γ : {Δ;Γ} ⊨ #() ≤log≤ #() : TUnit.
+  Lemma bin_log_related_unit Δ Γ : ⊢ {Δ;Γ} ⊨ #() ≤log≤ #() : TUnit.
   Proof. value_case. Qed.
 
-  Lemma bin_log_related_nat Δ Γ (n : nat) : {Δ;Γ} ⊨ #n ≤log≤ #n : TNat.
+  Lemma bin_log_related_nat Δ Γ (n : nat) : ⊢ {Δ;Γ} ⊨ #n ≤log≤ #n : TNat.
   Proof. value_case. Qed.
 
-  Lemma bin_log_related_bool Δ Γ (b : bool) : {Δ;Γ} ⊨ #b ≤log≤ #b : TBool.
+  Lemma bin_log_related_bool Δ Γ (b : bool) : ⊢ {Δ;Γ} ⊨ #b ≤log≤ #b : TBool.
   Proof. value_case. Qed.
 
   Lemma bin_log_related_pair Δ Γ e1 e2 e1' e2' (τ1 τ2 : type) :
@@ -471,7 +471,7 @@ Section fundamental.
   Qed.
 
   Theorem binary_fundamental Δ Γ e τ :
-    Γ ⊢ₜ e : τ → ({Δ;Γ} ⊨ e ≤log≤ e : τ)%I.
+    Γ ⊢ₜ e : τ → ⊢ {Δ;Γ} ⊨ e ≤log≤ e : τ.
   Proof.
     intros Ht. iInduction Ht as [] "IH" forall (Δ).
     - by iApply bin_log_related_var.
@@ -505,7 +505,7 @@ Section fundamental.
 
   Theorem refines_typed τ Δ e :
     ∅ ⊢ₜ e : τ →
-    REL e << e : (interp τ Δ ).
+    ⊢ REL e << e : interp τ Δ.
   Proof.
     move=> /binary_fundamental Hty.
     iPoseProof (Hty Δ with "[]") as "H".

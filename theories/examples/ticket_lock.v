@@ -49,7 +49,7 @@ Section refinement.
     set_solver.
   Qed.
 
-  Lemma newIssuedTickets : (|==> ∃ γ, issuedTickets γ 0)%I.
+  Lemma newIssuedTickets : ⊢ |==> ∃ γ, issuedTickets γ 0.
   Proof.
     iMod (own_alloc (● (GSet ∅))) as (γ) "Hγ"; [|by eauto].
     by apply auth_auth_valid.
@@ -102,7 +102,7 @@ Section refinement.
 
   (* Allocating a new lock *)
   Lemma newlock_refinement :
-    REL newlock << reloc.lib.lock.newlock : () → lockInt.
+    ⊢ REL newlock << reloc.lib.lock.newlock : () → lockInt.
   Proof.
     rel_arrow_val.
     iIntros (? ?) "/= [% %]"; simplify_eq.
@@ -207,7 +207,7 @@ Section refinement.
   Qed.
 
   Lemma acquire_refinement :
-    REL acquire << reloc.lib.lock.acquire : lockInt → ().
+    ⊢ REL acquire << reloc.lib.lock.acquire : lockInt → ().
   Proof.
     rel_arrow_val.
     iIntros (? lk) "/= #Hl".
@@ -239,7 +239,7 @@ Section refinement.
   Qed.
 
   Lemma acquire_refinement_direct :
-    REL acquire << reloc.lib.lock.acquire : lockInt → ().
+    ⊢ REL acquire << reloc.lib.lock.acquire : lockInt → ().
   Proof.
     rel_arrow_val.
     iIntros (? ?) "/= #Hl".
@@ -305,7 +305,7 @@ Section refinement.
   Qed.
 
   Lemma release_refinement :
-    REL release << reloc.lib.lock.release : lockInt → ().
+    ⊢ REL release << reloc.lib.lock.release : lockInt → ().
   Proof.
     rel_arrow_val.
     iIntros (? lk) "/= #Hl".
@@ -339,7 +339,7 @@ Section refinement.
   Qed.
 
   Lemma ticket_lock_refinement :
-    REL (newlock, acquire, release)
+    ⊢ REL (newlock, acquire, release)
         <<
         (reloc.lib.lock.newlock, reloc.lib.lock.acquire, reloc.lib.lock.release)
     : lrel_lock.

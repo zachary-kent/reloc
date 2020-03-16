@@ -188,7 +188,7 @@ Section proof.
       ∗ inv (stackN .@ (stk,stk')) (sinv A stk stk' l))%I.
 
   Lemma stack_refinement :
-    REL FG_stack << CG_stack : ∀ A, ∃ B, (() → B) * (B → () + A) * (B → A → ()).
+    ⊢ REL FG_stack << CG_stack : ∀ A, ∃ B, (() → B) * (B → () + A) * (B → A → ()).
   Proof.
     unfold CG_stack, FG_stack.
     iApply refines_forall. iIntros (A). iAlways.

@@ -212,7 +212,7 @@ Section env_typed.
   Qed.
 
   Lemma env_ltyped2_empty :
-    ⟦ ∅ ⟧* ∅.
+    ⊢ ⟦ ∅ ⟧* ∅.
   Proof. apply big_sepM2_empty'. Qed.
 
   Lemma env_ltyped2_empty_inv vs :

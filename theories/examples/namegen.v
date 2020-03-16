@@ -39,7 +39,7 @@ Section namegen_refinement.
                         end)%I.
 
   Lemma nameGen_ref1 :
-    REL nameGen1 << nameGen2 : ∃ α, (() → α) * (α → α → lrel_bool).
+    ⊢ REL nameGen1 << nameGen2 : ∃ α, (() → α) * (α → α → lrel_bool).
   Proof.
     unfold nameGen1, nameGen2.
     rel_alloc_r c as "Hc".

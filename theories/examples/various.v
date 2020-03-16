@@ -17,7 +17,7 @@ Section proofs.
   Context `{relocG Σ}.
 
   Lemma refinement1 :
-    REL
+    ⊢ REL
       let: "x" := ref #1 in
       (λ: "f", "f" #();; !"x")
     <<
@@ -43,7 +43,7 @@ Section proofs.
 
   Definition pending γ `{oneshotG Σ} := own γ (Cinl (Excl ())).
   Definition shot γ `{oneshotG Σ} := own γ (Cinr (to_agree ())).
-  Lemma new_pending `{oneshotG Σ} : (|==> ∃ γ, pending γ)%I.
+  Lemma new_pending `{oneshotG Σ} : ⊢ |==> ∃ γ, pending γ.
   Proof. by apply own_alloc. Qed.
   Lemma shoot γ `{oneshotG Σ} : pending γ ==∗ shot γ.
   Proof.
@@ -61,7 +61,7 @@ Section proofs.
   Qed.
 
   Lemma refinement2 `{oneshotG Σ} :
-    REL
+    ⊢ REL
       let: "x" := ref #0 in
       (λ: "f", "x" <- #1;; "f" #();; !"x")
     <<
@@ -113,7 +113,7 @@ Section proofs.
   Qed.
 
   Lemma refinement25 `{oneshotG Σ} :
-    REL
+    ⊢ REL
       (λ: "f", "f" #();; #1)
     <<
       (let: "x" := ref #0 in
@@ -164,7 +164,7 @@ Section proofs.
   Definition i3n := nroot .@ "i3".
 
   Lemma refinement3 :
-    REL
+    ⊢ REL
       let: "b" := ref #true in
       let: "x" := ref #0 in
       (λ: "f", if: CAS "b" #true #false
@@ -269,7 +269,7 @@ Section proofs.
       Without locking in the first expression, the callback can reenter
       the body in a forked thread to change the value of x *)
   Lemma refinement4 `{!lockG Σ}:
-    REL
+    ⊢ REL
       (let: "x" := ref #1 in
        let: "l" := newlock #() in
        λ: "f", acquire "l";;
@@ -314,7 +314,7 @@ Section proofs.
 
   (** "Single return" example *)
   Lemma refinement5 :
-    REL
+    ⊢ REL
       (λ: "f", let: "x" := ref #0 in
                let: "y" := ref #0 in
                "f" #();;
@@ -456,10 +456,10 @@ Section proofs.
   Qed.
 
   Lemma close_i6 c1 c2 γ γ' `{oneshotG Σ} `{inG Σ (exclR unitR)} :
-    ((∃ n : nat, c1 ↦ #n
+    (∃ n : nat, c1 ↦ #n
      ∗ (c2 ↦ₛ #n ∗ pending γ
        ∨ c2 ↦ₛ #(n - 1) ∗ shot γ ∗ own γ' (Excl ()) ∗ ⌜1 ≤ n⌝))
-     -∗ i6 c1 c2 γ γ')%I.
+     -∗ i6 c1 c2 γ γ'.
   Proof.
     iDestruct 1 as (m) "[Hc1 Hc2]".
     iDestruct "Hc2" as "[[Hc2 Hp] | (Hc2 & Hs & Ht & %)]";
@@ -510,7 +510,7 @@ Section proofs.
   Qed.
 
   Lemma refinement6 `{oneshotG Σ} `{inG Σ (exclR unitR)} :
-    REL
+    ⊢ REL
       (λ: "f" "g" "f'",
        let: "pg" := p "g" in
        let: "g'" := Fst "pg" in
