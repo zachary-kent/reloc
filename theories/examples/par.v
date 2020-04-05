@@ -16,125 +16,229 @@ Axioms/rules for parallel composition
     also requires unfolding
 *)
 
+Notation "e1 ∥ e2" := (((e1;; #()) ||| (e2;; #()));; #())%E
+                        (at level 60) : expr_scope.
+(* Notation "e1 ∥ e2" := (((e1;; #()) ||| (e2;; #()))%V;; #()) *)
+(*                         (at level 60) : val_scope. *)
+
+
 Section rules.
   Context `{!relocG Σ, !spawnG Σ}.
 
-  Lemma par_r_1 e1 e2 t (A : lrel Σ) E :
-    ↑ relocN ⊆ E →
-    is_closed_expr [] e1 →
-    (∀ i C, i ⤇ fill C e1 ={E}=∗ ∃ (v : val),
-            i ⤇ fill C v ∗ REL t << (v, e2) @ E : A) -∗
-    REL t << (e1 ||| e2)%V @ E : A.
+  Lemma par_l_2 e1 e2 t :
+    (WP e1 {{ _, True }}) -∗
+    (REL e2 << t : ()) -∗
+    REL (e1 ∥ e2) << t : ().
   Proof.
-    iIntros (??) "H".
-    rel_rec_r. repeat rel_pure_r.
-    rel_rec_r.
-    repeat rel_pure_r. rel_alloc_r c2 as "Hc2".
-    repeat rel_pure_r. rel_fork_r i as "Hi".
-    { simpl. eauto. }
-    repeat rel_pure_r.
-    tp_rec i. simpl.
-    tp_bind i e1.
-    iMod ("H" with "Hi") as (v1) "[Hi H]".
-    iSimpl in "Hi". tp_pure i (InjR v1). tp_store i.
-  Abort.
-    (* rewrite refines_eq /refines_def. *)
-    (* iIntros (ρ') "_". clear ρ'. *)
-    (* iIntros (j K) "Hj". *)
-    (* tp_bind j e2. *)
-
-  (* this one we can prove without unfolding *)
-  Lemma par_unit_1 e A :
-    (REL e << e : A) -∗
-    REL (#() ||| e) << e : lrel_true.
-  Proof.
-    iIntros "He".
-    rel_pures_l. rel_rec_l. rel_pures_l.
-    rel_bind_l (spawn _).
+    iIntros "He1 He2".
+    rel_pures_l. rel_rec_l.
+    rel_pures_l. rel_bind_l (spawn _).
     iApply refines_wp_l.
     pose (N:=nroot.@"par").
-    iApply (spawn_spec N (λ v, True)%I).
-    - by wp_pures.
+    iApply (spawn_spec N (λ _, True)%I with "[He1]").
+    - wp_pures. wp_bind e1. iApply (wp_wand with "He1").
+      iIntros (?)  "_"; by wp_pures.
     - iNext. iIntros (l) "hndl". iSimpl.
-      rel_pures_l. rel_bind_l e. rel_bind_r e.
-      iApply (refines_bind with "He").
-      iIntros (v v') "Hv". simpl.
+      rel_pures_l. rel_bind_l e2. rel_bind_r t.
+      iApply (refines_bind with "He2").
+      iIntros (? ?) "[% %]"; simplify_eq/=.
       rel_pures_l.
       rel_bind_l (spawn.join _).
       iApply refines_wp_l.
       iApply (join_spec with "hndl").
       iNext. iIntros (?) "_". simpl.
-      rel_pures_l. rel_values.
+      rel_pures_l. by rel_values.
   Qed.
-  Lemma par_unit_2 e A :
-    (REL e << e : A) -∗
-    REL e << (#() ||| e) : lrel_true.
+
+  Lemma par_l_2' Q K e1 e2 t :
+    (WP e1 {{ _, Q }}) -∗
+    (REL e2 << t : ()) -∗
+    (Q -∗ REL #() << fill K (#() : expr) : ()) -∗
+    REL (e1 ∥ e2) << fill K t : ().
   Proof.
-    iIntros "H".
+    iIntros "He1 He2 Ht".
+    rel_pures_l. rel_rec_l.
+    rel_pures_l. rel_bind_l (spawn _).
+    iApply refines_wp_l.
+    pose (N:=nroot.@"par").
+    iApply (spawn_spec N (λ _, Q)%I with "[He1]").
+    - wp_pures. wp_bind e1. iApply (wp_wand with "He1").
+      iIntros (?)  "HQ"; by wp_pures.
+    - iNext. iIntros (l) "hndl". iSimpl.
+      rel_pures_l. rel_bind_l e2.
+      iApply (refines_bind with "He2").
+      iIntros (? ?) "[% %]"; simplify_eq/=.
+      rel_pures_l.
+      rel_bind_l (spawn.join _).
+      iApply refines_wp_l.
+      iApply (join_spec with "hndl").
+      iNext. iIntros (?) "HQ". simpl.
+      rel_pures_l. by iApply "Ht".
+  Qed.
+
+  Lemma par_l_1 e1 e2 t :
+    (REL e1 << t : ()) -∗
+    (WP e2 {{ _, True }}) -∗
+    REL (e1 ∥ e2) << t : ().
+  Proof.
+    iIntros "He1 He2".
+    rel_pures_l. rel_rec_l.
+    rel_pures_l.
+    pose (N:=nroot.@"par").
+    rewrite refines_eq /refines_def. iIntros (j K) "#Hspec Hj".
+    iModIntro. wp_bind (spawn _).
+    iApply (spawn_spec N (λ _, j ⤇ fill K #())%I with "[He1 Hj]").
+    - wp_pures. wp_bind e1.
+      iMod ("He1" with "Hspec Hj") as "He1".
+      iApply (wp_wand with "He1").
+      iIntros (?)  "P". wp_pures.
+      by iDestruct "P" as (v') "[Hj [-> ->]]".
+    - iNext. iIntros (l) "hndl". iSimpl.
+      wp_pures. wp_bind e2.
+      iApply (wp_wand with "He2"). iIntros (?) "_".
+      wp_pures.
+      wp_apply (join_spec with "hndl").
+      iIntros (?) "Hj". wp_pures. iExists #(). eauto with iFrame.
+  Qed.
+
+  Lemma par_l_1' Q K e1 e2 t :
+    (REL e1 << t : ()) -∗
+    (WP e2 {{ _, Q }}) -∗
+    (Q -∗ REL #() << fill K (#() : expr) : ()) -∗
+    REL (e1 ∥ e2) << fill K t : ().
+  Proof.
+    iIntros "He1 He2 Ht".
+    rel_pures_l. rel_rec_l.
+    rel_pures_l.
+    pose (N:=nroot.@"par").
+    rewrite {1 3}refines_eq /refines_def. iIntros (j K') "#Hspec Hj".
+    iModIntro. wp_bind (spawn _).
+    iApply (spawn_spec N (λ _, j ⤇ fill (K++K') #())%I with "[He1 Hj]").
+    - wp_pures. wp_bind e1.
+      rewrite -fill_app.
+      iMod ("He1" with "Hspec Hj") as "He1".
+      iApply (wp_wand with "He1").
+      iIntros (?)  "P". wp_pures.
+      by iDestruct "P" as (v') "[Hj [-> ->]]".
+    - iNext. iIntros (l) "hndl". iSimpl.
+      wp_pures. wp_bind e2.
+      iApply (wp_wand with "He2"). iIntros (?) "HQ".
+      wp_pures.
+      wp_apply (join_spec with "hndl").
+      iIntros (?) "Hj".
+      iSpecialize ("Ht" with "HQ").
+      rewrite refines_eq /refines_def.
+      rewrite fill_app.
+      iMod ("Ht" with "Hspec Hj") as "Ht".
+      rewrite wp_value_inv. iMod "Ht" as (?) "[Ht [_ ->]]".
+      wp_pures. iExists #(). eauto with iFrame.
+  Qed.
+
+  (* Lemma par_r_1 e1 e2 t (A : lrel Σ) E : *)
+  (*   ↑ relocN ⊆ E → *)
+  (*   is_closed_expr [] e1 → *)
+  (*   (∀ i C, i ⤇ fill C e1 ={E}=∗ ∃ (v : val), *)
+  (*           i ⤇ fill C v ∗ REL t << (v, e2) @ E : A) -∗ *)
+  (*   REL t << (e1 ||| e2)%V @ E : A. *)
+  (* Proof. *)
+  (*   iIntros (??) "H". *)
+  (*   rel_rec_r. repeat rel_pure_r. *)
+  (*   rel_rec_r. *)
+  (*   repeat rel_pure_r. rel_alloc_r c2 as "Hc2". *)
+  (*   repeat rel_pure_r. rel_fork_r i as "Hi". *)
+  (*   { simpl. eauto. } *)
+  (*   repeat rel_pure_r. *)
+  (*   tp_rec i. simpl. *)
+  (*   tp_bind i e1. *)
+  (*   iMod ("H" with "Hi") as (v1) "[Hi H]". *)
+  (*   iSimpl in "Hi". tp_pure i (InjR v1). tp_store i. *)
+  (* Abort. *)
+  (*   (* rewrite refines_eq /refines_def. *) *)
+  (*   (* iIntros (ρ') "_". clear ρ'. *) *)
+  (*   (* iIntros (j K) "Hj". *) *)
+  (*   (* tp_bind j e2. *) *)
+
+  (* this one we can prove without unfolding *)
+  Lemma par_unit_1 e :
+    (REL e << e : ()) -∗
+    REL (#() ∥ e) << e : ().
+  Proof.
+    iIntros "He".
+    iApply (par_l_2 with "[] He").
+    by iApply wp_value.
+  Qed.
+  Lemma par_unit_2 e :
+    (REL e << e : ()) -∗
+    REL e << (#() ∥ e) : ().
+  Proof.
+    iIntros "He".
     rel_pures_r. rel_rec_r. rel_pures_r. rel_rec_r.
     rel_pures_r. rel_alloc_r c2 as "Hc2".
     rel_pures_r. rel_fork_r i as "Hi".
     rel_pures_r.
     tp_rec i. simpl.
+    tp_pure i (Lam _ _). tp_pure i (App _ _). simpl.
     tp_pure i (InjR _). tp_store i.
     rel_bind_l e. rel_bind_r e.
-    iApply (refines_bind with "H").
-    iIntros (v v') "Hv". simpl.
-    rel_pures_r.
+    iApply (refines_bind with "He").
+    iIntros (v v') "[-> ->]".
+    simpl. rel_pures_r.
     rel_rec_r. rel_load_r. rel_pures_r.
     rel_values.
   Qed.
 
-  Lemma par_comm e1 e2 (A B : lrel Σ) :
+  (* This proof is now simpler but it still requires unfolding the REL judgement *)
+  Lemma par_comm e1 e2 :
     is_closed_expr [] e1 →
     is_closed_expr [] e2 →
-    (REL e1 << e1 : A) -∗
-    (REL e2 << e2 : B) -∗
-    REL (e2 ||| e1)%V << (e1 ||| e2)%V : lrel_true.
+    (REL e1 << e1 : ()) -∗
+    (REL e2 << e2 : ()) -∗
+    REL (e2 ∥ e1) << (e1 ∥ e2) : ().
   Proof.
-    iIntros (??) "He1 He2". rel_rec_r. repeat rel_pure_r.
-    rel_rec_r.
-    repeat rel_pure_r. rel_alloc_r c2 as "Hc2".
-    repeat rel_pure_r. rel_fork_r i as "Hi".
+    iIntros (??) "He1 He2". rel_pures_r.
+    rel_rec_r. rel_pures_r. rel_rec_r.
+    rel_pures_r. rel_alloc_r c2 as "Hc2".
+    rel_pures_r. rel_fork_r i as "Hi".
     { simpl. eauto. }
-    repeat rel_pure_r.
-    tp_rec i. simpl.
-    rel_rec_l. repeat rel_pure_l.
-    rewrite {3}refines_eq /refines_def.
-    iIntros (j K) "#Hs Hj". iModIntro.
-    tp_bind j e2.
-    pose (C:=(AppRCtx (λ: "v2", let: "v1" := spawn.join #c2 in ("v1", "v2")) :: K)).
-    fold C.
-    pose (N:=nroot.@"par").
-    wp_bind (spawn _).
-    iApply (spawn_spec N with "[He2 Hj]").
-    - wp_lam. rewrite refines_eq /refines_def.
-      iMod ("He2" with "Hs Hj") as "He2".
-      iAssumption.
-    - iNext. iIntros (l) "l_hndl".
-      wp_pures. wp_bind e1.
-      rewrite refines_eq /refines_def.
+    tp_pure i (App _ _). simpl.
+    rel_pures_r.
+    rel_bind_r e2.
+    iApply refines_spec_ctx. iIntros "#Hs".
+    iApply (par_l_1' (i ⤇ (#c2 <- InjR (#();; #())))%I
+              with "He2 [He1 Hi]").
+    { rewrite refines_eq /refines_def.
       tp_bind i e1.
-      iMod ("He1" with "Hs Hi") as "He1".
-      iApply (wp_wand with "He1").
-      iIntros (v1). iDestruct 1 as (v2) "[Hi Hv]".
-      wp_pures. wp_bind (spawn.join _).
-      iApply (join_spec with "l_hndl").
-      iNext. iIntros (w1). iDestruct 1 as (w2) "[Hj Hw]".
-      unfold C. iSimpl in "Hi". iSimpl in "Hj".
-      tp_pure i (InjR v2). iSimpl in "Hi".
-      tp_store i.
-      (* TODO: better tp_pure tactics *)
-      tp_pure j (Lam _ _). simpl.
-      tp_rec j. simpl.
-      tp_bind j (spawn.join _). unlock spawn.join.
-      tp_pure j (App _ #c2). simpl.
-      iApply fupd_wp. tp_load j. simpl.
-      tp_pure j (Case _ _ _). tp_pure j (Lam _ _). simpl.
-      tp_pure j (App _ v2). simpl. tp_pure j (Lam _ _). simpl.
-      tp_pure j _. simpl. tp_pure j _.
-      iModIntro. wp_pures. iExists (v2, w2)%V. eauto.
+      iMod ("He1" with "Hs Hi") as "He1". simpl.
+      iApply (wp_wand with "He1"). iIntros (?).
+      iDestruct 1 as (?) "[Hi [-> ->]]". done. }
+    iIntros "Hi". simpl. rel_pures_r.
+    tp_pure i (Lam _ _). tp_pure i (App _ _). simpl.
+    tp_pure i (InjR _). tp_store i.
+    rel_rec_r. rel_load_r. rel_pures_r. rel_values.
   Qed.
+
+  Lemma par_bot_2 e1 :
+    REL bot #() << e1 ∥ bot #() : ().
+  Proof. rel_apply_l bot_l. Qed.
+
+  Lemma par_bot_1 e1 :
+    (WP e1 {{_ , True}}) -∗ (* TODO: what can we do about this assignment? *)
+    REL (e1 ∥ bot #()) << bot #() : ().
+  Proof.
+    iIntros "He1".
+    iApply (par_l_2 with "He1").
+    rel_apply_l bot_l.
+  Qed.
+
+  Lemma par_assoc_1 e f g :
+    (REL e << e : ()) -∗
+    (REL f << f : ()) -∗
+    (REL g << g : ()) -∗
+    REL (e ∥ (f ∥ g)) << ((e ∥ f) ∥ g) : ().
+  Proof.
+    iIntros "He Hf Hg".
+    iApply (par_l_2 with "[He]").
+    { admit. }
 
   Lemma seq_par e1 e2 (A B : lrel Σ) :
     is_closed_expr [] e1 →

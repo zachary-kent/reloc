@@ -216,3 +216,23 @@ Proof. destruct op; simpl; eauto. discriminate. Qed.
 Lemma binop_bool_typed_safe (op : bin_op) (b1 b2 : bool) τ :
   binop_bool_res_type op = Some τ → is_Some (bin_op_eval op #b1 #b2).
 Proof. destruct op; naive_solver. Qed.
+
+From stdpp Require Import fin_map_dom.
+
+Lemma typed_is_closed Γ e τ :
+  Γ ⊢ₜ e : τ → is_closed_expr (elements (dom stringset Γ)) e
+with typed_is_closed_val v τ :
+    ⊢ᵥ v : τ → is_closed_val v.
+Proof.
+  - inversion 1; simpl; try naive_solver.
+    + destruct f as [|f], x as [|x]; simpl; first naive_solver.
+      * specialize (typed_is_closed (<[x:=τ1]>Γ) e0 τ2 H0).
+        revert typed_is_closed. rewrite dom_insert_L.
+        admit.
+      * admit.
+      * admit.
+    + specialize (typed_is_closed (⤉Γ) e0 τ0 H0).
+      revert typed_is_closed. by rewrite dom_fmap_L.
+    + admit.
+  - inversion 1; simpl; try naive_solver.
+Admitted.
