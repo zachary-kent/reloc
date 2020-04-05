@@ -124,7 +124,7 @@ Section refinement.
       rewrite auth_auth_valid. done. }
     iPureIntro.
     revert Hfoo.
-    rewrite singleton_included=> -[av []].
+    rewrite singleton_included_l=> -[av []].
     revert Hvalid.
     rewrite /to_offer_reg !lookup_fmap.
     case: (N !! o)=> [av'|] Hvalid; last by inversion 1.
