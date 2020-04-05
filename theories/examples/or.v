@@ -288,4 +288,75 @@ Section rules.
 
 End rules.
 
-(* TODO: write out the contextual refinements *)
+
+(** Separately, we prove that the ordering induced by ⊕ conincides with
+    contextual refinement. *)
+Lemma Seq_typed Γ e1 e2 τ :
+  Γ ⊢ₜ e1 : TUnit →
+  Γ ⊢ₜ e2 : τ →
+  Γ ⊢ₜ (e1;;e2) : τ.
+Proof. by repeat (econstructor; eauto). Qed.
+
+Lemma or_equiv_refines_1 e t :
+  (∅ ⊢ₜ e : TUnit) →
+  (∅ ⊢ₜ t : TUnit) →
+  (∅ ⊨ e ≤ctx≤ t : TUnit) →
+  (∅ ⊨ (e ⊕ t) =ctx= t : TUnit).
+Proof.
+  intros Te Tt Het. split; last first.
+  - eapply (ctx_refines_transitive _ _ _ (t ⊕ e)%V).
+    + eapply (refines_sound relocΣ).
+      iIntros (? Δ).
+      iApply (or_choice_1_r t t  with "[]").
+      by iApply refines_typed.
+    + eapply (refines_sound relocΣ).
+      iIntros (? Δ). rel_pures_r.
+      iApply or_comm; by iApply (refines_typed TUnit []).
+  - eapply (ctx_refines_transitive _ _ _ (t ⊕ t)%E).
+    + ctx_bind_l e.
+      ctx_bind_r t.
+      eapply (ctx_refines_congruence ∅ _ _ TUnit);
+        last eassumption.
+      { cbn.
+        econstructor; cbn; eauto.
+        - econstructor; cbn; eauto.
+          econstructor; cbn; eauto.
+        - econstructor; cbn; eauto.
+          + econstructor; cbn; eauto.
+            econstructor; cbn; eauto.
+            econstructor; cbn; eauto.
+            change Z0 with (Z.of_nat 0%nat).
+            econstructor; cbn; eauto.
+            econstructor; cbn; eauto.
+            * econstructor; cbn; eauto.
+              eapply Seq_typed.
+              ** change 1%Z with (Z.of_nat 1%nat).
+                 repeat (econstructor; cbn; eauto).
+              ** repeat (econstructor; cbn; eauto).
+            * repeat (econstructor; cbn; eauto).
+          + econstructor; cbn; eauto.
+            2:{ econstructor; cbn; eauto. }
+            enough (typed_ctx_item (CTX_Rec <> <>)
+                       (binder_insert BAnon (TUnit → TUnit)%ty
+                                      (binder_insert BAnon TUnit (∅ : stringmap type)))
+                       TUnit ∅ (TUnit → TUnit)).
+            { by simpl in *. }
+            eapply (TP_CTX_Rec ∅ TUnit TUnit BAnon BAnon). }
+    + eapply (refines_sound relocΣ).
+      iIntros (? Δ). rel_pures_l.
+      iApply or_idemp_l. by iApply (refines_typed TUnit []).
+Qed.
+
+Lemma or_equiv_refines_2 e t :
+  (∅ ⊢ₜ e : TUnit) →
+  (∅ ⊢ₜ t : TUnit) →
+  (∅ ⊨ (e ⊕ t) =ctx= t : TUnit) →
+  (∅ ⊨ e ≤ctx≤ t : TUnit).
+Proof.
+  intros Te Tt [Het1 Het2].
+  eapply (ctx_refines_transitive _ _ _ (e ⊕ t)%E); last assumption.
+  eapply (refines_sound relocΣ).
+  iIntros (? Δ).
+  rel_pures_r. iApply or_choice_1_r.
+  by iApply (refines_typed TUnit []).
+Qed.

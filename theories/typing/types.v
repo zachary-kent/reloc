@@ -106,9 +106,12 @@ Inductive typed : stringmap type → expr → type → Prop :=
   | Val_typed Γ v τ :
       ⊢ᵥ v : τ →
       Γ ⊢ₜ Val v : τ
-  | Unit_typed Γ : Γ ⊢ₜ #() : TUnit
-  | Nat_typed Γ (n : nat) : Γ ⊢ₜ # n : TNat
-  | Bool_typed Γ (b : bool) : Γ ⊢ₜ # b : TBool
+  | Unit_typed Γ :
+      Γ ⊢ₜ #() : TUnit
+  | Nat_typed Γ (n : nat) :
+      Γ ⊢ₜ #n : TNat
+  | Bool_typed Γ (b : bool) :
+      Γ ⊢ₜ #b : TBool
   | BinOp_typed_nat Γ op e1 e2 τ :
      Γ ⊢ₜ e1 : TNat → Γ ⊢ₜ e2 : TNat →
      binop_nat_res_type op = Some τ →
@@ -120,39 +123,65 @@ Inductive typed : stringmap type → expr → type → Prop :=
   | RefEq_typed Γ e1 e2 τ :
      Γ ⊢ₜ e1 : Tref τ → Γ ⊢ₜ e2 : Tref τ →
      Γ ⊢ₜ BinOp EqOp e1 e2 : TBool
-  | Pair_typed Γ e1 e2 τ1 τ2 : Γ ⊢ₜ e1 : τ1 → Γ ⊢ₜ e2 : τ2 → Γ ⊢ₜ Pair e1 e2 : TProd τ1 τ2
-  | Fst_typed Γ e τ1 τ2 : Γ ⊢ₜ e : TProd τ1 τ2 → Γ ⊢ₜ Fst e : τ1
-  | Snd_typed Γ e τ1 τ2 : Γ ⊢ₜ e : TProd τ1 τ2 → Γ ⊢ₜ Snd e : τ2
-  | InjL_typed Γ e τ1 τ2 : Γ ⊢ₜ e : τ1 → Γ ⊢ₜ InjL e : TSum τ1 τ2
-  | InjR_typed Γ e τ1 τ2 : Γ ⊢ₜ e : τ2 → Γ ⊢ₜ InjR e : TSum τ1 τ2
+  | Pair_typed Γ e1 e2 τ1 τ2 :
+      Γ ⊢ₜ e1 : τ1 → Γ ⊢ₜ e2 : τ2 →
+      Γ ⊢ₜ (e1, e2) : τ1 * τ2
+  | Fst_typed Γ e τ1 τ2 :
+      Γ ⊢ₜ e : τ1 * τ2 →
+      Γ ⊢ₜ Fst e : τ1
+  | Snd_typed Γ e τ1 τ2 :
+      Γ ⊢ₜ e : τ1 * τ2 →
+      Γ ⊢ₜ Snd e : τ2
+  | InjL_typed Γ e τ1 τ2 :
+      Γ ⊢ₜ e : τ1 →
+      Γ ⊢ₜ InjL e : τ1 + τ2
+  | InjR_typed Γ e τ1 τ2 :
+      Γ ⊢ₜ e : τ2 →
+      Γ ⊢ₜ InjR e : τ1 + τ2
   | Case_typed Γ e0 e1 e2 τ1 τ2 τ3 :
-     Γ ⊢ₜ e0 : TSum τ1 τ2 →
-     Γ ⊢ₜ e1 : TArrow τ1 τ3 →
-     Γ ⊢ₜ e2 : TArrow τ2 τ3 →
+     Γ ⊢ₜ e0 : τ1 + τ2 →
+     Γ ⊢ₜ e1 : (τ1 → τ3) →
+     Γ ⊢ₜ e2 : (τ2 → τ3) →
      Γ ⊢ₜ Case e0 e1 e2 : τ3
   | If_typed Γ e0 e1 e2 τ :
-     Γ ⊢ₜ e0 : TBool → Γ ⊢ₜ e1 : τ → Γ ⊢ₜ e2 : τ → Γ ⊢ₜ If e0 e1 e2 : τ
+     Γ ⊢ₜ e0 : TBool →
+     Γ ⊢ₜ e1 : τ →
+     Γ ⊢ₜ e2 : τ →
+     Γ ⊢ₜ If e0 e1 e2 : τ
   | Rec_typed Γ f x e τ1 τ2 :
-     <[f:=TArrow τ1 τ2]>(<[x:=τ1]>Γ) ⊢ₜ e : τ2 →
-     Γ ⊢ₜ Rec f x e : TArrow τ1 τ2
+     <[f:=(τ1 → τ2)%ty]>(<[x:=τ1]>Γ) ⊢ₜ e : τ2 →
+     Γ ⊢ₜ (rec: f x := e) : (τ1 → τ2)
   | App_typed Γ e1 e2 τ1 τ2 :
-     Γ ⊢ₜ e1 : TArrow τ1 τ2 → Γ ⊢ₜ e2 : τ1 → Γ ⊢ₜ App e1 e2 : τ2
+     Γ ⊢ₜ e1 : (τ1 → τ2) →
+     Γ ⊢ₜ e2 : τ1 →
+     Γ ⊢ₜ e1 e2 : τ2
   | TLam_typed Γ e τ :
      ⤉ Γ ⊢ₜ e : τ →
-     Γ ⊢ₜ (Λ: e) : TForall τ
-  | TApp_typed Γ e τ τ' : Γ ⊢ₜ e : TForall τ →
+     Γ ⊢ₜ (Λ: e) : ∀: τ
+  | TApp_typed Γ e τ τ' :
+     Γ ⊢ₜ e : (∀: τ) →
      Γ ⊢ₜ e #() : τ.[τ'/]
-  | TFold Γ e τ : Γ ⊢ₜ e : τ.[TRec τ/] → Γ ⊢ₜe : TRec τ
-  | TUnfold Γ e τ : Γ ⊢ₜ e : TRec τ → Γ ⊢ₜ rec_unfold e : τ.[TRec τ/]
-  | TPack Γ e τ τ' : Γ ⊢ₜ e : τ.[τ'/] → Γ ⊢ₜ e : TExists τ
+  | TFold Γ e τ :
+      Γ ⊢ₜ e : τ.[(μ: τ)%ty/] →
+      Γ ⊢ₜ e : (μ: τ)
+  | TUnfold Γ e τ :
+      Γ ⊢ₜ e : (μ: τ)%ty →
+      Γ ⊢ₜ rec_unfold e : τ.[(μ: τ)%ty/]
+  | TPack Γ e τ τ' :
+      Γ ⊢ₜ e : τ.[τ'/] →
+      Γ ⊢ₜ e : (∃: τ)
   | TUnpack Γ e1 x e2 τ τ2 :
-      Γ ⊢ₜ e1 : TExists τ →
+      Γ ⊢ₜ e1 : (∃: τ) →
       <[x:=τ]>(⤉ Γ) ⊢ₜ e2 : (Autosubst_Classes.subst (ren (+1%nat)) τ2) →
       Γ ⊢ₜ (unpack: x := e1 in e2) : τ2
   | TFork Γ e : Γ ⊢ₜ e : TUnit → Γ ⊢ₜ Fork e : TUnit
   | TAlloc Γ e τ : Γ ⊢ₜ e : τ → Γ ⊢ₜ Alloc e : Tref τ
   | TLoad Γ e τ : Γ ⊢ₜ e : Tref τ → Γ ⊢ₜ Load e : τ
   | TStore Γ e e' τ : Γ ⊢ₜ e : Tref τ → Γ ⊢ₜ e' : τ → Γ ⊢ₜ Store e e' : TUnit
+  | TFAA Γ e1 e2 :
+     Γ ⊢ₜ e1 : Tref TNat →
+     Γ ⊢ₜ e2 : TNat →
+     Γ ⊢ₜ FAA e1 e2 : TNat
   | TCmpXchg Γ e1 e2 e3 τ :
      EqType τ → UnboxedType τ →
      Γ ⊢ₜ e1 : Tref τ → Γ ⊢ₜ e2 : τ → Γ ⊢ₜ e3 : τ →
