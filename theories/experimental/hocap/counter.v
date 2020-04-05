@@ -104,19 +104,6 @@ Section cnt_spec.
   Qed.
 
 
-  (** We are going to make use of an alternative invariant opening rule: *)
-  Lemma inv_open_cow (E E' : coPset) M P :
-    ↑M ⊆ E → ↑M ⊆ E' →
-    inv M P ={E,E∖↑M}=∗ ▷ P ∗ (▷ P ={E'∖↑M,E'}=∗ True).
-  Proof.
-    iIntros (? ?) "#Hinv".
-    iMod (inv_acc_strong E M with "Hinv") as "[HP Hcl]"; first done.
-    iFrame. iIntros "!> HP".
-    iMod ("Hcl" $! E' ∖ ↑M with "HP") as "_".
-    rewrite -union_difference_L; eauto.
-  Qed.
-
-
 (** This specification for the increment function allows us to
      1) derive the "standard" lifting of unary HOCAP specification
         (by picking E = ∅)
@@ -155,4 +142,117 @@ Section cnt_spec.
       rewrite -union_difference_L; last set_solver.
       done.
   Qed.
+
+  Lemma cnt_read_l E c γ K e A :
+    E ## ↑ N →
+    Cnt c γ -∗
+    (∀ n : nat, cnt_auth γ n ={⊤∖↑N, ⊤∖↑N∖E}=∗
+                cnt_auth γ n ∗ REL fill K (of_val #n) << e @ (⊤∖E): A) -∗
+    REL fill K (counter_read c) << e : A.
+  Proof.
+    iIntros (?).
+    iDestruct 1 as (l ->) "#Hcnt". iIntros "Hvs".
+    rel_rec_l. rel_load_l_atomic.
+    iMod (inv_acc_strong with "Hcnt") as "[>H Hcl]"; first by solve_ndisj.
+    iDestruct "H" as (n) "[Hl Ha]". iModIntro.
+    iExists #n. iFrame "Hl"; iIntros "!> Hl".
+    iMod ("Hvs" with "Ha") as "[Ha Href]".
+    iMod ("Hcl" with "[Hl Ha]") as "_".
+    { iNext. iExists _; by iFrame. }
+    assert (⊤ ∖ ↑N ∖ E = ⊤ ∖ E ∖ ↑N) as -> by set_solver.
+    rewrite -union_difference_L; last set_solver.
+    done.
+  Qed.
 End cnt_spec.
+
+Section refinement.
+  Context `{!cnt_hocapG Σ, !relocG Σ}.
+
+  (** We are going to make use of an alternative invariant opening rule: *)
+  Lemma inv_open_cow (E E' : coPset) M P :
+    ↑M ⊆ E → ↑M ⊆ E' →
+    inv M P ={E,E∖↑M}=∗ ▷ P ∗ (▷ P ={E'∖↑M,E'}=∗ True).
+  Proof.
+    iIntros (? ?) "#Hinv".
+    iMod (inv_acc_strong E M with "Hinv") as "[HP Hcl]"; first done.
+    iFrame. iIntros "!> HP".
+    iMod ("Hcl" $! E' ∖ ↑M with "HP") as "_".
+    rewrite -union_difference_L; eauto.
+  Qed.
+
+  Definition N:=nroot.@"cnt".
+  Definition N2:=nroot.@"cntr".
+
+  Lemma incr_refinement c γ lk l :
+    Cnt N c γ -∗
+    inv N2 (∃ m, lock.is_locked_r lk false ∗ cnt γ 1 m ∗ l ↦ₛ #m)%I -∗
+    REL FG_increment c << CG_increment #l lk : interp TNat [].
+  Proof.
+    iIntros "#HCnt #HI".
+    rel_apply_l (cnt_increment_l _ (↑N2) with "HCnt"); first by solve_ndisj.
+    iIntros (n) "Ha".
+    iMod (inv_open_cow _ ⊤ with "HI") as "[H Hcl]"; try solve_ndisj.
+    iDestruct "H" as (m) ">(Hlk & Hc & Hl)".
+    iDestruct (cnt_agree_2 with "Ha Hc") as %<-.
+    iMod (cnt_update (n+1) with "Ha Hc") as "[Ha Hc]".
+    iModIntro. iFrame "Ha".
+    rel_apply_r (CG_increment_r with "Hl Hlk").
+    iIntros "Hl Hlk".
+    iMod ("Hcl" with "[-]") as "_".
+    { iNext. iExists (n+1); try iFrame.
+      assert (Z.of_nat (n + 1)%nat = Z.of_nat n + 1)%Z as -> by lia.
+      done. }
+    rel_values.
+  Qed.
+
+  Lemma read_refinement c γ lk l :
+    Cnt N c γ -∗
+    inv N2 (∃ m, lock.is_locked_r lk false ∗ cnt γ 1 m ∗ l ↦ₛ #m)%I -∗
+    REL counter_read c << counter_read #l : interp TNat [].
+  Proof.
+    iIntros "#HCnt #HI".
+    rel_apply_l (cnt_read_l _ (↑N2) with "HCnt"); first by solve_ndisj.
+    iIntros (n) "Ha".
+    iMod (inv_open_cow _ ⊤ with "HI") as "[H Hcl]"; try solve_ndisj.
+    iDestruct "H" as (m) ">(Hlk & Hc & Hl)".
+    iDestruct (cnt_agree_2 with "Ha Hc") as %<-.
+    iModIntro. iFrame "Ha".
+    rel_apply_r (counter_read_r with "Hl"). iIntros "Hl".
+    iMod ("Hcl" with "[-]") as "_".
+    { iNext. iExists _; iFrame. }
+    rel_values.
+  Qed.
+
+  Lemma FG_CG_counter_refinement :
+    ⊢ REL FG_counter << CG_counter : () → (() → lrel_int) * (() → lrel_int).
+  Proof.
+    unfold FG_counter, CG_counter.
+    iApply refines_arrow_val.
+    iAlways. iIntros (? ?) "_"; simplify_eq/=.
+    rel_rec_l. rel_rec_r.
+    rel_apply_r lock.refines_newlock_r; auto.
+    iIntros (lk) "Hlk".
+    repeat rel_pure_r.
+    rel_alloc_r c' as "Hcnt'".
+    rel_alloc_l c as "Hcnt". simpl.
+
+    iMod (Cnt_alloc N _ 0%nat with "Hcnt") as (γ) "[#HCnt Hc]".
+
+    (* establishing the invariant *)
+    iMod (inv_alloc N2 _ (∃ m, lock.is_locked_r lk false ∗ cnt γ 1 m ∗ c' ↦ₛ #m)%I
+         with "[-]") as "#Hinv".
+    { iNext. iExists 0%nat. by iFrame. }
+    (* TODO: here we have to do /exactly/ 4 steps.
+       The next step will reduce `(Val v1, Val v2)` to `Val (v1, v2)`,
+       and the compatibility rule wouldn't be applicable *)
+    do 4 rel_pure_r. do 4 rel_pure_l.
+    iApply refines_pair .
+    - iApply refines_arrow_val.
+      iAlways. iIntros (? ?) "_". rel_seq_l; rel_seq_r.
+      iApply (incr_refinement with "HCnt Hinv").
+    - iApply refines_arrow_val.
+      iAlways. iIntros (? ?) "_". rel_seq_l; rel_seq_r.
+      iApply (read_refinement with "HCnt Hinv").
+  Qed.
+
+End refinement.
