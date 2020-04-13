@@ -16,26 +16,21 @@ Definition bit_nat : expr :=
   (#1, flip_nat, (λ: "b", "b" = #1)).
 
 Definition bitτ : type :=
-  ∃: (TVar 0)%nat * (TVar 0%nat → TVar 0%nat) * (TVar 0%nat → TBool).
+  ∃: (TVar 0) * (TVar 0 → TVar 0) * (TVar 0 → TBool).
 
 Section bit_refinement.
   Context `{relocG Σ}.
 
   Definition bitf (b : bool) : nat :=
-    match b with
-    | true => 1
-    | false => 0
-    end.
+    if b then 1 else 0.
 
   (* This is the graph of the `bitf` function *)
   Definition bitτi : lrel Σ := LRel (λ v1 v2,
     (∃ b : bool, ⌜v1 = #b⌝ ∗ ⌜v2 = #(bitf b)⌝))%I.
 
-  Lemma bit_refinement Δ :
-    ⊢ REL bit_bool << bit_nat : interp bitτ Δ.
+  Lemma bit_refinement Δ : ⊢ REL bit_bool << bit_nat : interp bitτ Δ.
   Proof.
-    unfold bit_bool, bit_nat.
-    unfold bitτ. simpl.
+    unfold bitτ; simpl.
     iApply (refines_exists bitτi).
     progress repeat iApply refines_pair.
     - rel_values.
