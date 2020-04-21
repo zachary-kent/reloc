@@ -12,44 +12,53 @@ From reloc Require Export reloc experimental.helping.mailbox.
 From reloc Require Import examples.stack.CG_stack lib.list.
 
 (** * Source code *)
-(** All the operations are paramaterized by a mailbox, see mailbox.v for details *)
-Definition pop_st : val := rec: "pop" "r" "get" :=
-  match: "get" #() with
-    NONE =>
-    (match: !"r" with
+Definition pop_st_no_offer : val := λ: "r" "mb" "pop",
+  (match: !"r" with
        NONE => NONE
      | SOME "l" =>
        let: "pair" := !"l" in
        if: CAS "r" (SOME "l") (Snd "pair")
        then SOME (Fst "pair")
-       else "pop" "r" "get"
-     end)
-  | SOME "x" => SOME "x"
+       else "pop" "r" "mb"
+     end).
+
+Definition pop_st : val := rec: "pop" "r" "mb" :=
+  match: !"mb" with
+    NONE =>
+    (* there are no offers *) pop_st_no_offer "r" "mb" "pop"
+  | SOME "off" =>
+    (* trying to accept an offer instead of doing an actual POP *)
+    match: take_offer "off" with
+      NONE => (* did not succeed on accepting the offer *)
+      pop_st_no_offer "r" "mb" "pop"
+    | SOME "x" => SOME "x"
+    end
   end.
 
-Definition push_st : val := rec: "push" "r" "put" "n" :=
-  match: "put" "n" with
-    NONE => #()
+Definition push_st : val := rec: "push" "r" "mb" "n" :=
+  let: "off" := mk_offer "n" in
+  "mb" <- SOME "off";;
+  match: revoke_offer "off" with
+    NONE => (* the offer was successfully taken *) #()
   | SOME "n" =>
+    (* nobody took the offer  *)
     let: "tail" := !"r" in
     let: "new" := SOME (ref ("n", "tail")) in
     if: CAS "r" "tail" "new"
     then #()
-    else "push" "r" "put" "n"
+    else "push" "r" "mb" "n"
   end.
 
-Definition mk_stack : val :=  λ: "_",
-  unpack: "M" := mailbox in
-  let: "new_mb" := Fst (Fst "M") in
-  let: "put" := Snd (Fst "M") in
-  let: "get" := Snd "M" in
-  let: "mb" := "new_mb" #() in
+Definition mk_stack : val :=  λ: <>,
+  (* mailbox which will contain offered elements *)
+  let: "mb" := ref NONE in
+  (* the stack itself *)
   let: "r" := ref NONE in
-  (λ: <>, pop_st "r" (λ: <>, "get" "mb"),
-   λ: "x", push_st "r" (λ: "n", "put" "mb" "n") "x").
+  (λ: <>, pop_st "r" "mb",
+   λ: "x", push_st "r" "mb" "x").
 
 (** The coarse-grained version *)
-Definition CG_mkstack : val := λ: "_",
+Definition CG_mkstack : val := λ: <>,
   let: "st" := CG_new_stack #() in
   (λ: <>, CG_locked_pop "st", λ: "x", CG_locked_push "st" "x").
 
@@ -178,14 +187,120 @@ Section refinement.
   Qed.
 
   (** ** The offer invariant *)
+  (* TODO: abstract away from the concrete representation of offers *)
+  Definition is_offer γ (l : loc) (P Q : iProp Σ) :=
+    (∃ (c : nat),
+       l ↦ #c ∗
+        (⌜c = 0⌝ ∗ P
+       ∨ ⌜c = 1⌝ ∗ (Q ∨ own γ (Excl ()))
+       ∨ ⌜c = 2⌝ ∗ own γ (Excl ()))%nat)%I.
+
+  Definition offer_token γ := own γ (Excl ()).
+
+ (* this is kinda useless *)
+  Lemma mk_offer_l P Q K (v : val) t A :
+    P -∗
+    (∀ γ l, is_offer γ l P Q -∗ offer_token γ -∗ REL fill K (of_val (v, #l)) << t : A) -∗
+    REL fill K (mk_offer v) << t : A.
+  Proof.
+    iIntros "HP Hcont". rel_rec_l. rel_alloc_l l as "Hl".
+    iMod (own_alloc (Excl ())) as (γ) "Hγ". done.
+    rel_pures_l.
+    iApply ("Hcont" $! γ l with "[HP Hl] Hγ").
+    iExists 0. iFrame. iLeft. eauto.
+  Qed.
+
+  Lemma take_offer_l γ E (l : loc) v t A K P Q :
+    (|={⊤, E}=> ▷ is_offer γ l P Q ∗
+         ▷ ((is_offer γ l P Q -∗ REL fill K (of_val NONEV) << t @ E : A)
+            ∧ (P -∗ (Q -∗ is_offer γ l P Q) -∗ REL fill K (of_val $ SOMEV v) << t @ E : A))) -∗
+    REL fill K (take_offer (v, #l)%V) << t : A.
+  Proof.
+    iIntros "Hlog". rel_rec_l. rel_pures_l.
+    rel_cmpxchg_l_atomic.
+    iMod "Hlog" as "(Hoff & Hcont)".
+    rewrite {1}/is_offer. iDestruct "Hoff" as (c) "[Hl Hoff]".
+    iModIntro. iExists _. iFrame "Hl". iSplit.
+    - iIntros (?). iNext.
+      iDestruct "Hcont" as "[Hcont _]".
+      iIntros "Hl".
+      rel_pures_l. iApply ("Hcont" with "[-]").
+      iExists _; iFrame.
+    - iIntros (?). simplify_eq/=.
+      assert (c = 0%nat) as -> by lia. (* :) *)
+      iNext. iIntros "Hl".
+      iDestruct "Hoff" as "[[% HP] | [[% ?] | [% ?]]]"; [| congruence..].
+      rel_pures_l.
+      iDestruct "Hcont" as "[_ Hcont]".
+      iApply ("Hcont" with "HP [-]").
+      iIntros "HQ". rewrite /is_offer. iExists 1.
+      iFrame. iRight. iLeft. iSplit; eauto.
+  Qed.
+
+  Lemma wp_revoke_offer γ l E P Q (v : val) Φ :
+    offer_token γ -∗
+    ▷ (|={⊤, E}=> ▷ is_offer γ l P Q ∗
+        ▷ ((is_offer γ l P Q -∗ Q ={E, ⊤}=∗ Φ NONEV)
+           ∧ (is_offer γ l P Q -∗ P ={E, ⊤}=∗ Φ (SOMEV v)))) -∗
+    WP (revoke_offer (of_val (v, #l))) {{ Φ }}.
+  Proof.
+    iIntros "Hγ Hlog". wp_rec. wp_pures.
+    wp_bind (CmpXchg _ _ _). iApply wp_atomic.
+    iMod "Hlog" as "(Hoff & Hcont)".
+    rewrite {1}/is_offer. iDestruct "Hoff" as (c) "[Hl Hoff]".
+    iModIntro. iDestruct "Hoff" as "[(>-> & HP)|[(>-> & HQ) | (>-> & Htok)]]".
+    - wp_cmpxchg_suc; first fast_done.
+      iDestruct "Hcont" as "[_ Hcont]".
+      iMod ("Hcont" with "[-HP] HP") as "HΦ".
+      { iExists 2. iFrame "Hl". iRight. iRight. eauto. }
+      iModIntro. by wp_pures.
+    - wp_cmpxchg_fail; first done.
+      iDestruct "Hcont" as "[Hcont _]".
+      iDestruct "HQ" as "[HQ | Htok]"; last first.
+      { iDestruct (own_valid_2 with "Hγ Htok") as %Hbar.
+        inversion Hbar. }
+      iMod ("Hcont" with "[-HQ] HQ") as "HΦ".
+      { iExists 1. iFrame "Hl". iRight. iLeft. eauto. }
+      iModIntro. by wp_pures.
+    - wp_cmpxchg_fail; first done.
+      iDestruct (own_valid_2 with "Hγ Htok") as %Hbar.
+      inversion Hbar.
+  Qed.
+
+  (* We have the revoke_offer symbolic execution rule specialized for helping *)
+  Lemma revoke_offer_l γ off E K (v : val) e1 e2 A :
+    offer_token γ -∗
+    off ↦ #0 -∗
+    (∀ j K', is_offer γ off (j ⤇ fill K' e1) (j ⤇ fill K' e2) ={E, ⊤, E}▷=∗
+      ▷ is_offer γ off (j ⤇ fill K' e1) (j ⤇ fill K' e2) ∗
+      ▷ (is_offer γ off (j ⤇ fill K' e1) (j ⤇ fill K' e2) -∗
+           ((REL fill K (of_val NONEV) << e2 @ E : A)
+         ∧ (REL fill K (of_val $ SOMEV v) << e1 @ E : A)))) -∗
+    REL fill K (revoke_offer (v, #off)%V) << e1 @ E : A.
+  Proof.
+    iIntros "Hγ Hoff Hlog".
+    rewrite {3}refines_eq /refines_def.
+    iIntros (j K') "#Hs Hj".
+    iMod ("Hlog" with "[Hoff Hj]") as "Hlog".
+    { iExists 0. iFrame "Hoff". iLeft. eauto. }
+    iModIntro. iApply wp_bind. (* TODO: why do we have to use wp_bind here? *)
+    wp_apply (wp_revoke_offer with "Hγ [-]").
+    iNext. iMod "Hlog" as "[Hoff Hcont]". iModIntro.
+    iFrame "Hoff". iNext. iSplit.
+    - iIntros "Hoff". iDestruct ("Hcont" with "Hoff") as "[Hcont _]".
+      rewrite refines_eq. by iApply "Hcont".
+    - iIntros "Hoff". iDestruct ("Hcont" with "Hoff") as "[_ Hcont]".
+      rewrite refines_eq. by iApply "Hcont".
+  Qed.
+
+  Opaque is_offer mk_offer take_offer revoke_offer.
+
   Definition offerInv (N : offerReg) (st' : val) : iProp Σ :=
     ([∗ map] l ↦ w ∈ N,
      match w with
-     | (v,γ,j,K) => ∃ (c : nat),
-       l ↦ #c ∗
-        (⌜c = 0⌝ ∗ j ⤇ fill K (CG_locked_push st' (of_val v))%E
-       ∨ ⌜c = 1⌝ ∗ (j ⤇ fill K #() ∨ own γ (Excl ()))
-       ∨ ⌜c = 2⌝ ∗ own γ (Excl ()))%nat
+     | (v,γ,j,K) => is_offer γ l
+                             (j ⤇ fill K (CG_locked_push st' (of_val v))%E)
+                             (j ⤇ fill K #())
      end)%I.
 
   Lemma offerInv_empty (st' : val) :
@@ -201,9 +316,11 @@ Section refinement.
     {
       iIntros ([[[[? ?] ?] ?] HNo]).
       rewrite (big_sepM_lookup _ N o _ HNo).
+      Transparent is_offer.
       iDestruct "HN" as (c) "[HNo ?]".
       iDestruct (gen_heap.mapsto_valid_2 with "Ho HNo") as %Hfoo.
       compute in Hfoo. contradiction.
+      Opaque is_offer.
     }
     iPureIntro.
     destruct (N !! o); eauto. exfalso. apply Hbaz; eauto.
@@ -296,21 +413,14 @@ Section refinement.
 
   Lemma pop_no_helping_refinement A γo st st' mb lk :
     inv stackN (stackInv A γo st st' mb lk) -∗
-    □ (REL (pop_st #st) (λ: <>, get_mail #mb)%V
+    □ (REL pop_st #st #mb
        <<
       CG_locked_pop (#st', lk)%V : () + A) -∗
-    REL match: ! #st with
-          InjL <> => InjL #()
-        | InjR "l" =>
-          let: "pair" := ! "l" in
-          if: Snd (CmpXchg #st (InjR "l") (Snd "pair"))
-          then InjR (Fst "pair")
-          else (pop_st #st) (λ: <>, get_mail #mb)%V
-        end
+    REL pop_st_no_offer #st #mb pop_st
     <<
     CG_locked_pop (#st', lk)%V : () + A.
   Proof.
-    iIntros "#Hinv IH".
+    iIntros "#Hinv IH". rel_rec_l. rel_pures_l.
     rel_load_l_atomic.
     iInv stackN as (s1 s2 N) "(Hlk & Hst1 & Hst2 & Hrel & Hmb & HNown & HN)" "Hcl".
     iModIntro. iExists _; iFrame. iNext. iIntros "Hst1".
@@ -364,14 +474,13 @@ Section refinement.
 
   Lemma pop_refinement A γo st st' mb lk :
     inv stackN (stackInv A γo st st' mb lk) -∗
-    REL (pop_st #st) (λ: <>, get_mail #mb)%V
+    REL pop_st #st #mb
       <<
     CG_locked_pop (#st', lk)%V : () + A.
   Proof.
     iIntros "#Hinv".
     iLöb as "IH".
     rel_rec_l. rel_pures_l.
-    rel_rec_l.
     rel_load_l_atomic.
     iInv stackN as (s1 s2 N) "(>Hl & >Hst1 & >Hst2 & Hrel & Hmb & HNown & HN)" "Hcl"; simplify_eq.
     iDestruct "Hmb" as "[Hmb | Hmb]".
@@ -385,9 +494,9 @@ Section refinement.
     - (* YES OFFER *)
       iDestruct "Hmb" as (l v1 v2 γ j K) "(#Hv & Hmb & >HNl)".
       iDestruct "HNl" as %HNl.
-      rewrite /offerInv big_sepM_lookup_acc; eauto.
+      rewrite /offerInv big_sepM_lookup_acc; eauto. iSimpl in "HN".
       iDestruct "HN" as "[HNl HN]".
-      simpl. iMod "HNown".
+      iMod "HNown".
       iMod (offerReg_lookup_frag with "HNown") as "[#Hlown HNown]"; eauto.
       iModIntro. iExists _; iFrame.
       iNext. iIntros "Hmb".
@@ -397,24 +506,24 @@ Section refinement.
         - iRight. iExists _, _, _, _, _, _.
           eauto with iFrame.
         - by iApply "HN". }
-      rel_pures_l. rel_rec_l. rel_pures_l.
-      (* Trying to take upon the offer *)
-      rel_cmpxchg_l_atomic.
+
+      rel_pures_l. rel_apply_l (take_offer_l _ ).
       iInv stackN as (s1' s2' N') "(>Hl & >Hst1 & >Hst2 & Hrel & Hmb & HNown & HN)" "Hcl"; simplify_eq.
       iMod "HNown".
       iDestruct (offerReg_frag_lookup with "HNown Hlown") as %?.
-      rewrite /offerInv (big_sepM_lookup_acc _ _ l); eauto.
-      iDestruct "HN" as "[HNl HN]".
-      iDestruct "HNl" as (c) "[>HNl Hc]".
-      iModIntro. iExists _; iFrame.
-      iSplit; last first.
-      + (* CAS suc *)
-        iIntros (Hc); simplify_eq/=. iNext.
-        assert (c = 0%nat) as -> by lia. (* :) *)
+      rewrite /offerInv (big_sepM_lookup_acc _ _ l); eauto. iSimpl in "HN".
+      iDestruct "HN" as "[HNl HN]". iModIntro.
+      iFrame "HNl". iNext. iSplit.
+      +  (* Did not manage to accept an offer *)
         iIntros "HNl".
+        iMod ("Hcl" with "[-IH]") as "_".
+        { iNext. iExists _,_,_. iFrame.
+          by iApply "HN". }
         rel_pures_l.
-        iDestruct "Hc" as "[[% Hj] | [[% ?] | [% ?]]]"; [| congruence..].
-        unlock {1}CG_locked_push.
+        iApply (pop_no_helping_refinement with "Hinv IH").
+      + (* An offer was accepted *)
+        iIntros "Hj Hoff". rel_pures_l.
+        unlock {3}CG_locked_push.
         unlock {1}acquire {1}release.
         (* THIS IS COPY PASTED :-) *)
         tp_pure j (App _ (_,_)%V). iSimpl in "Hj".
@@ -446,154 +555,104 @@ Section refinement.
         tp_rec j. iSimpl in "Hj".
         tp_pure j (Snd _). unlock release.
         tp_rec j. tp_store j.
+        iSpecialize ("Hoff" with "Hj").
+        iSpecialize ("HN" with "Hoff").
         iClear "Hρ". iModIntro.
 
         rel_apply_r (refines_CG_pop_suc_r with "Hst2 [Hl]").
         { iExists _. by iFrame "Hl". }
         iIntros "Hst2 Hl".
         iMod ("Hcl" with "[-]") as "_".
-        { iNext. iExists _,_,_. iFrame.
-          iApply "HN".
-          iExists 1%nat. iFrame "HNl".
-          iRight. iLeft. eauto with iFrame. }
+        { iNext. iExists _,_,_. by iFrame. }
         rel_values. iModIntro. iExists v1,v2.
         iRight. repeat iSplit; eauto with iFrame.
-      + (* CAS FAILS *)
-        iIntros (Hc). iNext.
-        iIntros "HNl".
-        iMod ("Hcl" with "[-IH]") as "_".
-        { iNext. iExists _,_,_. iFrame.
-          iApply "HN". iExists _. iFrame. }
-        rel_pures_l.
-        iApply (pop_no_helping_refinement with "Hinv IH").
   Qed.
 
   Lemma push_refinement A γo st st' mb lk h1 h2 :
     inv stackN (stackInv A γo st st' mb lk) -∗
     A h1 h2 -∗
-    REL ((push_st #st) (λ: "n", (put_mail #mb) "n")%V) h1
+    REL push_st #st #mb h1
       <<
-    (CG_locked_push (#st', lk)%V) h2 : ().
+    CG_locked_push (#st', lk)%V h2 : ().
   Proof.
     iIntros "#Hinv #Hh".
     iLöb as "IH".
     rel_rec_l.
     rel_pures_l.
-    rel_rec_l. rel_pures_l. rel_rec_l.
-    rel_alloc_l o as "Ho". rel_pures_l.
-    rel_store_l_atomic.
+
+    Transparent mk_offer.
+
+    rel_rec_l. rel_pures_l.
+    rel_alloc_l off as "Hoff". rel_pures_l.
+    rel_store_l_atomic. (* we update the mailbox and store the offer in the registry *)
     iInv stackN as (s1 s2 N) "(Hl & Hst1 & Hst2 & Hrel & Hmb & HNown & HN)" "Hcl".
     iModIntro.
+    (* first we need to show that mb is allocated / owned *)
     iAssert (∃ v, ▷ mb ↦ v)%I with "[Hmb]" as (v) "Hmb".
     { iDestruct "Hmb" as "[Hmb | Hmb]".
-      - iExists (InjLV #()); eauto.
+      - iExists NONEV; eauto.
       - iDestruct "Hmb" as (l m1 m2 γ j K) "(Hm & Hmb & ?)".
-        iExists (InjRV (m1, #l)); eauto. }
+        iExists (SOMEV (m1, #l)); eauto. }
     iExists _; iFrame; iNext.
     iIntros "Hmb".
+
+
     rel_pures_l.
-    rel_rec_l.
-    iDestruct (offerInv_excl with "HN Ho") as %Hbaz.
+    iDestruct (offerInv_excl with "HN Hoff") as %Hbaz.
     iMod (own_alloc (Excl ())) as (γ) "Hγ"; first done.
-    rewrite {2}refines_eq /refines_def.
-    iIntros (j K) "#Hs Hj".
-    iMod (offerReg_alloc o h2 γ j K with "HNown") as "[HNown Hfrag]"; eauto.
-    iMod ("Hcl" with "[-Hfrag Hγ]") as "_".
+
+    rel_apply_l (revoke_offer_l with "Hγ Hoff").
+    iIntros (j K') "Hoff".
+    iMod (offerReg_alloc off h2 γ j K' with "HNown") as "[HNown #Hfrag]"; eauto.
+    iMod ("Hcl" with "[-]") as "_".
     { iNext. iExists _,_,_; iFrame.
       iSplitL "Hmb".
-      - iRight. iExists o, h1, h2, _, _, _. iFrame "Hmb Hh".
+      - iRight. iExists off, h1, h2, _, _, _. iFrame "Hmb Hh".
         iPureIntro. by rewrite lookup_insert.
-      - rewrite /offerInv big_sepM_insert; eauto.
-        iFrame.
-        iExists 0%nat. iFrame "Ho".
-        iLeft. unlock CG_locked_push. iFrame "Hj". eauto. }
-    iModIntro. wp_proj.
-    wp_bind (CmpXchg _ _ _).
+      - rewrite /offerInv big_sepM_insert; eauto with iFrame. }
+    iModIntro. iNext.
     iInv stackN as (s1' s2' N') "(Hl & Hst1 & Hst2 & Hrel & Hmb & >HNown & HN)" "Hcl".
-    iDestruct (offerReg_frag_lookup with "HNown Hfrag") as %Hfoo.
+    iModIntro. iDestruct (offerReg_frag_lookup with "HNown Hfrag") as %Hfoo.
     rewrite /offerInv.
+    (* TODO: separate lemma *)
     rewrite (big_sepM_lookup_acc _ N'); eauto.
-    iDestruct "HN" as "[HoN HN]".
-    iDestruct "HoN" as (c) ">[Ho Hc]".
-    destruct (decide (c = 0%nat)); subst.
-    * wp_cmpxchg_suc; first done.
-      iDestruct "Hc" as "[[% Hj] | [[% Hc] | [% Hc]]]"; [ | congruence..].
-      iMod ("Hcl" with "[-Hj Hfrag]").
-      { iNext. iExists _,_,_; iFrame.
-        iApply "HN". iExists 2%nat; eauto with iFrame. }
-      iModIntro. wp_pures.
-      wp_bind (! #st)%E. clear s1 s2 Hbaz N.
+    iDestruct "HN" as "[$ HN]".
+    iNext. iIntros "Hoff". iSplit.
+    - (* The offer was already accepted *)
+      iSpecialize ("HN" with "Hoff").
+      iMod ("Hcl" with "[-]") as "_".
+      { iNext. iExists _,_,_; iFrame. }
+      rel_pures_l. rel_values.
+    - (* The offer has been successfully revoked. We have to do the actual push. *)
+      iSpecialize ("HN" with "Hoff").
+      iMod ("Hcl" with "[-]") as "_".
+      { iNext. iExists _,_,_; iFrame. }
+      clear.
+      rel_pures_l. rel_load_l_atomic.
       iInv stackN as (s1 s2 N) "(>Hl & >Hst1 & >Hst2 & Hrel & Hmb & HNown & HN)" "Hcl"; simplify_eq.
-      wp_load.
-      iMod ("Hcl" with "[-Hj Hfrag]") as "_".
-      { iNext. iExists _,_,_; by iFrame. }
-      iModIntro. wp_pures. wp_alloc hd as "Hhd". wp_pures.
-      wp_bind (CmpXchg _ _ _).
-      clear s1' s2' N.
-      iInv stackN as (s1' s2' N) "(>Hl & >Hst1 & >Hst2 & Hrel & Hmb & HNown & HN)" "Hcl"; simplify_eq.
-      destruct (decide (s1 = s1')) as [->|?].
-      ** (** CAS/push succeeds *)
-        wp_cmpxchg_suc. destruct s1'; left; done.
-        unlock {2}CG_locked_push.
-        (* TODO: This is horrible *)
-        tp_pure j (App _ (_,_)%V). iSimpl in "Hj".
-        tp_pure j (Rec _ _ _). iSimpl in "Hj".
-        repeat (tp_pure j _; iSimpl in "Hj").
-        tp_pure j (Snd _). iSimpl in "Hj".
-        unlock acquire. tp_pure j (App _ lk). iSimpl in "Hj".
-        unlock is_locked_r. iDestruct "Hl" as (lk' ->) "Hl".
-        tp_cmpxchg_suc j. iSimpl in "Hj".
-        tp_pure j (Snd _). iSimpl in "Hj".
-        tp_if j. iSimpl in "Hj".
-        tp_pure j (Rec _ _ _). iSimpl in "Hj".
-        tp_rec j. iSimpl in "Hj".
+      iModIntro. iExists _. iFrame "Hst1". iNext. iIntros "Hst1".
 
-        unlock CG_push.
-        tp_pure j (Fst _). iSimpl in "Hj".
-        tp_pure j (App _ #st'). iSimpl in "Hj".
-        tp_pure j (Rec _ _ _). iSimpl in "Hj".
-        tp_pure j (App _ h2). iSimpl in "Hj".
-        tp_load j. iSimpl in "Hj".
-        tp_pure j (Pair _ _).
-        tp_pure j (InjR _).
-        tp_store j. iSimpl in "Hj".
-        tp_pure j (Rec _ _ _).
-        tp_rec j. iSimpl in "Hj".
-        tp_pure j (Snd _). unlock release.
-        tp_rec j. tp_store j.
-        iDestruct (stack_link_cons _ hd h1 h2
-                     with "Hh Hrel Hhd") as "Hrel".
-        iMod ("Hcl" with "[-Hj]").
-        { iNext. iExists _,_,_; subst; iFrame.
-          iExists _; by iFrame "Hl". }
-        iModIntro. wp_pures.
-        iExists #(); iFrame; eauto.
-      ** (** CAS FAILS  *)
-        wp_cmpxchg_fail.
-        { destruct s1', s1; simplify_eq/=; eauto.
-          congruence. }
-        { destruct s1', s1; simplify_eq/=; eauto. }
-        iMod ("Hcl" with "[-Hj]") as "_".
-        { iNext. iExists _,_,_; subst; eauto with iFrame. }
-        iModIntro. wp_pure _. wp_if.
-        rewrite refines_eq /refines_def.
-        iApply fupd_wp.
-        iApply ("IH" with "Hs Hj").
-    * iDestruct "Hc" as "[[% Hc] | [[% Hj] | [% Hc]]]"; [congruence | |]; last first.
-      iDestruct (own_valid_2 with "Hγ Hc") as %Hbar.
-      inversion Hbar.
-      iDestruct "Hj" as "[Hj | Hc]"; last first.
-      iDestruct (own_valid_2 with "Hγ Hc") as %Hbar.
-      inversion Hbar.
-      wp_cmpxchg_fail.
-      { simplify_eq/=; eauto. }
-      iMod ("Hcl" with "[-Hj]") as "_".
-      { iNext. iExists _,_,_; iFrame.
-        iApply "HN".
-        simpl. iExists _. iFrame.
-        iRight. iLeft. iSplit; eauto. }
-      iModIntro. wp_pures.
-      iExists #(); eauto.
+      iMod ("Hcl" with "[-]") as "_".
+      { iNext. iExists _,_,_; iFrame. }
+
+      rel_pures_l. rel_alloc_l new as "Hnew". rel_pures_l.
+
+      rel_cmpxchg_l_atomic; first by destruct s1.
+      iInv stackN as (s1' s2' N') "(>Hl & >Hst1 & >Hst2 & Hrel & Hmb & HNown & HN)" "Hcl"; simplify_eq.
+      iModIntro. iExists _. iFrame "Hst1". iSplit.
+      + iIntros (?). iNext. iIntros "Hst1".
+        iMod ("Hcl" with "[-]") as "_".
+        { iNext. iExists _,_,_; by iFrame. }
+        rel_pures_l. iApply "IH".
+      + iIntros (?); simplify_eq/=. iNext.
+        iIntros "Hst1".
+        rel_apply_r (refines_CG_push_r with "Hst2 Hl").
+        iIntros "Hst2 Hl".
+        iDestruct (stack_link_cons _ new h1 h2
+                     with "Hh Hrel Hnew") as "Hrel".
+        iMod ("Hcl" with "[-]") as "_".
+        { iNext. iExists _,_,_; by iFrame. }
+        rel_pures_l. rel_values.
   Qed.
 
   Lemma refinement A :
@@ -605,10 +664,9 @@ Section refinement.
     rel_pures_r.
     rel_alloc_r st' as "Hst'".
     rel_pure_r. rel_pure_r.  rel_pure_r.  rel_pure_r.  rel_pure_r.
-    rel_rec_l. rel_pures_l. rel_rec_l. rel_pures_l.
     rel_rec_l. rel_pures_l.
     rel_alloc_l mb as "Hmb". rel_pures_l.
-    rel_alloc_l st as "Hst". rel_pure_l. rel_pure_l. rel_pure_l. rel_pure_l.
+    rel_alloc_l st as "Hst". do 4 rel_pure_l. (*XXX: doing rel_pures_l reduces too much *)
     iMod (own_alloc (● to_offer_reg ∅ : authR offerRegR)) as (γo) "Hor".
     { apply auth_auth_valid. apply to_offer_reg_valid. }
     iMod (inv_alloc stackN _ (stackInv A γo st st' mb lk) with "[-]") as "#Hinv".
