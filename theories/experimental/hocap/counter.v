@@ -1,8 +1,12 @@
+(* ReLoC -- Relational logic for fine-grained concurrency *)
+(** HOCAP-style specifications for the concurrent counter *)
 From reloc Require Export reloc.
 From reloc.lib Require Export counter.
 From iris.algebra Require Export auth frac excl.
 From iris.bi.lib Require Export fractional.
 From iris.base_logic.lib Require Export auth.
+
+Definition wk_incr : val := λ: "c", "c" <- !"c" + #1.
 
 Class cnt_hocapG Σ := CntG {
     cnt_hocapG_inG :> authG Σ (optionUR (prodR fracR (agreeR natO)));
@@ -103,6 +107,35 @@ Section cnt_spec.
     iModIntro. iExists _; iFrame. iExists _; iSplit; eauto with iFrame.
   Qed.
 
+  Lemma wk_incr_l E c γ K e A q n :
+    E ## ↑ N →
+    Cnt c γ -∗
+    cnt γ q n -∗
+    (cnt_auth γ n ∗ cnt γ q n ={⊤∖↑N, ⊤∖↑N∖E}=∗
+     cnt_auth γ (n+1) ∗ cnt γ q (n+1) ∗ REL fill K (of_val #()) << e @ (⊤∖E): A) -∗
+    REL fill K (wk_incr c) << e : A.
+  Proof.
+    iIntros (?).
+    iDestruct 1 as (l ->) "#Hcnt". iIntros "Hc Hvs".
+    rel_rec_l. rel_load_l_atomic.
+    iInv N as (m) ">[Hl Ha]" "Hcl". iModIntro.
+    iDestruct (cnt_agree_2 with "Ha Hc") as %->.
+    iExists #n. iFrame "Hl"; iIntros "!> Hl".
+    iMod ("Hcl" with "[Hl Ha]") as "_".
+    { iNext. iExists _; by iFrame. }
+    rel_pures_l. rel_store_l_atomic.
+    iMod (inv_acc_strong with "Hcnt") as "[>Hcnt' Hcl]"; first by solve_ndisj.
+    iDestruct "Hcnt'" as (m) "[Hl Ha]".
+    iDestruct (cnt_agree_2 with "Ha Hc") as %->.
+    iModIntro. iExists _. iFrame "Hl". iIntros "!> Hl".
+    iMod ("Hvs" with "[$Ha $Hc]") as "(Ha & Hc & Href)".
+    iMod ("Hcl" with "[Ha Hl]") as "_".
+    { iNext. assert ((Z.of_nat n + 1)%Z = Z.of_nat (n + 1)) as -> by lia.
+      iExists _. by iFrame. }
+    assert (⊤ ∖ ↑N ∖ E = ⊤ ∖ E ∖ ↑N) as -> by set_solver.
+    rewrite -union_difference_L; last set_solver.
+    done.
+  Qed.
 
 (** This specification for the increment function allows us to
      1) derive the "standard" lifting of unary HOCAP specification
@@ -148,11 +181,11 @@ Section cnt_spec.
     Cnt c γ -∗
     (∀ n : nat, cnt_auth γ n ={⊤∖↑N, ⊤∖↑N∖E}=∗
                 cnt_auth γ n ∗ REL fill K (of_val #n) << e @ (⊤∖E): A) -∗
-    REL fill K (counter_read c) << e : A.
+    REL fill K (! c) << e : A.
   Proof.
     iIntros (?).
     iDestruct 1 as (l ->) "#Hcnt". iIntros "Hvs".
-    rel_rec_l. rel_load_l_atomic.
+    rel_load_l_atomic.
     iMod (inv_acc_strong with "Hcnt") as "[>H Hcl]"; first by solve_ndisj.
     iDestruct "H" as (n) "[Hl Ha]". iModIntro.
     iExists #n. iFrame "Hl"; iIntros "!> Hl".
@@ -211,6 +244,7 @@ Section refinement.
     REL counter_read c << counter_read #l : interp TNat [].
   Proof.
     iIntros "#HCnt #HI".
+    rel_rec_l.
     rel_apply_l (cnt_read_l _ (↑N2) with "HCnt"); first by solve_ndisj.
     iIntros (n) "Ha".
     iMod (inv_open_cow _ ⊤ with "HI") as "[H Hcl]"; try solve_ndisj.
