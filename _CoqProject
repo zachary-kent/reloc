@@ -59,7 +59,7 @@ theories/examples/coinflip.v
 
 theories/examples/par.v
 
-theories/experimental/helping/mailbox.v
+theories/experimental/helping/offers.v
 theories/experimental/helping/helping_stack.v
 
 theories/experimental/hocap/counter.v

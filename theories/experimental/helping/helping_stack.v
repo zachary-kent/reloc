@@ -8,7 +8,7 @@ of this code was written togethe witr Amin Timany around 2017 *)
 
 From iris.algebra Require Import auth gmap agree list excl.
 From iris.base_logic.lib Require Import auth.
-From reloc Require Export reloc experimental.helping.mailbox.
+From reloc Require Export reloc experimental.helping.offers.
 From reloc Require Import examples.stack.CG_stack lib.list.
 
 (** * Source code *)
@@ -65,12 +65,13 @@ Definition CG_mkstack : val := λ: <>,
 (** * Algebras needed for the refinement *)
 Canonical Structure ectx_itemO := leibnizO ectx_item.
 
-(** An offer registry associates with each offer (loc), a value that is being offered, and a potential thread (gname, nat, ectx) that accepts the offer, if it is present. *)
+(** An offer registry associates with each offer (loc), a value that
+is being offered, and a potential thread (gname, nat, ectx) that
+accepts the offer, if it is present. *)
 Definition offerReg := gmap loc (val * gname * nat * (list ectx_item)).
 
 Definition offerRegR :=
-  gmapUR loc
-         (agreeR (prodO valO (prodO gnameO (prodO natO (listO ectx_itemO))))).
+  gmapUR loc (agreeR (prodO valO (prodO gnameO (prodO natO (listO ectx_itemO))))).
 
 Class offerRegPreG Σ := OfferRegPreG {
   offerReg_inG :> authG Σ offerRegR
@@ -93,7 +94,7 @@ Qed.
 
 (** * Refinement proof *)
 Section refinement.
-  Context `{!relocG Σ, !offerRegPreG Σ, !channelG Σ}.
+  Context `{!relocG Σ, !offerRegPreG Σ, !offerG Σ}.
 
   Implicit Type A : lrel Σ.
 
@@ -111,8 +112,7 @@ Section refinement.
     iMod (own_update with "HN") as "[HN Hfrag]".
     { eapply auth_update_alloc.
       eapply (alloc_singleton_local_update _ o (to_agree (v, (γ, (j, K))))); try done.
-      by rewrite /to_offer_reg lookup_fmap HNo.
-    }
+      by rewrite /to_offer_reg lookup_fmap HNo. }
     iFrame.
     by rewrite /to_offer_reg fmap_insert.
   Qed.
@@ -186,91 +186,10 @@ Section refinement.
     by rewrite Hfoo.
   Qed.
 
-  (** ** The offer invariant *)
-  (* TODO: abstract away from the concrete representation of offers *)
-  Definition is_offer γ (l : loc) (P Q : iProp Σ) :=
-    (∃ (c : nat),
-       l ↦ #c ∗
-        (⌜c = 0⌝ ∗ P
-       ∨ ⌜c = 1⌝ ∗ (Q ∨ own γ (Excl ()))
-       ∨ ⌜c = 2⌝ ∗ own γ (Excl ()))%nat)%I.
-
-  Definition offer_token γ := own γ (Excl ()).
-
- (* this is kinda useless *)
-  Lemma mk_offer_l P Q K (v : val) t A :
-    P -∗
-    (∀ γ l, is_offer γ l P Q -∗ offer_token γ -∗ REL fill K (of_val (v, #l)) << t : A) -∗
-    REL fill K (mk_offer v) << t : A.
-  Proof.
-    iIntros "HP Hcont". rel_rec_l. rel_alloc_l l as "Hl".
-    iMod (own_alloc (Excl ())) as (γ) "Hγ". done.
-    rel_pures_l.
-    iApply ("Hcont" $! γ l with "[HP Hl] Hγ").
-    iExists 0. iFrame. iLeft. eauto.
-  Qed.
-
-  Lemma take_offer_l γ E (l : loc) v t A K P Q :
-    (|={⊤, E}=> ▷ is_offer γ l P Q ∗
-         ▷ ((is_offer γ l P Q -∗ REL fill K (of_val NONEV) << t @ E : A)
-            ∧ (P -∗ (Q -∗ is_offer γ l P Q) -∗ REL fill K (of_val $ SOMEV v) << t @ E : A))) -∗
-    REL fill K (take_offer (v, #l)%V) << t : A.
-  Proof.
-    iIntros "Hlog". rel_rec_l. rel_pures_l.
-    rel_cmpxchg_l_atomic.
-    iMod "Hlog" as "(Hoff & Hcont)".
-    rewrite {1}/is_offer. iDestruct "Hoff" as (c) "[Hl Hoff]".
-    iModIntro. iExists _. iFrame "Hl". iSplit.
-    - iIntros (?). iNext.
-      iDestruct "Hcont" as "[Hcont _]".
-      iIntros "Hl".
-      rel_pures_l. iApply ("Hcont" with "[-]").
-      iExists _; iFrame.
-    - iIntros (?). simplify_eq/=.
-      assert (c = 0%nat) as -> by lia. (* :) *)
-      iNext. iIntros "Hl".
-      iDestruct "Hoff" as "[[% HP] | [[% ?] | [% ?]]]"; [| congruence..].
-      rel_pures_l.
-      iDestruct "Hcont" as "[_ Hcont]".
-      iApply ("Hcont" with "HP [-]").
-      iIntros "HQ". rewrite /is_offer. iExists 1.
-      iFrame. iRight. iLeft. iSplit; eauto.
-  Qed.
-
-  Lemma wp_revoke_offer γ l E P Q (v : val) Φ :
-    offer_token γ -∗
-    ▷ (|={⊤, E}=> ▷ is_offer γ l P Q ∗
-        ▷ ((is_offer γ l P Q -∗ Q ={E, ⊤}=∗ Φ NONEV)
-           ∧ (is_offer γ l P Q -∗ P ={E, ⊤}=∗ Φ (SOMEV v)))) -∗
-    WP (revoke_offer (of_val (v, #l))) {{ Φ }}.
-  Proof.
-    iIntros "Hγ Hlog". wp_rec. wp_pures.
-    wp_bind (CmpXchg _ _ _). iApply wp_atomic.
-    iMod "Hlog" as "(Hoff & Hcont)".
-    rewrite {1}/is_offer. iDestruct "Hoff" as (c) "[Hl Hoff]".
-    iModIntro. iDestruct "Hoff" as "[(>-> & HP)|[(>-> & HQ) | (>-> & Htok)]]".
-    - wp_cmpxchg_suc; first fast_done.
-      iDestruct "Hcont" as "[_ Hcont]".
-      iMod ("Hcont" with "[-HP] HP") as "HΦ".
-      { iExists 2. iFrame "Hl". iRight. iRight. eauto. }
-      iModIntro. by wp_pures.
-    - wp_cmpxchg_fail; first done.
-      iDestruct "Hcont" as "[Hcont _]".
-      iDestruct "HQ" as "[HQ | Htok]"; last first.
-      { iDestruct (own_valid_2 with "Hγ Htok") as %Hbar.
-        inversion Hbar. }
-      iMod ("Hcont" with "[-HQ] HQ") as "HΦ".
-      { iExists 1. iFrame "Hl". iRight. iLeft. eauto. }
-      iModIntro. by wp_pures.
-    - wp_cmpxchg_fail; first done.
-      iDestruct (own_valid_2 with "Hγ Htok") as %Hbar.
-      inversion Hbar.
-  Qed.
-
   (* We have the revoke_offer symbolic execution rule specialized for helping *)
   Lemma revoke_offer_l γ off E K (v : val) e1 e2 A :
     offer_token γ -∗
-    off ↦ #0 -∗
+    (∀ j K', (j ⤇ fill K' e1) -∗ is_offer γ off (j ⤇ fill K' e1) (j ⤇ fill K' e2)) -∗
     (∀ j K', is_offer γ off (j ⤇ fill K' e1) (j ⤇ fill K' e2) ={E, ⊤, E}▷=∗
       ▷ is_offer γ off (j ⤇ fill K' e1) (j ⤇ fill K' e2) ∗
       ▷ (is_offer γ off (j ⤇ fill K' e1) (j ⤇ fill K' e2) -∗
@@ -281,8 +200,8 @@ Section refinement.
     iIntros "Hγ Hoff Hlog".
     rewrite {3}refines_eq /refines_def.
     iIntros (j K') "#Hs Hj".
-    iMod ("Hlog" with "[Hoff Hj]") as "Hlog".
-    { iExists 0. iFrame "Hoff". iLeft. eauto. }
+    iSpecialize ("Hoff" with "Hj").
+    iMod ("Hlog" with "Hoff") as "Hlog".
     iModIntro. iApply wp_bind. (* TODO: why do we have to use wp_bind here? *)
     wp_apply (wp_revoke_offer with "Hγ [-]").
     iNext. iMod "Hlog" as "[Hoff Hcont]". iModIntro.
@@ -292,8 +211,6 @@ Section refinement.
     - iIntros "Hoff". iDestruct ("Hcont" with "Hoff") as "[_ Hcont]".
       rewrite refines_eq. by iApply "Hcont".
   Qed.
-
-  Opaque is_offer mk_offer take_offer revoke_offer.
 
   Definition offerInv (N : offerReg) (st' : val) : iProp Σ :=
     ([∗ map] l ↦ w ∈ N,
@@ -307,23 +224,17 @@ Section refinement.
     ⊢ offerInv ∅ st'.
   Proof. by rewrite /offerInv big_sepM_empty. Qed.
 
-  Lemma offerInv_excl (N : offerReg) (st' : val) (o : loc) (v : val) :
-    offerInv N st' -∗ o ↦ v -∗ ⌜N !! o = None⌝.
+  Lemma offerInv_excl (N : offerReg) (st' : val) (o : loc) γ P Q :
+    offerInv N st' -∗ is_offer γ o P Q -∗ ⌜N !! o = None⌝.
   Proof.
-    rewrite /offerInv.
-    iIntros "HN Ho".
+    rewrite /offerInv. iIntros "HN Ho".
     iAssert (⌜is_Some (N !! o)⌝ → False)%I as %Hbaz.
     {
       iIntros ([[[[? ?] ?] ?] HNo]).
       rewrite (big_sepM_lookup _ N o _ HNo).
-      Transparent is_offer.
-      iDestruct "HN" as (c) "[HNo ?]".
-      iDestruct (gen_heap.mapsto_valid_2 with "Ho HNo") as %Hfoo.
-      compute in Hfoo. contradiction.
-      Opaque is_offer.
+      iApply (is_offer_exclusive with "HN Ho").
     }
-    iPureIntro.
-    destruct (N !! o); eauto. exfalso. apply Hbaz; eauto.
+    iPureIntro. revert Hbaz. case: (N !! o)=> [av'|]; naive_solver.
   Qed.
 
   (** Linking two contents of the two stacks together. *)
@@ -579,11 +490,8 @@ Section refinement.
     iLöb as "IH".
     rel_rec_l.
     rel_pures_l.
-
-    Transparent mk_offer.
-
-    rel_rec_l. rel_pures_l.
-    rel_alloc_l off as "Hoff". rel_pures_l.
+    rel_apply_l mk_offer_l. iIntros (γ off) "Hoff Htok".
+    rel_pures_l.
     rel_store_l_atomic. (* we update the mailbox and store the offer in the registry *)
     iInv stackN as (s1 s2 N) "(Hl & Hst1 & Hst2 & Hrel & Hmb & HNown & HN)" "Hcl".
     iModIntro.
@@ -591,18 +499,18 @@ Section refinement.
     iAssert (∃ v, ▷ mb ↦ v)%I with "[Hmb]" as (v) "Hmb".
     { iDestruct "Hmb" as "[Hmb | Hmb]".
       - iExists NONEV; eauto.
-      - iDestruct "Hmb" as (l m1 m2 γ j K) "(Hm & Hmb & ?)".
+      - iDestruct "Hmb" as (l m1 m2 γ' j K) "(Hm & Hmb & ?)".
         iExists (SOMEV (m1, #l)); eauto. }
     iExists _; iFrame; iNext.
     iIntros "Hmb".
 
 
     rel_pures_l.
-    iDestruct (offerInv_excl with "HN Hoff") as %Hbaz.
-    iMod (own_alloc (Excl ())) as (γ) "Hγ"; first done.
+    rel_apply_l (revoke_offer_l with "Htok [Hoff]").
+    { iIntros (j K') "Hj". iApply ("Hoff" with "Hj"). }
 
-    rel_apply_l (revoke_offer_l with "Hγ Hoff").
     iIntros (j K') "Hoff".
+    iDestruct (offerInv_excl with "HN Hoff") as %?.
     iMod (offerReg_alloc off h2 γ j K' with "HNown") as "[HNown #Hfrag]"; eauto.
     iMod ("Hcl" with "[-]") as "_".
     { iNext. iExists _,_,_; iFrame.
