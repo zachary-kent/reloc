@@ -1,11 +1,25 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Fine-grained stack with helping.
 Based on the case study <https://iris-project.org/pdfs/2017-case-study-concurrent-stacks-with-helping.pdf> *)
-(** This demonstrates how to do _helping_ in ReLoC/Iris. Note that for this
-proof we cannot stay inside the ReLoC and we have to unfold some stuff
-to get to the actual model of logical relations. The initial version
-of this code was written togethe witr Amin Timany around 2017 *)
+(** This demonstrates how to do /helping/ in ReLoC/Iris. Note that for
+this proof we cannot stay inside the ReLoC and we have to unfold some
+stuff to get to the actual model of logical relations. The initial
+version of this code was written togethe witr Amin Timany around 2017.
+Upon suggestion by Lars Birkedal I've removed the "mailbox"
+indirection, but made the proof (almost) abstract in the theory of
+offers. As a result, the only two places where we abandon ReLoC specs
+are:
 
+  -- The `revoke_offer_l` lemma which specifies the symbolic execution
+     rule for `revoke_offer` specifialized to the case of helping. In
+     order to prove this lemma we have to unfold the model of the REL
+     proposition.
+
+  -- In the proof of the pop refinement we have to symbolic execute
+     the coarse grained push operation (to actually simulate the
+     helping); this is done using the tp_ tactics and not the usual
+     ReLoC specification.
+*)
 From iris.algebra Require Import auth gmap agree list excl.
 From iris.base_logic.lib Require Import auth.
 From reloc Require Export reloc experimental.helping.offers.
@@ -57,19 +71,19 @@ Definition mk_stack : val :=  λ: <>,
   (λ: <>, pop_st "r" "mb",
    λ: "x", push_st "r" "mb" "x").
 
-(** The coarse-grained version *)
+(** The coarse-grained version; we will prove that stack with helping refines it. *)
 Definition CG_mkstack : val := λ: <>,
   let: "st" := CG_new_stack #() in
   (λ: <>, CG_locked_pop "st", λ: "x", CG_locked_push "st" "x").
 
-(** * Algebras needed for the refinement *)
+
+(** * Logical theory of an offer registry *)
+(** We will use an "offer registery". It associates for each offer a
+value that is being offered and a potential thread with the
+continuation that accepts the offer, if it is present. *)
+
 Canonical Structure ectx_itemO := leibnizO ectx_item.
-
-(** An offer registry associates with each offer (loc), a value that
-is being offered, and a potential thread (gname, nat, ectx) that
-accepts the offer, if it is present. *)
 Definition offerReg := gmap loc (val * gname * nat * (list ectx_item)).
-
 Definition offerRegR :=
   gmapUR loc (agreeR (prodO valO (prodO gnameO (prodO natO (listO ectx_itemO))))).
 
@@ -77,7 +91,6 @@ Class offerRegPreG Σ := OfferRegPreG {
   offerReg_inG :> authG Σ offerRegR
 }.
 
-(** ** Definitions concerning offers *)
 Definition offerize (x : (val * gname * nat * (list ectx_item))) :
   (agreeR (prodO valO (prodO gnameO (prodO natO (listO ectx_itemO))))) :=
   match x with
@@ -92,29 +105,22 @@ Proof.
   intros [[[v γ] n] K]; simpl. done.
 Qed.
 
-(** * Refinement proof *)
-Section refinement.
-  Context `{!relocG Σ, !offerRegPreG Σ, !offerG Σ}.
+Section offerReg_rules.
+  Context `{!offerRegPreG Σ, !offerG Σ}.
 
-  Implicit Type A : lrel Σ.
-
-  Definition stackN := nroot .@ "stacked".
-
-  (** ** Lemmas for modifying the offer registery *)
   Lemma offerReg_alloc (o : loc) (v : val) (γ : gname)
     (j : nat) (K : list ectx_item) (γo : gname) (N : offerReg)  :
     N !! o = None →
     own γo (● to_offer_reg N)
     ==∗ own γo (● to_offer_reg (<[o:=(v, γ, j, K)]> N))
-      ∗ own γo (◯ {[o := to_agree (v, (γ, (j, K)))]}).
+      ∗ own γo (◯ {[o := offerize (v, γ, j, K)]}).
   Proof.
     iIntros (HNo) "HN".
     iMod (own_update with "HN") as "[HN Hfrag]".
     { eapply auth_update_alloc.
       eapply (alloc_singleton_local_update _ o (to_agree (v, (γ, (j, K))))); try done.
       by rewrite /to_offer_reg lookup_fmap HNo. }
-    iFrame.
-    by rewrite /to_offer_reg fmap_insert.
+    iFrame. by rewrite /to_offer_reg fmap_insert.
   Qed.
 
   Lemma offerReg_frag_lookup (o : loc) (v : val) (γ : gname)
@@ -186,7 +192,44 @@ Section refinement.
     by rewrite Hfoo.
   Qed.
 
-  (* We have the revoke_offer symbolic execution rule specialized for helping *)
+  (** The invariant that we will have. *)
+  Definition offerInv `{!relocG Σ} (N : offerReg) (st' : val) : iProp Σ :=
+    ([∗ map] l ↦ w ∈ N,
+     match w with
+     | (v,γ,j,K) => is_offer γ l
+                             (j ⤇ fill K (CG_locked_push st' (of_val v))%E)
+                             (j ⤇ fill K #())
+     end)%I.
+
+  Lemma offerInv_empty `{!relocG Σ} (st' : val) : ⊢ offerInv ∅ st'.
+  Proof. by rewrite /offerInv big_sepM_empty. Qed.
+
+  Lemma offerInv_excl `{!relocG Σ} (N : offerReg) (st' : val) (o : loc) γ P Q :
+    offerInv N st' -∗ is_offer γ o P Q -∗ ⌜N !! o = None⌝.
+  Proof.
+    rewrite /offerInv. iIntros "HN Ho".
+    iAssert (⌜is_Some (N !! o)⌝ → False)%I as %Hbaz.
+    {
+      iIntros ([[[[? ?] ?] ?] HNo]).
+      rewrite (big_sepM_lookup _ N o _ HNo).
+      iApply (is_offer_exclusive with "HN Ho").
+    }
+    iPureIntro. revert Hbaz. case: (N !! o)=> [av'|]; naive_solver.
+  Qed.
+
+End offerReg_rules.
+
+(** * Refinement proof *)
+Section refinement.
+  Context `{!relocG Σ, !offerRegPreG Σ, !offerG Σ}.
+
+  Implicit Type A : lrel Σ.
+
+  Definition stackN := nroot .@ "stacked".
+
+  (** First we have the revoke_offer symbolic execution rule specialized for helping.
+      This is also the only place where we need to unfold the definition of the refinement proposition. *)
+  (* DF: Can this be simplified ? *)
   Lemma revoke_offer_l γ off E K (v : val) e1 e2 A :
     offer_token γ -∗
     (∀ j K', (j ⤇ fill K' e1) -∗ is_offer γ off (j ⤇ fill K' e1) (j ⤇ fill K' e2)) -∗
@@ -212,45 +255,36 @@ Section refinement.
       rewrite refines_eq. by iApply "Hcont".
   Qed.
 
-  Definition offerInv (N : offerReg) (st' : val) : iProp Σ :=
-    ([∗ map] l ↦ w ∈ N,
-     match w with
-     | (v,γ,j,K) => is_offer γ l
-                             (j ⤇ fill K (CG_locked_push st' (of_val v))%E)
-                             (j ⤇ fill K #())
-     end)%I.
-
-  Lemma offerInv_empty (st' : val) :
-    ⊢ offerInv ∅ st'.
-  Proof. by rewrite /offerInv big_sepM_empty. Qed.
-
-  Lemma offerInv_excl (N : offerReg) (st' : val) (o : loc) γ P Q :
-    offerInv N st' -∗ is_offer γ o P Q -∗ ⌜N !! o = None⌝.
+  (** We will also use the following instances for splitting and
+  compining read-only pointsto permissions. *)
+  Local Instance ro_pointsto_fromand (l : loc) (w : val) :
+    FromSep (∃ q, l ↦{q} w) (∃ q, l ↦{q} w) (∃ q, l ↦{q} w).
   Proof.
-    rewrite /offerInv. iIntros "HN Ho".
-    iAssert (⌜is_Some (N !! o)⌝ → False)%I as %Hbaz.
-    {
-      iIntros ([[[[? ?] ?] ?] HNo]).
-      rewrite (big_sepM_lookup _ N o _ HNo).
-      iApply (is_offer_exclusive with "HN Ho").
-    }
-    iPureIntro. revert Hbaz. case: (N !! o)=> [av'|]; naive_solver.
+    rewrite /FromSep. iIntros "[$ _]".
+  Qed.
+  Local Instance ro_pointsto_intoand (l : loc) (w : val) :
+    IntoSep (∃ q, l ↦{q} w) (∃ q, l ↦{q} w) (∃ q, l ↦{q} w).
+  Proof.
+    rewrite /IntoSep /=. iDestruct 1 as (q) "[H1 H2]".
+    iSplitL "H1"; eauto with iFrame.
   Qed.
 
-  (** Linking two contents of the two stacks together. *)
+  (** Then we have definitions and lemmas that we use for actually
+  liking the contents of the two stacks together *)
+  Definition olocO := leibnizO (option loc).
+
   Definition oloc_to_val (ol: option loc) : val :=
     match ol with
     | None => NONEV
     | Some loc => SOMEV (#loc)
     end.
 
-  Definition olocO := leibnizO (option loc).
-
   Local Instance oloc_to_val_inj : Inj (=) (=) oloc_to_val.
   Proof. intros [|][|]; simpl; congruence. Qed.
 
+  (** This will be the type of the stack linking predicate... *)
   Local Notation D := (olocO -d> valO -d> iPropO Σ).
-
+  (** .. which we compute as the following fixed point: *)
   Definition stack_link_pre (A : lrel Σ) : D → D := λ S ol v2,
     match ol return _ with
     | None => ⌜v2 = NONEV⌝
@@ -259,7 +293,6 @@ Section refinement.
                 ∗ (∃ q, l ↦{q} (h, oloc_to_val t))
                 ∗ A h h' ∗ ▷ S t t'
     end%I.
-
   Global Instance stack_link_pre_contractive A : Contractive (stack_link_pre A).
   Proof.
     intros n S1 S2 HS. solve_proper_prepare.
@@ -293,7 +326,7 @@ Section refinement.
     iExists _,_,_,_. iFrame "Hh Ht". iSplit; eauto with iFrame.
   Qed.
 
-  (** ** The main invariant *)
+  (** ** The main invariant that we will use for the proof *)
   Definition stackInv A oname (st st' mb : loc) (lc : val) : iProp Σ :=
     (∃ ol v2 (N : offerReg),
        is_locked_r lc false
@@ -301,27 +334,16 @@ Section refinement.
      ∗ st' ↦ₛ v2
      ∗ stack_link A ol v2
      ∗ (mb ↦ NONEV      (* the mailbox is either empty or contains an offer that is in the registry *)
-        ∨ (∃ (l : loc) v1 v2 γ j K, A v1 v2
-                                  ∗ mb ↦ SOMEV (v1, #l)
-                                  ∗ ⌜N !! l = Some (v2, γ, j, K)⌝))
+        ∨ (∃ (l : loc) v1 v2 γ j K,
+              A v1 v2
+            ∗ mb ↦ SOMEV (v1, #l)
+            ∗ ⌜N !! l = Some (v2, γ, j, K)⌝))
      ∗ own oname (● to_offer_reg N)
      ∗ offerInv N (#st', lc))%I.
 
-
   (** ** The proof itself *)
-  (* Helper instances *)
-  Local Instance ro_pointsto_fromand (l : loc) (w : val) :
-    FromSep (∃ q, l ↦{q} w) (∃ q, l ↦{q} w) (∃ q, l ↦{q} w).
-  Proof.
-    rewrite /FromSep. iIntros "[$ _]".
-  Qed.
-  Local Instance ro_pointsto_intoand (l : loc) (w : val) :
-    IntoSep (∃ q, l ↦{q} w) (∃ q, l ↦{q} w) (∃ q, l ↦{q} w).
-  Proof.
-    rewrite /IntoSep /=. iDestruct 1 as (q) "[H1 H2]".
-    iSplitL "H1"; eauto with iFrame.
-  Qed.
 
+  (* First the case where no offers is accepted *)
   Lemma pop_no_helping_refinement A γo st st' mb lk :
     inv stackN (stackInv A γo st st' mb lk) -∗
     □ (REL pop_st #st #mb
@@ -504,7 +526,6 @@ Section refinement.
     iExists _; iFrame; iNext.
     iIntros "Hmb".
 
-
     rel_pures_l.
     rel_apply_l (revoke_offer_l with "Htok [Hoff]").
     { iIntros (j K') "Hj". iApply ("Hoff" with "Hj"). }
@@ -564,8 +585,7 @@ Section refinement.
   Qed.
 
   Lemma refinement A :
-    ⊢ REL mk_stack #() << CG_mkstack #() :
-      (() → () + A) * (A → ()).
+    ⊢ REL mk_stack #() << CG_mkstack #() : (() → () + A) * (A → ()).
   Proof.
     rel_rec_r. rel_pures_r. rel_rec_r.
     rel_apply_r refines_newlock_r. iIntros (lk) "Hlk".
