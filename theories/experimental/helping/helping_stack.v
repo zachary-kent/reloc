@@ -229,22 +229,19 @@ Section refinement.
 
   (** First we have the revoke_offer symbolic execution rule specialized for helping.
       This is also the only place where we need to unfold the definition of the refinement proposition. *)
-  (* DF: Can this be simplified ? *)
   Lemma revoke_offer_l γ off E K (v : val) e1 e2 A :
     offer_token γ -∗
-    (∀ j K', (j ⤇ fill K' e1) -∗ is_offer γ off (j ⤇ fill K' e1) (j ⤇ fill K' e2)) -∗
-    (∀ j K', is_offer γ off (j ⤇ fill K' e1) (j ⤇ fill K' e2) ={E, ⊤, E}▷=∗
+    (∀ j K', (j ⤇ fill K' e1)  ={E, ⊤, E}▷=∗
       ▷ is_offer γ off (j ⤇ fill K' e1) (j ⤇ fill K' e2) ∗
       ▷ (is_offer γ off (j ⤇ fill K' e1) (j ⤇ fill K' e2) -∗
            ((REL fill K (of_val NONEV) << e2 @ E : A)
          ∧ (REL fill K (of_val $ SOMEV v) << e1 @ E : A)))) -∗
     REL fill K (revoke_offer (v, #off)%V) << e1 @ E : A.
   Proof.
-    iIntros "Hγ Hoff Hlog".
+    iIntros "Hγ Hlog".
     rewrite {3}refines_eq /refines_def.
     iIntros (j K') "#Hs Hj".
-    iSpecialize ("Hoff" with "Hj").
-    iMod ("Hlog" with "Hoff") as "Hlog".
+    iMod ("Hlog" with "Hj") as "Hlog".
     iModIntro. iApply wp_bind. (* TODO: why do we have to use wp_bind here? *)
     wp_apply (wp_revoke_offer with "Hγ [-]").
     iNext. iMod "Hlog" as "[Hoff Hcont]". iModIntro.
@@ -527,10 +524,8 @@ Section refinement.
     iIntros "Hmb".
 
     rel_pures_l.
-    rel_apply_l (revoke_offer_l with "Htok [Hoff]").
-    { iIntros (j K') "Hj". iApply ("Hoff" with "Hj"). }
-
-    iIntros (j K') "Hoff".
+    rel_apply_l (revoke_offer_l with "Htok").
+    iIntros (j K') "Hj". iSpecialize ("Hoff" with "Hj").
     iDestruct (offerInv_excl with "HN Hoff") as %?.
     iMod (offerReg_alloc off h2 γ j K' with "HNown") as "[HNown #Hfrag]"; eauto.
     iMod ("Hcl" with "[-]") as "_".
