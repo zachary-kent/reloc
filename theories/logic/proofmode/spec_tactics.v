@@ -64,22 +64,23 @@ Tactic Notation "tp_bind" constr(j) open_constr(efoc) :=
     |reflexivity
     |(* new goal *)].
 
-Lemma tac_tp_pure `{relocG Σ} j K' e1 e2 Δ1 Δ2 E1 i1 i2 p e ϕ ψ Q n :
+Lemma tac_tp_pure `{relocG Σ} e K' e1 j e2 Δ1 E1 i1 i2 p e' ϕ ψ Q n :
+  e = fill K' e1 →
+  PureExec ϕ n e1 e2 →
   (∀ P, ElimModal ψ false false (|={E1}=> P) P Q Q) →
   nclose specN ⊆ E1 →
   envs_lookup i1 Δ1 = Some (p, spec_ctx) →
   envs_lookup i2 Δ1 = Some (false, j ⤇ e)%I →
-  e = fill K' e1 →
-  PureExec ϕ n e1 e2 →
   ψ →
   ϕ →
-  envs_simple_replace i2 false
-    (Esnoc Enil i2
-     (j ⤇ fill K' e2)) Δ1 = Some Δ2 →
-  envs_entails Δ2 Q →
+  e' = fill K' e2 →
+  match envs_simple_replace i2 false (Esnoc Enil i2 (j ⤇ e')) Δ1 with
+  | Some Δ2 => envs_entails Δ2 Q
+  | None => False
+  end →
   envs_entails Δ1 Q.
 Proof.
-  rewrite envs_entails_eq. intros ?? HΔ1 ? Hfill Hpure Hψ Hϕ ??.
+  rewrite envs_entails_eq. intros -> Hpure ?? HΔ1 ? Hψ Hϕ -> ?.
   rewrite -(idemp bi_and (of_envs Δ1)).
   rewrite {1}(envs_lookup_sound' Δ1 false). 2: apply HΔ1.
   rewrite bi.sep_elim_l.
@@ -89,8 +90,9 @@ Proof.
     by rewrite ?(bi.intuitionistic_intuitionistically spec_ctx). }
   rewrite bi.persistently_and_intuitionistically_sep_l.
   rewrite bi.intuitionistic_intuitionistically.
+  destruct (envs_simple_replace _ _ _ _) as [Δ2|] eqn:HΔ2; try done.
   rewrite (envs_simple_replace_sound Δ1 Δ2 i2) //; simpl.
-  rewrite right_id Hfill.
+  rewrite right_id.
   rewrite (assoc _ spec_ctx (j ⤇ _)%I).
   rewrite step_pure //.
   rewrite -[Q]elim_modal // /=.
@@ -109,23 +111,37 @@ Ltac with_spec_ctx tac :=
   | _ => tac ()
   end.
 
-(* TODO: The problem here is that it will fail if the redex is not specified, and is not on the top level *)
 Tactic Notation "tp_pure" constr(j) open_constr(ef) :=
   iStartProof;
   with_spec_ctx ltac:(fun _ =>
-  eapply (tac_tp_pure j _ ef);
-    [iSolveTC || fail "tp_pure: cannot eliminate modality in the goal"
-    |solve_ndisj || fail "tp_pure: cannot prove 'nclose specN ⊆ ?'"
-    |iAssumptionCore || fail "tp_pure: cannot find spec_ctx" (* spec_ctx *)
-    |iAssumptionCore || fail "tp_pure: cannot find '" j " ⤇ ?'"
-    |tp_bind_helper         (* e = K'[e1]*)
-    |iSolveTC               (* PureExec ϕ n e1 e2 *)
-    |try (exact I || reflexivity) (* ψ *)
-    |try (exact I || reflexivity) (* ϕ *)
-    |pm_reflexivity || fail "tp_pure: this should not happen"
-    |(* new goal *)]).
+  lazymatch goal with
+  | |- context[environments.Esnoc _ ?H (j ⤇ fill ?K' ?e)] =>
+    reshape_expr e ltac:(fun K e' =>
+      unify e' ef;
+      eapply (tac_tp_pure (fill K' e) (K++K') e' j);
+      [by rewrite ?fill_app | iSolveTC | ..])
+  | |- context[environments.Esnoc _ ?H (j ⤇ ?e)] =>
+    reshape_expr e ltac:(fun K e' =>
+      unify e' ef;
+      eapply (tac_tp_pure e K e' j);
+      [by rewrite ?fill_app | iSolveTC | ..])
+  end;
+  [iSolveTC || fail "tp_pure: cannot eliminate modality in the goal"
+  |solve_ndisj || fail "tp_pure: cannot prove 'nclose specN ⊆ ?'"
+  |iAssumptionCore || fail "tp_pure: cannot find spec_ctx" (* spec_ctx *)
+  |iAssumptionCore || fail "tp_pure: cannot find '" j " ⤇ ?'"
+  |try (exact I || reflexivity) (* ψ *)
+  |try (exact I || reflexivity) (* ϕ *)
+  |simpl; reflexivity ||  fail "tp_pure: this should not happen" (* e' = fill K' e2 *)
+  |pm_reduce (* new goal *)]).
 
-Tactic Notation "tp_rec" constr(j) := tp_pure j (App _ _).
+
+Tactic Notation "tp_pures" constr (j) := repeat (tp_pure j _; tp_normalise j).
+Tactic Notation "tp_rec" constr(j) :=
+  let H := fresh in
+  assert (H := AsRecV_recv);
+  tp_pure j (App _ _);
+  clear H.
 Tactic Notation "tp_seq" constr(j) := tp_rec j.
 Tactic Notation "tp_let" constr(j) := tp_rec j.
 Tactic Notation "tp_lam" constr(j) := tp_rec j.

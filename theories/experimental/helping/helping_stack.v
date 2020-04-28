@@ -27,14 +27,14 @@ From reloc Require Import examples.stack.CG_stack lib.list.
 
 (** * Source code *)
 Definition pop_st_no_offer : val := λ: "r" "mb" "pop",
-  (match: !"r" with
-       NONE => NONE
-     | SOME "l" =>
-       let: "pair" := !"l" in
-       if: CAS "r" (SOME "l") (Snd "pair")
-       then SOME (Fst "pair")
-       else "pop" "r" "mb"
-     end).
+  match: !"r" with
+      NONE => NONE
+    | SOME "l" =>
+      let: "pair" := !"l" in
+      if: CAS "r" (SOME "l") (Snd "pair")
+      then SOME (Fst "pair")
+      else "pop" "r" "mb"
+  end.
 
 Definition pop_st : val := rec: "pop" "r" "mb" :=
   match: !"mb" with
@@ -49,18 +49,18 @@ Definition pop_st : val := rec: "pop" "r" "mb" :=
     end
   end.
 
-Definition push_st : val := rec: "push" "r" "mb" "n" :=
-  let: "off" := mk_offer "n" in
+Definition push_st : val := rec: "push" "r" "mb" "x" :=
+  let: "off" := mk_offer "x" in
   "mb" <- SOME "off";;
   match: revoke_offer "off" with
     NONE => (* the offer was successfully taken *) #()
-  | SOME "n" =>
+  | SOME "x" =>
     (* nobody took the offer  *)
     let: "tail" := !"r" in
-    let: "new" := SOME (ref ("n", "tail")) in
-    if: CAS "r" "tail" "new"
+    let: "hd" := SOME (ref ("x", "tail")) in
+    if: CAS "r" "tail" "hd"
     then #()
-    else "push" "r" "mb" "n"
+    else "push" "r" "mb" "x"
   end.
 
 Definition mk_stack : val :=  λ: <>,
@@ -453,37 +453,16 @@ Section refinement.
         iApply (pop_no_helping_refinement with "Hinv IH").
       + (* An offer was accepted *)
         iIntros "Hj Hoff". rel_pures_l.
-        unlock {3}CG_locked_push.
-        unlock {1}acquire {1}release.
-        (* THIS IS COPY PASTED :-) *)
-        tp_pure j (App _ (_,_)%V). iSimpl in "Hj".
-        tp_pure j (Rec _ _ _). iSimpl in "Hj".
-        repeat (tp_pure j _; iSimpl in "Hj").
-        tp_pure j (Snd _). iSimpl in "Hj".
-        unlock acquire. tp_pure j (App _ lk). iSimpl in "Hj".
+        tp_rec j. tp_pures j. tp_rec j.
         unlock is_locked_r. iDestruct "Hl" as (lk' ->) "Hl".
         (* TODO: make all the tp_ tactics work without the need for an explicit Fupd *)
         iApply refines_spec_ctx. iIntros "#Hρ".
         iApply fupd_refines.
         (* because we manually applied `fupd_refines`, the tactical `with_spec_ctx` doesn't work anymore *)
         tp_cmpxchg_suc j. iSimpl in "Hj".
-        tp_pure j (Snd _). iSimpl in "Hj".
-        tp_if j. iSimpl in "Hj".
-        tp_pure j (Rec _ _ _). iSimpl in "Hj".
-        tp_rec j. iSimpl in "Hj".
-
-        unlock CG_push.
-        tp_pure j (Fst _). iSimpl in "Hj".
-        tp_pure j (App _ #st'). iSimpl in "Hj".
-        tp_pure j (Rec _ _ _). iSimpl in "Hj".
-        tp_pure j (App _ v2). iSimpl in "Hj".
-        tp_load j. iSimpl in "Hj".
-        tp_pure j (Pair _ _).
-        tp_pure j (InjR _).
-        tp_store j. iSimpl in "Hj".
-        tp_pure j (Rec _ _ _).
-        tp_rec j. iSimpl in "Hj".
-        tp_pure j (Snd _). unlock release.
+        tp_pures j. tp_rec j. tp_pures j.
+        tp_load j. tp_normalise j. tp_pures j.
+        tp_store j. tp_normalise j. tp_pures j.
         tp_rec j. tp_store j.
         iSpecialize ("Hoff" with "Hj").
         iSpecialize ("HN" with "Hoff").

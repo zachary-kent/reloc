@@ -16,9 +16,7 @@ Lemma test1 E1 j K (l : loc) (n : nat) :
 Proof.
   iIntros (?) "#? Hj Hl".
   tp_load j. tp_normalise j.
-  tp_closure j. tp_normalise j.
-  tp_lam j. tp_normalise j.
-  tp_binop j. tp_normalise j.
+  tp_pures j.
   tp_store j. by iFrame.
 Qed.
 
@@ -32,11 +30,9 @@ Lemma test2 E1 j K (l : loc) (n : nat) :
 Proof.
   iIntros (?) "#? Hj Hl".
   tp_cmpxchg_fail j. tp_normalise j.
-  tp_pure j (Snd _). tp_normalise j.
-  tp_closure j. tp_normalise j.
-  tp_seq j. tp_normalise j.
-  tp_binop j. tp_normalise j.
-  tp_cmpxchg_suc j. tp_pure j (Snd _). by iFrame.
+  tp_pures j.
+  tp_cmpxchg_suc j. tp_normalise j.
+  tp_pures j. by iFrame.
 Qed.
 
 (* fork *)

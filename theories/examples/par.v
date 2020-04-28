@@ -33,10 +33,9 @@ Section rules.
     repeat rel_pure_r. rel_fork_r i as "Hi".
     { simpl. eauto. }
     repeat rel_pure_r.
-    tp_rec i. simpl.
-    tp_bind i e1.
+    tp_pure i _. tp_bind i e1.
     iMod ("H" with "Hi") as (v1) "[Hi H]".
-    iSimpl in "Hi". tp_pure i (InjR v1). tp_store i.
+    iSimpl in "Hi". tp_pure i _. tp_store i.
   Abort.
     (* rewrite refines_eq /refines_def. *)
     (* iIntros (ρ') "_". clear ρ'. *)
@@ -77,7 +76,7 @@ Section rules.
     repeat rel_pure_r. rel_fork_r i as "Hi".
     repeat rel_pure_r.
     tp_rec i. simpl.
-    tp_pure i (InjR _). tp_store i.
+    tp_pure i _. tp_store i.
     rel_bind_l e. rel_bind_r e.
     iApply (refines_bind with "H").
     iIntros (v v') "Hv". simpl.
@@ -123,17 +122,11 @@ Section rules.
       iApply (join_spec with "l_hndl").
       iNext. iIntros (w1). iDestruct 1 as (w2) "[Hj Hw]".
       unfold C. iSimpl in "Hi". iSimpl in "Hj".
-      tp_pure i (InjR v2). iSimpl in "Hi".
-      tp_store i.
-      (* TODO: better tp_pure tactics *)
-      tp_pure j (Lam _ _). simpl.
-      tp_rec j. simpl.
-      tp_bind j (spawn.join _). unlock spawn.join.
-      tp_pure j (App _ #c2). simpl.
-      iApply fupd_wp. tp_load j. simpl.
-      tp_pure j (Case _ _ _). tp_pure j (Lam _ _). simpl.
-      tp_pure j (App _ v2). simpl. tp_pure j (Lam _ _). simpl.
-      tp_pure j _. simpl. tp_pure j _.
+      tp_pures i. tp_store i.
+      tp_pures j.
+      tp_rec j.
+      tp_pures j. iApply fupd_wp. tp_load j. tp_normalise j.
+      tp_pures j.
       iModIntro. wp_pures. iExists (v2, w2)%V. eauto.
   Qed.
 
@@ -167,17 +160,11 @@ Section rules.
     iApply (wp_wand with "He2"). iIntros (w1).
     iDestruct 1 as (w2) "[Hj Hw]".
     iSimpl in "Hi". iSimpl in "Hj".
-    tp_pure i (InjR v2). iSimpl in "Hi".
+    tp_pure i _. iSimpl in "Hi".
     tp_store i.
-    (* TODO: better tp_pure tactics *)
-    tp_pure j (Lam _ _). simpl.
-    tp_rec j. simpl.
-    tp_bind j (spawn.join _). unlock spawn.join.
-    tp_pure j (App _ #c2). simpl.
-    tp_load j. simpl.
-    tp_pure j (Case _ _ _). tp_pure j (Lam _ _). simpl.
-    tp_pure j (App _ v2). simpl. tp_pure j (Lam _ _). simpl.
-    tp_pure j _. simpl. tp_pure j _.
+    tp_pures j. tp_rec j.
+    tp_load j. tp_normalise j.
+    tp_pures j.
     iModIntro. iExists _. iFrame.
   Qed.
 
@@ -219,12 +206,7 @@ Section rules.
       wp_pures. wp_bind (spawn.join _).
       iApply (join_spec with "Hdl").
       iNext. iIntros (av). iDestruct 1 as (av') "[Hj HA]".
-      wp_pures.
-      (* TODO why is this so annoying *)
-      tp_pure j (Lam _ _). iSimpl in "Hj".
-      tp_pure j (App _ av'). iSimpl in "Hj".
-      tp_pure i (Lam _ _). iSimpl in "Hi".
-      tp_pure i (App _ bv'). iSimpl in "Hi".
+      wp_pures. tp_pures j. tp_pures i.
       wp_rec. wp_pures.
       wp_apply (spawn_spec N with "[Hc Hi]").
       { wp_pures.
@@ -242,12 +224,9 @@ Section rules.
       iIntros (cv). iDestruct 1 as (cv') "[Hi HC]".
       iApply wp_fupd.
       wp_pures. iExists (cv', dv')%V. simpl.
-      tp_pure i (InjR _). tp_store i.
-      tp_pure j (Lam _ _). tp_pure j _. simpl.
-      rewrite /spawn.join. tp_pure j (App _ #c2). simpl.
-      tp_load j. tp_case j. simpl.
-      tp_pure j (Lam _ _). tp_pure j (App _ cv'). simpl.
-      tp_pure j (Lam _ _). tp_pure j (App _ cv'). simpl.
-      tp_pure j (Pair _ _). eauto with iFrame.
+      tp_pures i. tp_store i.
+      tp_pures j.
+      rewrite /spawn.join. tp_pures j.
+      tp_load j. iSimpl in "Hj". tp_pures j. eauto with iFrame.
   Qed.
 End rules.
