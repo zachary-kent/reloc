@@ -459,10 +459,10 @@ Section refinement.
         iApply refines_spec_ctx. iIntros "#Hρ".
         iApply fupd_refines.
         (* because we manually applied `fupd_refines`, the tactical `with_spec_ctx` doesn't work anymore *)
-        tp_cmpxchg_suc j. iSimpl in "Hj".
+        tp_cmpxchg_suc j.
         tp_pures j. tp_rec j. tp_pures j.
-        tp_load j. tp_normalise j. tp_pures j.
-        tp_store j. tp_normalise j. tp_pures j.
+        tp_load j. tp_pures j.
+        tp_store j. tp_pures j.
         tp_rec j. tp_store j.
         iSpecialize ("Hoff" with "Hj").
         iSpecialize ("HN" with "Hoff").

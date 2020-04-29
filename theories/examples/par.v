@@ -125,7 +125,7 @@ Section rules.
       tp_pures i. tp_store i.
       tp_pures j.
       tp_rec j.
-      tp_pures j. iApply fupd_wp. tp_load j. tp_normalise j.
+      tp_pures j. iApply fupd_wp. tp_load j.
       tp_pures j.
       iModIntro. wp_pures. iExists (v2, w2)%V. eauto.
   Qed.
@@ -160,10 +160,10 @@ Section rules.
     iApply (wp_wand with "He2"). iIntros (w1).
     iDestruct 1 as (w2) "[Hj Hw]".
     iSimpl in "Hi". iSimpl in "Hj".
-    tp_pure i _. iSimpl in "Hi".
+    tp_pure i _.
     tp_store i.
     tp_pures j. tp_rec j.
-    tp_load j. tp_normalise j.
+    tp_load j.
     tp_pures j.
     iModIntro. iExists _. iFrame.
   Qed.
@@ -227,6 +227,6 @@ Section rules.
       tp_pures i. tp_store i.
       tp_pures j.
       rewrite /spawn.join. tp_pures j.
-      tp_load j. iSimpl in "Hj". tp_pures j. eauto with iFrame.
+      tp_load j. tp_pures j. eauto with iFrame.
   Qed.
 End rules.
