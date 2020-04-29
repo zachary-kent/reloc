@@ -172,14 +172,15 @@ Tactic Notation "rel_pure_l" open_constr(ef) :=
   rel_reshape_cont_l ltac:(fun K e' =>
       unify e' ef;
       eapply (tac_rel_pure_l K e');
-      [reflexivity                  (** e = fill K e1 *)
-      |iSolveTC                     (** PureClosed ϕ e1 e2 *)
-      |try heap_lang.proofmode.solve_vals_compare_safe                (** φ *)
+      [reflexivity                  (** e = fill K e' *)
+      |iSolveTC                     (** PureClosed ϕ e' e2 *)
+      | .. ]);
+      [try heap_lang.proofmode.solve_vals_compare_safe                (** φ *)
       |first [left; split; reflexivity              (** Here we decide if the mask E is ⊤ *)
              | right; reflexivity]                  (**    (m = n ∧ E = ⊤) ∨ (m = 0) *)
       |iSolveTC                                     (** IntoLaters *)
       |simpl; reflexivity           (** eres = fill K e2 *)
-      |rel_finish                   (** new goal *)])
+      |rel_finish                   (** new goal *)]
   || fail "rel_pure_l: cannot find the reduct".
 
 Tactic Notation "rel_pure_l" := rel_pure_l _.
@@ -191,10 +192,11 @@ Tactic Notation "rel_pure_r" open_constr(ef) :=
       eapply (tac_rel_pure_r K e');
       [reflexivity                  (** e = fill K e1 *)
       |iSolveTC                     (** PureClosed ϕ e1 e2 *)
-      |try heap_lang.proofmode.solve_vals_compare_safe                (** φ *)
+      |..]);
+      [try heap_lang.proofmode.solve_vals_compare_safe                (** φ *)
       |solve_ndisj        || fail 1 "rel_pure_r: cannot solve ↑specN ⊆ ?"
       |simpl; reflexivity           (** eres = fill K e2 *)
-      |rel_finish                   (** new goal *)])
+      |rel_finish                   (** new goal *)]
   || fail "rel_pure_r: cannot find the reduct".
 
 Tactic Notation "rel_pure_r" := rel_pure_r _.
