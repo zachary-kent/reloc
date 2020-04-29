@@ -39,7 +39,7 @@ Section semtypes.
     | TExists τ' => λne Δ, lrel_exists (λ τ, interp τ' (τ::Δ))
     | Tref τ => λne Δ, lrel_ref (interp τ Δ)
     end.
-  Solve Obligations with (intros I τ τ' n Δ Δ' HΔ' ??; solve_proper).
+  Solve Obligations with (intros I τ τ' n Δ Δ' HΔ' ??; try solve_proper).
   Next Obligation.
     intros I τ τ' n Δ Δ' HΔ' ??.
     apply lrel_rec_ne=> X /=.
