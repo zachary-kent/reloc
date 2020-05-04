@@ -539,6 +539,7 @@ Lemma tac_tp_alloc `{relocG Σ} j Δ1 E1 i1 i2 p K' e e' v Q :
   envs_lookup i2 Δ1 = Some (false, j ⤇ e)%I →
   e = fill K' (ref e') →
   IntoVal e' v →
+  (* TODO use match here as well *)
   (∀ l : loc, ∃ Δ2,
     envs_simple_replace i2 false
        (Esnoc Enil i2 (j ⤇ fill K' #l)) Δ1 = Some Δ2 ∧

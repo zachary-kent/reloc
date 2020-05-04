@@ -343,7 +343,7 @@ Section refinement.
   (* First the case where no offers is accepted *)
   Lemma pop_no_helping_refinement A γo st st' mb lk :
     inv stackN (stackInv A γo st st' mb lk) -∗
-    □ (REL pop_st #st #mb
+    (REL pop_st #st #mb
        <<
       CG_locked_pop (#st', lk)%V : () + A) -∗
     REL pop_st_no_offer #st #mb pop_st
