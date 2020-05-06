@@ -4,7 +4,7 @@ From stdpp Require Import sets.
 From iris.algebra Require Export auth gset excl.
 From iris.base_logic Require Import auth.
 From reloc Require Import reloc lib.lock lib.counter.
-From iris.heap_lang.lib Require Import ticket_lock.
+From iris.heap_lang.lib Require Export ticket_lock.
 
 (* A different `acquire` funciton to showcase the atomic rule for FG_increment *)
 Definition acquire : val := λ: "lk",
@@ -12,6 +12,8 @@ Definition acquire : val := λ: "lk",
   wait_loop "n" "lk".
 (* A different `release` function to showcase the rule for wkincr *)
 Definition release : val := λ: "lk", wkincr (Fst "lk").
+
+Definition newlock : val := ticket_lock.newlock.
 
 Definition lrel_lock `{relocG Σ} : lrel Σ :=
   ∃ A, (() → A) * (A → ()) * (A → ()).

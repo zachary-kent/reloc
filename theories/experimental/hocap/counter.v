@@ -1,12 +1,10 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** HOCAP-style specifications for the concurrent counter *)
 From reloc Require Export reloc.
-From reloc.lib Require Export counter.
+From reloc.lib Require Export counter lock.
 From iris.algebra Require Export auth frac excl.
 From iris.bi.lib Require Export fractional.
 From iris.base_logic.lib Require Export auth.
-
-Definition wk_incr : val := λ: "c", "c" <- !"c" + #1.
 
 Class cnt_hocapG Σ := CntG {
     cnt_hocapG_inG :> authG Σ (optionUR (prodR fracR (agreeR natO)));
@@ -107,13 +105,62 @@ Section cnt_spec.
     iModIntro. iExists _; iFrame. iExists _; iSplit; eauto with iFrame.
   Qed.
 
-  Lemma wk_incr_l E c γ K e A q n :
+
+  Lemma wkincr_l_2 E c γ K e A :
+    E ## ↑ N →
+    Cnt c γ -∗
+    (∀ n, cnt_auth γ n ={⊤∖↑N}=∗ cnt_auth γ n ∗ ∀ m,
+       (cnt_auth γ m ={⊤∖↑N, ⊤∖↑N∖E}=∗
+          cnt_auth γ (n+1) ∗ REL fill K (of_val #()) << e @ (⊤∖E): A)) -∗
+    REL fill K (wkincr c) << e : A.
+  Proof.
+    iIntros (?).
+    iDestruct 1 as (l ->) "#Hcnt". iIntros "Hvs".
+    rel_rec_l. rel_load_l_atomic.
+    iInv N as (n1) ">[Hl Ha]" "Hcl". iModIntro.
+    iExists #n1. iFrame "Hl"; iIntros "!> Hl".
+    iMod ("Hvs" with "Ha") as "[Ha Hvs]".
+    iMod ("Hcl" with "[Hl Ha]") as "_".
+    { iNext. iExists _; by iFrame. }
+    rel_pures_l. rel_store_l_atomic.
+    iMod (inv_acc_strong with "Hcnt") as "[>Hcnt' Hcl]"; first by solve_ndisj.
+    iDestruct "Hcnt'" as (n2) "[Hl Ha]".
+    iModIntro. iExists _. iFrame "Hl". iIntros "!> Hl".
+    (* iDestruct (cnt_agree_2 with "Ha Hc") as %->. *)
+    iMod ("Hvs" with "Ha") as "(Ha & Href)".
+    iMod ("Hcl" with "[Ha Hl]") as "_".
+    { iNext. assert ((Z.of_nat n1 + 1)%Z = Z.of_nat (n1 + 1)) as -> by lia.
+      iExists _. by iFrame. }
+    assert (⊤ ∖ ↑N ∖ E = ⊤ ∖ E ∖ ↑N) as -> by set_solver.
+    rewrite -union_difference_L; last set_solver.
+    done.
+  Qed.
+
+  Lemma wkincr_l E c γ K e A q n :
     E ## ↑ N →
     Cnt c γ -∗
     cnt γ q n -∗
     (cnt_auth γ n ∗ cnt γ q n ={⊤∖↑N, ⊤∖↑N∖E}=∗
-     cnt_auth γ (n+1) ∗ cnt γ q (n+1) ∗ REL fill K (of_val #()) << e @ (⊤∖E): A) -∗
-    REL fill K (wk_incr c) << e : A.
+     cnt_auth γ (n+1) ∗ REL fill K (of_val #()) << e @ (⊤∖E): A) -∗
+    REL fill K (wkincr c) << e : A.
+  Proof.
+    iIntros (?) "#Hcnt Hn Hvs".
+    iApply wkincr_l_2; try done.
+    iIntros (n1) "Ha".
+    iDestruct (cnt_agree_2 with "Ha Hn") as %->.
+    iModIntro. iFrame "Ha". iIntros (m) "Ha".
+    iDestruct (cnt_agree_2 with "Ha Hn") as %->.
+    iMod ("Hvs" with "[$Ha $Hn]") as "(Ha & Hvs)".
+    iModIntro. by iFrame.
+  Qed.
+
+  Lemma wkincr_l_alt E c γ K e A q n :
+    E ## ↑ N →
+    Cnt c γ -∗
+    cnt γ q n -∗
+    (cnt_auth γ n ∗ cnt γ q n ={⊤∖↑N, ⊤∖↑N∖E}=∗
+     cnt_auth γ (n+1) ∗ REL fill K (of_val #()) << e @ (⊤∖E): A) -∗
+    REL fill K (wkincr c) << e : A.
   Proof.
     iIntros (?).
     iDestruct 1 as (l ->) "#Hcnt". iIntros "Hc Hvs".
@@ -128,7 +175,7 @@ Section cnt_spec.
     iDestruct "Hcnt'" as (m) "[Hl Ha]".
     iDestruct (cnt_agree_2 with "Ha Hc") as %->.
     iModIntro. iExists _. iFrame "Hl". iIntros "!> Hl".
-    iMod ("Hvs" with "[$Ha $Hc]") as "(Ha & Hc & Href)".
+    iMod ("Hvs" with "[$Ha $Hc]") as "(Ha & Href)".
     iMod ("Hcl" with "[Ha Hl]") as "_".
     { iNext. assert ((Z.of_nat n + 1)%Z = Z.of_nat (n + 1)) as -> by lia.
       iExists _. by iFrame. }
@@ -218,7 +265,7 @@ Section refinement.
 
   Lemma incr_refinement c γ lk l :
     Cnt N c γ -∗
-    inv N2 (∃ m, lock.is_locked_r lk false ∗ cnt γ 1 m ∗ l ↦ₛ #m)%I -∗
+    inv N2 (∃ m, is_locked_r lk false ∗ cnt γ 1 m ∗ l ↦ₛ #m)%I -∗
     REL FG_increment c << CG_increment #l lk : interp TNat [].
   Proof.
     iIntros "#HCnt #HI".
@@ -240,7 +287,7 @@ Section refinement.
 
   Lemma read_refinement c γ lk l :
     Cnt N c γ -∗
-    inv N2 (∃ m, lock.is_locked_r lk false ∗ cnt γ 1 m ∗ l ↦ₛ #m)%I -∗
+    inv N2 (∃ m, is_locked_r lk false ∗ cnt γ 1 m ∗ l ↦ₛ #m)%I -∗
     REL counter_read c << counter_read #l : interp TNat [].
   Proof.
     iIntros "#HCnt #HI".
@@ -264,7 +311,7 @@ Section refinement.
     iApply refines_arrow_val.
     iAlways. iIntros (? ?) "_"; simplify_eq/=.
     rel_rec_l. rel_rec_r.
-    rel_apply_r lock.refines_newlock_r; auto.
+    rel_apply_r refines_newlock_r; auto.
     iIntros (lk) "Hlk".
     repeat rel_pure_r.
     rel_alloc_r c' as "Hcnt'".
@@ -273,7 +320,7 @@ Section refinement.
     iMod (Cnt_alloc N _ 0%nat with "Hcnt") as (γ) "[#HCnt Hc]".
 
     (* establishing the invariant *)
-    iMod (inv_alloc N2 _ (∃ m, lock.is_locked_r lk false ∗ cnt γ 1 m ∗ c' ↦ₛ #m)%I
+    iMod (inv_alloc N2 _ (∃ m, is_locked_r lk false ∗ cnt γ 1 m ∗ c' ↦ₛ #m)%I
          with "[-]") as "#Hinv".
     { iNext. iExists 0%nat. by iFrame. }
     (* TODO: here we have to do /exactly/ 4 steps.

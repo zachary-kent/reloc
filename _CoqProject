@@ -63,3 +63,4 @@ theories/experimental/helping/offers.v
 theories/experimental/helping/helping_stack.v
 
 theories/experimental/hocap/counter.v
+theories/experimental/hocap/ticket_lock.v
