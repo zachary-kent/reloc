@@ -21,171 +21,148 @@ Section proof.
     iSplitL "H1"; eauto with iFrame.
   Qed.
 
-  Notation D := (locO -n> valO -n> iPropO Σ).
+  Fixpoint stack_contents (v1 : loc) (ls : list val) :=
+    match ls with
+    | [] => ∃ q, v1 ↦{q} NONEV
+    | h::tl => ∃ (z1 : loc) q, v1 ↦{q} SOMEV (h, #z1) ∗
+                 stack_contents z1 tl
+    end%I.
 
-  Program Definition stack_link_pre (A : lrel Σ) : D -n> D := λne S v1 v2,
-    (∃ w, (∃ q, v1 ↦{q} w) ∗
-      ((⌜w = NONEV⌝ ∧ ⌜v2 = NONEV⌝)
-      ∨(∃ (y1 : val) (z1 : loc) (y2 z2 : val),
-           ⌜w = SOMEV (y1, #z1)⌝
-         ∗ ⌜v2 = SOMEV (y2, z2)⌝
-         ∗ A y1 y2 ∗ ▷ S z1 z2)))%I.
-  Solve Obligations with solve_proper.
+  Definition stack_link (A : lrel Σ) (v1 : loc) (v2 : val) :=
+    (∃ (ls1 : list val) (ls2 : list val),
+        stack_contents v1 ls1 ∗ is_stack v2 ls2 ∗
+        [∗ list] v1;v2 ∈ ls1;ls2, A v1 v2)%I.
 
-  Global Instance stack_link_pre_contractive A : Contractive (stack_link_pre A).
-  Proof. solve_contractive. Qed.
-
-  Definition stack_link A := fixpoint (stack_link_pre A).
-
-  Lemma stack_link_unfold (A : lrel Σ) (istk : loc) (v : val) :
-    stack_link A istk v ≡
-    (∃ w, (∃ q, istk ↦{q} w) ∗
-      ((⌜w = NONEV⌝ ∧ ⌜v = NONEV⌝)
-      ∨ (∃ (y1 : val) (z1 : loc) (y2 z2 : val),
-            ⌜w = SOMEV (y1,#z1)⌝
-          ∗ ⌜v = SOMEV (y2, z2)⌝
-          ∗ A y1 y2
-          ∗ ▷ stack_link A z1 z2)))%I.
+  (** Actually, the whole `stack_contents` predicate is duplicable *)
+  Local Instance stack_contents_intoand (istk : loc) (ls : list val) :
+    IntoSep (stack_contents istk ls) (stack_contents istk ls) (stack_contents istk ls).
   Proof.
-    rewrite {1}/stack_link.
-    transitivity (stack_link_pre A (fixpoint (stack_link_pre A)) istk v).
-    (* TODO: rewrite fixpoint_unfold. *)
-    { f_equiv. f_equiv. apply fixpoint_unfold. }
-    reflexivity.
+    rewrite /IntoSep /=.
+    revert istk. induction ls as [|h ls]; intros istk; simpl.
+    - apply istk_intoand.
+    - iDestruct 1 as (z1 q) "[Histk Hc]".
+      rewrite IHls. iDestruct "Hc" as "[Hc1 Hc2]". iDestruct "Histk" as "[Histk1 Histk2]".
+      iSplitL "Hc1 Histk1"; iExists _, (q/2)%Qp; by iFrame.
   Qed.
 
-  (** Actually, the whole `stack_link` predicate is duplicable *)
-  Local Instance stack_link_intoand (A : lrel Σ) (istk : loc) (v : val) :
-    IntoSep (stack_link A istk v) (stack_link A istk v) (stack_link A istk v).
+  Lemma stack_contents_agree istk ls ls' :
+    stack_contents istk ls -∗ stack_contents istk ls' -∗ ⌜ls = ls'⌝.
   Proof.
-    rewrite /IntoSep /=. iLöb as "IH" forall (istk v).
-    rewrite {1 2 3}stack_link_unfold.
-    iDestruct 1 as (w) "([Histk Histk2] & [HLK | HLK])".
-    - iDestruct "HLK" as "[% %]".
-      iSplitL "Histk"; iExists _; iFrame; eauto.
-    - iDestruct "HLK" as (y1 z1 y2 z2) "(% & % & #HQ & HLK)".
-      iDestruct ("IH" with "HLK") as "[HLK HLK2]".
-      iClear "IH".
-      iSplitL "Histk HLK"; iExists _; iFrame; iRight; iExists _,_,_,_; eauto.
+    revert istk ls'. induction ls as [|h ls]; intros istk ls'; simpl.
+    - iDestruct 1 as (q) "Histk".
+      destruct ls' as [|h' ls']; first by eauto.
+      simpl. iDestruct 1 as (z q') "[Histk' _]".
+      iDestruct (gen_heap.mapsto_agree with "Histk' Histk") as %Hfoo.
+      exfalso. naive_solver.
+    - iDestruct 1 as (z q) "[Histk Hls]".
+      destruct ls' as [|h' ls']; simpl.
+      + iDestruct 1 as (q') "Histk'".
+        iDestruct (gen_heap.mapsto_agree with "Histk' Histk") as %Hfoo.
+        exfalso. naive_solver.
+      + iDestruct 1 as (z' q') "[Histk' Hls']".
+        iDestruct (gen_heap.mapsto_agree with "Histk' Histk") as %Hfoo. simplify_eq/=.
+        iDestruct (IHls with "Hls Hls'") as %Hbar. simplify_eq/=.
+        eauto.
   Qed.
 
-  Definition sinv (A : lrel Σ) stk stk' l' : iProp Σ :=
-    (∃ (istk : loc) v,
-       stk' ↦ₛ v
-     ∗ is_locked_r l' false
-     ∗ stk  ↦ #istk
-     ∗ stack_link A istk v)%I.
+  Definition sinv (A : lrel Σ) stk stk' : iProp Σ :=
+    (∃ (istk : loc), stk  ↦ #istk ∗ stack_link A istk stk')%I.
 
   Ltac close_sinv Hcl asn :=
     iMod (Hcl with asn) as "_";
-    [iNext; rewrite /sinv; iExists _,_; by iFrame |]; try iModIntro.
+    [iNext; rewrite /sinv; iExists _;
+         (by iFrame || iFrame; iExists _,_; by eauto with iFrame) |]; try iModIntro.
 
-  Lemma FG_CG_push_refinement N st st' (A : lrel Σ) l (v v' : val) :
+  Lemma FG_CG_push_refinement N st st' (A : lrel Σ) (v v' : val) :
     N ## relocN →
-    inv N (sinv A st st' l) -∗
+    inv N (sinv A st st') -∗
     A v v' -∗
     REL (FG_push #st v)
        <<
-        (CG_locked_push (#st', l)%V v') : ().
+        (CG_locked_push st' v') : ().
   Proof.
     iIntros (?) "#Hinv #Hvv".
     rel_rec_l. iLöb as "IH".
-    repeat rel_pure_l.
+    rel_pures_l.
     rel_load_l_atomic.
-    iInv N as (istk w) "(>Hst' & >Hl & >Hst & HLK)" "Hclose".
+    iInv N as (isk) "(>Hstk & Hlnk)" "Hclose".
     iExists _. iFrame.
-    iModIntro. iNext. iIntros "Hst".
-    close_sinv "Hclose" "[Hst Hst' Hl HLK]". clear w.
-    repeat rel_pure_l.
+    iModIntro. iNext. iIntros "Hstk".
+    close_sinv "Hclose" "[Hlnk Hstk]".
+    rel_pures_l.
     rel_alloc_l nstk as "Hnstk".
     rel_cmpxchg_l_atomic.
-    iInv N as (istk' w) "(>Hst' & >Hl & >Hst & HLK)" "Hclose".
-    iExists _. iFrame "Hst".
+    iInv N as (isk') "(>Hstk & Hlnk)" "Hclose".
+    iExists _. iFrame "Hstk".
     iModIntro. iSplit.
     - (* CmpXchg fails *)
-      iIntros (?); iNext; iIntros "Hst".
-      close_sinv "Hclose" "[Hst Hst' Hl HLK]". clear w.
-      rel_pures_l. simpl.
-      rel_rec_l.
-      by iApply "IH".
+      iIntros (?); iNext; iIntros "Hstk".
+      close_sinv "Hclose" "[Hlnk Hstk]".
+      rel_pures_l. rel_rec_l. by iApply "IH".
     - (* CmpXchg succeeds *)
-      iIntros (?). simplify_eq/=. iNext. iIntros "Hst".
-      rel_apply_r (refines_CG_push_r with "Hst' Hl").
-      iIntros "Hst' Hl".
-      iMod ("Hclose" with "[Hst Hst' Hl HLK Hnstk]").
-      { iNext. rewrite {2}/sinv. iExists _,_.
-        iFrame "Hst' Hst Hl".
-        rewrite (stack_link_unfold _ nstk).
-        iExists _. iSplitL "Hnstk".
-        - iExists 1%Qp; iFrame.
-        - iRight. iExists _,_,_,_. eauto. }
-      rel_pures_l.
-      rel_values.
+      iIntros (?). simplify_eq/=. iNext. iIntros "Hstk".
+      rewrite /stack_link. iDestruct "Hlnk" as (ls1 ls2) "(Hls1 & Hls2 & #HA)".
+      rel_apply_r (refines_CG_push_r with "Hls2").
+      iIntros "Hls2".
+      iMod ("Hclose" with "[-]").
+      { iNext. rewrite {2}/sinv. iExists _. iFrame.
+        iExists (v::ls1),_. simpl. iFrame "Hls2 Hvv HA".
+        iExists _,_. iFrame. }
+      rel_pures_l. rel_values.
   Qed.
 
-  Lemma FG_CG_pop_refinement N st st' (A : lrel Σ) l :
+  Lemma FG_CG_pop_refinement N st st' (A : lrel Σ) :
     N ## relocN →
-    inv N (sinv A st st' l) -∗
+    inv N (sinv A st st') -∗
     REL FG_pop #st
       <<
-        CG_locked_pop (#st', l)%V : () + A.
+        CG_locked_pop st' : () + A.
   Proof.
     iIntros (?) "#Hinv".
     iLöb as "IH". rel_rec_l.
     rel_load_l_atomic.
-    iInv N as (istk w) "(>Hst' & >Hl & >Hst & HLK)" "Hclose".
-    iExists _. iFrame "Hst".
-    iModIntro. iNext. iIntros "Hst /=".
-    repeat rel_pure_l. rel_rec_l.
-    iDestruct "HLK" as "[HLK HLK2]".
-    rewrite {1}stack_link_unfold.
-    iDestruct "HLK" as (w') "(Histk & HLK)".
-    iDestruct "HLK" as "[[% %] | HLK]"; simplify_eq/=.
-    - (* The stack is empty *)
-      rel_apply_r (refines_CG_pop_fail_r with "Hst' Hl").
-      iIntros "Hst' Hl".
-      (* duplicate the top node *)
-      iDestruct "Histk" as "[Histk Histk2]".
-      close_sinv "Hclose" "[Hst' Hst Hl HLK2]".
-      iDestruct "Histk2" as (q) "Histk2".
-      rel_load_l. repeat rel_pure_l.
-      rel_values.
+    iInv N as (istk) "(>Hstk & Hlnk)" "Hclose".
+    iExists _. iFrame "Hstk".
+    iModIntro. iNext. iIntros "Hstk /=".
+    rel_pures_l. rel_rec_l.
+    iDestruct "Hlnk" as (ls1 ls2) "(Hls1 & Hls2 & #HA)".
+    iDestruct "Hls1" as "[Histk1 Histk2]".
+    destruct ls1 as [|h1 ls1]; iSimpl in "Histk1".
+    - iDestruct (big_sepL2_length with "HA") as %Hfoo.
+      assert (ls2 = []) as -> by (apply length_zero_iff_nil; done). clear Hfoo.
+      rel_apply_r (refines_CG_pop_fail_r with "Hls2").
+      iIntros "Hls2".
+      close_sinv "Hclose" "[Histk2 Hstk Hls2]".
+      iDestruct "Histk1" as (q) "Histk'". rel_load_l.
+      rel_pures_l. rel_values.
       iModIntro. iExists _,_. eauto.
-    - (* The stack has a value *)
-      iDestruct "HLK" as (y1 z1 y2 z2) "(% & % & #Hτ & HLK_tail)"; simplify_eq/=.
-      (* duplicate the top node *)
-      close_sinv "Hclose" "[Hst' Hst Hl HLK2]".
-      iDestruct "Histk" as (q) "Histk".
-      rel_load_l. repeat rel_pure_l.
+    - iDestruct "Histk1" as (z1 q) "[Histk1 Hrest]".
+      close_sinv "Hclose" "[Histk2 Hstk Hls2]".
+      rel_load_l. rel_pures_l.
       rel_cmpxchg_l_atomic.
-      iInv N as (istk' w) "(>Hst' & >Hl & >Hst & HLK)" "Hclose".
-      iExists _. iFrame "Hst".
-      iModIntro. iSplit.
-      + (* CmpXchg fails *) iIntros (?); simplify_eq/=.
-        iNext. iIntros "Hst".
-        rel_pures_l.
-        close_sinv "Hclose" "[Hst Hst' Hl HLK]".
-        iApply "IH".
-      + (* CmpXchg succeeds *) iIntros (?); simplify_eq/=.
-        iNext. iIntros "Hst".
-        rel_pures_l.
-        rewrite (stack_link_unfold _ istk).
-        iDestruct "HLK" as (w') "(Histk2 & HLK)".
-        iAssert (⌜w' = InjRV (y1, #z1)⌝)%I with "[Histk Histk2]" as %->.
-        { iDestruct "Histk2" as (?) "Histk2".
-          iApply (gen_heap.mapsto_agree with "Histk2 Histk"). }
-        iDestruct "HLK" as "[[% %] | HLK]"; first by congruence.
-        iDestruct "HLK" as (? ? ? ? ? ?) "[#Hτ2 HLK]". simplify_eq/=.
-        rel_apply_r (refines_CG_pop_suc_r with "Hst' Hl").
-        iIntros "Hst' Hl".
+      iInv N as (istk') "(>Hstk & Hlnk)" "Hclose".
+      iModIntro. iExists _. iFrame "Hstk". iSplit.
+      + iIntros (?). iNext. iIntros "Hstk".
+        close_sinv "Hclose" "[Hstk Hlnk]".
+        rel_pures_l. iApply "IH".
+      + iIntros (?). simplify_eq/=. iNext.
+        iIntros "Hstk". rel_pures_l.
+        iDestruct "Hlnk" as (ls1' ls2') "(Hc2 & Hst & #HA')".
+        iDestruct "Hrest" as "[Hrest Hz1]".
+        iAssert (stack_contents istk (h1::ls1)) with "[Histk1 Hrest]" as "Histk1".
+        { simpl. iExists _,_. by iFrame. }
+        iDestruct (stack_contents_agree with "Histk1 Hc2") as %<-.
+        iClear "HA".
+        rewrite big_sepL2_cons_inv_l. iDestruct "HA'" as (h2 l2' ->) "[Hh HA]".
+        rel_apply_r (refines_CG_pop_suc_r with "Hst").
+        iIntros "Hst".
         close_sinv "Hclose" "[-]".
-        rel_pures_l.
         rel_values. iModIntro. iExists _,_; eauto.
   Qed.
 
   Definition stackInt A : lrel Σ := LRel (λ v1 v2,
-    ∃ (l : val) (stk stk' : loc), ⌜v2 = (#stk', l)%V⌝ ∗ ⌜v1 = #stk⌝
-      ∗ inv (stackN .@ (stk,stk')) (sinv A stk stk' l))%I.
+    ∃ (stk : loc), ⌜v1 = #stk⌝
+      ∗ inv (stackN .@ (stk,v2)) (sinv A stk v2))%I.
 
   Lemma stack_refinement :
     ⊢ REL FG_stack << CG_stack : ∀ A, ∃ B, (() → B) * (B → () + A) * (B → A → ()).
@@ -202,22 +179,23 @@ Section proof.
       rel_apply_r refines_newlock_r. iIntros (l) "Hl".
       rel_pure_r. rel_alloc_r st' as "Hst'". rel_pure_r.
       rel_values.
-      iMod (inv_alloc (stackN.@(st,st')) _ (sinv A st st' l) with "[-]")
+      iMod (inv_alloc (stackN.@(st,(#st', l)%V)) _ (sinv A st (#st', l)%V) with "[-]")
         as "#Hinv".
-      { iNext. iExists _,_. iFrame.
-        rewrite stack_link_unfold. iExists _.
-        iSplitL; eauto. }
-      iModIntro. iExists _,_,_. iFrame "Hinv". eauto.
+      { iNext. iExists _. iFrame. iExists [],[]. simpl.
+        iSplitL "Hisk"; first by eauto.
+        rewrite right_id. rewrite /is_stack.
+        iExists _,_; eauto with iFrame. }
+      iModIntro. iExists _. eauto with iFrame.
     - rel_pure_l. rel_pure_r. iApply refines_arrow_val.
       iAlways. iIntros (st1 st2) "Hst".
       rel_rec_l. rel_rec_r.
-      iDestruct "Hst" as (??? ??) "#Hst". simplify_eq/=.
+      iDestruct "Hst" as (??) "#Hst". simplify_eq/=.
       iApply (FG_CG_pop_refinement with "Hst").
       solve_ndisj.
     - rel_pure_l. rel_pure_r. iApply refines_arrow_val.
       iAlways. iIntros (st1 st2) "Hst".
       rel_rec_l. rel_rec_r.
-      iDestruct "Hst" as (??? ??) "#Hst". simplify_eq/=.
+      iDestruct "Hst" as (??) "#Hst". simplify_eq/=.
       rel_pure_l. rel_pure_r. iApply refines_arrow_val.
       iAlways. iIntros (x1 x2) "Hx".
       rel_rec_l. rel_rec_r.

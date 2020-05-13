@@ -23,7 +23,8 @@ are:
 From iris.algebra Require Import auth gmap agree list excl.
 From iris.base_logic.lib Require Import auth.
 From reloc Require Export reloc experimental.helping.offers.
-From reloc Require Import examples.stack.CG_stack lib.list.
+From reloc Require Import lib.list.
+From reloc.examples.stack Require Import CG_stack refinement.
 
 (** * Source code *)
 Definition pop_st_no_offer : val := λ: "r" "mb" "pop",
@@ -219,6 +220,26 @@ Section offerReg_rules.
 
 End offerReg_rules.
 
+(* TODO: this goes in Iris *)
+Section sep_list2.
+  Context `{!relocG Σ} {A B : Type}.
+  Implicit Types Φ Ψ : nat → A → B → iProp Σ.
+
+  Lemma big_sepL2_nil_inv_l Φ l2 :
+    ([∗ list] k↦y1;y2 ∈ []; l2, Φ k y1 y2) -∗ ⌜l2 = []⌝.
+  Proof.
+    rewrite big_sepL2_alt bi.and_elim_l /= -length_zero_iff_nil.
+    by apply bi.pure_mono.
+  Qed.
+  Lemma big_sepL2_nil_inv_r Φ l1 :
+    ([∗ list] k↦y1;y2 ∈ l1; [], Φ k y1 y2) -∗ ⌜l1 = []⌝.
+  Proof.
+    rewrite big_sepL2_alt bi.and_elim_l /= length_zero_iff_nil.
+    by apply bi.pure_mono.
+  Qed.
+
+End sep_list2.
+
 (** * Refinement proof *)
 Section refinement.
   Context `{!relocG Σ, !offerRegPreG Σ, !offerG Σ}.
@@ -279,147 +300,132 @@ Section refinement.
   Local Instance oloc_to_val_inj : Inj (=) (=) oloc_to_val.
   Proof. intros [|][|]; simpl; congruence. Qed.
 
-  (** This will be the type of the stack linking predicate... *)
-  Local Notation D := (olocO -d> valO -d> iPropO Σ).
-  (** .. which we compute as the following fixed point: *)
-  Definition stack_link_pre (A : lrel Σ) : D → D := λ S ol v2,
-    match ol return _ with
-    | None => ⌜v2 = NONEV⌝
-    | Some l => ∃ (h : val) (t : option loc) (h' t' : val),
-                  ⌜v2 = SOMEV (h', t')⌝
-                ∗ (∃ q, l ↦{q} (h, oloc_to_val t))
-                ∗ A h h' ∗ ▷ S t t'
+  Fixpoint stack_contents (ol : option loc) (ls : list val) :=
+    match ol,ls with
+    | None,[] => True
+    | Some l,(h::t) =>
+      ∃ (ol : option loc),
+      ∃ q, l ↦{q} (h, oloc_to_val ol) ∗ stack_contents ol t
+    | _,_ => False
     end%I.
-  Global Instance stack_link_pre_contractive A : Contractive (stack_link_pre A).
+
+  Existing Instance istk_fromand.
+  Existing Instance istk_intoand.
+  Local Instance stack_contents_intoand (istk : option loc) (ls : list val) :
+    IntoSep (stack_contents istk ls) (stack_contents istk ls) (stack_contents istk ls).
   Proof.
-    intros n S1 S2 HS. solve_proper_prepare.
-    repeat (first [apply HS | f_contractive | f_equiv]).
+    rewrite /IntoSep /=.
+    revert istk. induction ls as [|h ls]; intros istk; simpl.
+    - destruct istk; eauto.
+    - destruct istk; last by eauto. iDestruct 1 as (z1 q) "[Histk Hc]".
+      rewrite IHls. iDestruct "Hc" as "[Hc1 Hc2]". iDestruct "Histk" as "[Histk1 Histk2]".
+      iSplitL "Hc1 Histk1"; iExists _, (q/2)%Qp; by iFrame.
   Qed.
 
-  Definition stack_link A := fixpoint (stack_link_pre A).
-
-  Lemma stack_link_unfold A ol v2 :
-    stack_link A ol v2 ≡
-    (match ol with
-     | None => ⌜v2 = NONEV⌝
-     | Some l => ∃ (h : val) (t : option loc) (h' t' : val),
-                   ⌜v2 = SOMEV (h', t')⌝
-                 ∗ (∃ q, l ↦{q} (h, oloc_to_val t))
-                 ∗ A h h' ∗ ▷ stack_link A t t'
-     end%I).
-  Proof. apply (fixpoint_unfold (stack_link_pre A)). Qed.
-
-  Lemma stack_link_empty A : ⊢ stack_link A None NILV.
-  Proof. rewrite stack_link_unfold; by iPureIntro. Qed.
-
-  Lemma stack_link_cons A l h h' t t' q :
-    A h h' -∗
-    ▷ stack_link A t t' -∗
-    l ↦{q} (h, oloc_to_val t) -∗
-    stack_link A (Some l) (CONSV h' t').
+  Lemma stack_contents_agree istk ls ls' :
+    stack_contents istk ls -∗ stack_contents istk ls' -∗ ⌜ls = ls'⌝.
   Proof.
-    iIntros "Hh Ht Hl".
-    rewrite (stack_link_unfold A (Some _)).
-    iExists _,_,_,_. iFrame "Hh Ht". iSplit; eauto with iFrame.
+    revert istk ls'. induction ls as [|h ls]; intros istk ls'; simpl.
+    - destruct istk; eauto.
+      destruct ls' as [|h' ls']; simpl; eauto.
+    - destruct istk; last eauto.
+      iDestruct 1 as (z q) "[Histk Hls]".
+      destruct ls' as [|h' ls']; simpl; eauto.
+      iDestruct 1 as (z' q') "[Histk' Hls']".
+      iDestruct (gen_heap.mapsto_agree with "Histk' Histk") as %Hfoo. simplify_eq/=.
+      iDestruct (IHls with "Hls Hls'") as %Hbar. simplify_eq/=.
+      eauto.
   Qed.
 
   (** ** The main invariant that we will use for the proof *)
-  Definition stackInv A oname (st st' mb : loc) (lc : val) : iProp Σ :=
-    (∃ ol v2 (N : offerReg),
-       is_locked_r lc false
-     ∗ st ↦ oloc_to_val ol
-     ∗ st' ↦ₛ v2
-     ∗ stack_link A ol v2
+  Definition stackInv A oname (st mb : loc) (st' : val) : iProp Σ :=
+    (∃ ol (N : offerReg) ls1 ls2,
+       st ↦ oloc_to_val ol
+     ∗ stack_contents ol ls1
+     ∗ is_stack st' ls2
+     ∗ ([∗ list] v1;v2 ∈ ls1;ls2, A v1 v2)
      ∗ (mb ↦ NONEV      (* the mailbox is either empty or contains an offer that is in the registry *)
         ∨ (∃ (l : loc) v1 v2 γ j K,
               A v1 v2
             ∗ mb ↦ SOMEV (v1, #l)
             ∗ ⌜N !! l = Some (v2, γ, j, K)⌝))
      ∗ own oname (● to_offer_reg N)
-     ∗ offerInv N (#st', lc))%I.
+     ∗ offerInv N st')%I.
 
   (** ** The proof itself *)
 
   (* First the case where no offers is accepted *)
-  Lemma pop_no_helping_refinement A γo st st' mb lk :
-    inv stackN (stackInv A γo st st' mb lk) -∗
+  Lemma pop_no_helping_refinement A γo st st' mb :
+    inv stackN (stackInv A γo st mb st') -∗
     (REL pop_st #st #mb
        <<
-      CG_locked_pop (#st', lk)%V : () + A) -∗
+      CG_locked_pop st' : () + A) -∗
     REL pop_st_no_offer #st #mb pop_st
     <<
-    CG_locked_pop (#st', lk)%V : () + A.
+    CG_locked_pop st' : () + A.
   Proof.
     iIntros "#Hinv IH". rel_rec_l. rel_pures_l.
     rel_load_l_atomic.
-    iInv stackN as (s1 s2 N) "(Hlk & Hst1 & Hst2 & Hrel & Hmb & HNown & HN)" "Hcl".
-    iModIntro. iExists _; iFrame. iNext. iIntros "Hst1".
-    rewrite stack_link_unfold.
-    destruct s1 as [l|]; last first.
-    - (* Stack is empty *)
-      iDestruct "Hrel" as "->". iSimpl.
+    iInv stackN as (ol N ls1 ls2) "(Hol & Hst1 & Hst2 & HA & Hmb & Hown & HN)" "Hcl".
+    iModIntro. iExists _; iFrame. iNext. iIntros "Hol".
+    destruct ls1 as [|h1 ls1].
+    - iSimpl in "Hst1".
+      destruct ol; first by eauto with iFrame.
       rel_pures_l.
-      rel_apply_r (refines_CG_pop_fail_r with "Hst2 Hlk").
-      iIntros "Hst' Hlk".
-      iMod ("Hcl" with "[-]") as "_".
-      { iNext. iExists _,_,_. iFrame.
-        iApply stack_link_empty. }
-      rel_values. iModIntro. iExists #(),#().
-      iLeft; repeat iSplit; eauto with iFrame.
-    - iDestruct "Hrel" as (h t h' t' ->) "(Hl & #Hh & Ht)". iSimpl.
-      rel_pures_l.
-      iDestruct "Hl" as "[Hl Hl2]".
-      iMod ("Hcl" with "[-IH Hl]") as "_".
-      { iNext. iExists _,_,_. iFrame.
-        iDestruct "Hl2" as (q) "Hl2".
-        iApply (stack_link_cons with "Hh Ht Hl2"). }
-      iDestruct "Hl" as (q) "Hl".
-      rel_load_l. rel_pures_l.
+      rewrite (big_sepL2_nil_inv_l _ ls2). iDestruct "HA" as %->.
+      simpl. rel_pures_l.
+      rel_apply_r (refines_CG_pop_fail_r with "Hst2").
+      iIntros "Hst2". iMod ("Hcl" with "[-IH]") as "_".
+      { iNext. iExists None,_,[],_. simpl; iFrame.
+        by rewrite big_sepL2_nil. }
+      rel_values. iExists _,_. eauto with iFrame.
+    - iDestruct "Hst1" as "[Hst1 Hst1']".
+      iSimpl in "Hst1". destruct ol as [l|]; last by eauto with iFrame.
+      iDestruct "Hst1" as (ol q) "[[Hl Hl'] [Hol' Hol2]]".
+      rel_pures_l. iMod ("Hcl" with "[-Hl IH Hst1' Hol2]") as "_".
+      { iNext. iExists (Some l),_,(h1::ls1),_. iFrame.
+        simpl. eauto with iFrame. }
+      rel_load_l. rel_pures_l. iClear "Hl".
       rel_cmpxchg_l_atomic.
-      iInv stackN as (s1 s2 N') "(Hlk & Hst1 & Hst2 & Hrel & Hmb & HNown & HN)" "Hcl".
-      iModIntro. iExists _; iFrame "Hst1". iSplit.
-      + (* Going to retry *)
-        iIntros (Hs1). iNext. iIntros "Hst1".
-        rel_pures_l.
+      iInv stackN as (ol2 N' ls1' ls2') "(Hol & Hst1 & Hst2 & HA & Hmb & Hown & HN)" "Hcl".
+      iModIntro. iExists _. iFrame "Hol". iSplit.
+      + iIntros (?). iNext.
+        iIntros "Hol". rel_pures_l.
         iMod ("Hcl" with "[-IH]").
-        { iNext. iExists _,_,_. by iFrame. }
+        { iNext. iExists _,_,_,_. by iFrame. }
         iApply "IH".
-      + (* Going to succeed *)
-        iIntros (Hs1). iNext. iIntros "Hst1".
-        rel_pures_l.
-        assert (s1 = Some l) as ->.
-        { revert Hs1. destruct s1; simpl; congruence. }
-        rewrite stack_link_unfold.
-        iDestruct "Hrel" as (h1 t1 h1' t1' ->) "([Hl2 Hl3] & #Hh' & Hrel)".
-        rel_apply_r (refines_CG_pop_suc_r with "Hst2 Hlk").
-        iIntros "Hst' Hlk".
-        iDestruct "Hl2" as (?) "Hl2".
-        iDestruct (gen_heap.mapsto_agree with "Hl Hl2") as %?.
-        simplify_eq/=.
-        iMod ("Hcl" with "[-IH Hl Hl2]").
-        { iNext. iExists _,_,_. by iFrame. }
-        rel_values. iModIntro. iExists h1,h1'.
-        iRight. repeat iSplit; eauto with iFrame.
+      + iIntros (?). iNext.
+        iIntros "Hol". rel_pures_l.
+        assert (ol2 = Some l) as ->.
+        { destruct ol2; by simplify_eq/=. }
+        iDestruct (stack_contents_agree with "Hst1 Hst1'") as %->.
+        rewrite big_sepL2_cons_inv_l.
+        iDestruct "HA" as (h2 ls2'' ->) "[#Hh HA]".
+        rel_apply_r (refines_CG_pop_suc_r with "Hst2").
+        iIntros "Hst2".
+        iMod ("Hcl" with "[-]").
+        { iNext. iExists _,_,_,_. by iFrame. }
+        rel_values. iExists _,_. eauto with iFrame.
   Qed.
 
-  Lemma pop_refinement A γo st st' mb lk :
-    inv stackN (stackInv A γo st st' mb lk) -∗
+  Lemma pop_refinement A γo st st' mb :
+    inv stackN (stackInv A γo st mb st') -∗
     REL pop_st #st #mb
       <<
-    CG_locked_pop (#st', lk)%V : () + A.
+    CG_locked_pop st' : () + A.
   Proof.
     iIntros "#Hinv".
     iLöb as "IH".
     rel_rec_l. rel_pures_l.
     rel_load_l_atomic.
-    iInv stackN as (s1 s2 N) "(>Hl & >Hst1 & >Hst2 & Hrel & Hmb & HNown & HN)" "Hcl"; simplify_eq.
+    iInv stackN as (ol N ls1 ls2) "(Hol & Hst1 & Hst2 & HA & Hmb & HNown & HN)" "Hcl".
     iDestruct "Hmb" as "[Hmb | Hmb]".
     - (* NO OFFER *)
       iModIntro. iExists _; iFrame.
       iNext. iIntros "Hmb".
       rel_pures_l.
       iMod ("Hcl" with "[-]") as "_".
-      { iNext. iExists _, _, _; iFrame. }
+      { iNext. iExists _, _, _, _; by iFrame. }
       iApply (pop_no_helping_refinement with "Hinv IH").
     - (* YES OFFER *)
       iDestruct "Hmb" as (l v1 v2 γ j K) "(#Hv & Hmb & >HNl)".
@@ -431,14 +437,15 @@ Section refinement.
       iModIntro. iExists _; iFrame.
       iNext. iIntros "Hmb".
       iMod ("Hcl" with "[-Hlown IH]") as "_".
-      { iNext. iExists _, _, _; iFrame.
+      { iNext. iExists _, _, _, _; iFrame.
         iSplitL "Hmb".
         - iRight. iExists _, _, _, _, _, _.
           eauto with iFrame.
         - by iApply "HN". }
 
       rel_pures_l. rel_apply_l (take_offer_l _ ).
-      iInv stackN as (s1' s2' N') "(>Hl & >Hst1 & >Hst2 & Hrel & Hmb & HNown & HN)" "Hcl"; simplify_eq.
+      iInv stackN as (ol' N' ls1' ls2') "(Hol & Hst1 & Hst2 & HA & Hmb & HNown & HN)" "Hcl".
+      simplify_eq/=.
       iMod "HNown".
       iDestruct (offerReg_frag_lookup with "HNown Hlown") as %?.
       rewrite /offerInv (big_sepM_lookup_acc _ _ l); eauto. iSimpl in "HN".
@@ -447,14 +454,15 @@ Section refinement.
       +  (* Did not manage to accept an offer *)
         iIntros "HNl".
         iMod ("Hcl" with "[-IH]") as "_".
-        { iNext. iExists _,_,_. iFrame.
+        { iNext. iExists _,_,_,_. iFrame.
           by iApply "HN". }
         rel_pures_l.
         iApply (pop_no_helping_refinement with "Hinv IH").
       + (* An offer was accepted *)
         iIntros "Hj Hoff". rel_pures_l.
+        iDestruct "Hst2" as (st2l lk ->) "[Hlk Hst2]".
         tp_rec j. tp_pures j. tp_rec j.
-        unlock is_locked_r. iDestruct "Hl" as (lk' ->) "Hl".
+        unlock is_locked_r. iDestruct "Hlk" as (lk' ->) "Hl".
         (* TODO: make all the tp_ tactics work without the need for an explicit Fupd *)
         iApply refines_spec_ctx. iIntros "#Hρ".
         iApply fupd_refines.
@@ -468,21 +476,21 @@ Section refinement.
         iSpecialize ("HN" with "Hoff").
         iClear "Hρ". iModIntro.
 
-        rel_apply_r (refines_CG_pop_suc_r with "Hst2 [Hl]").
-        { iExists _. by iFrame "Hl". }
-        iIntros "Hst2 Hl".
+        rel_apply_r (refines_CG_pop_suc_r with "[Hst2 Hl]").
+        { iExists st2l,#lk'. rewrite /is_locked_r. by eauto with iFrame. }
+        iIntros "Hst2".
         iMod ("Hcl" with "[-]") as "_".
-        { iNext. iExists _,_,_. by iFrame. }
+        { iNext. iExists _,_,_,_. by eauto with iFrame. }
         rel_values. iModIntro. iExists v1,v2.
         iRight. repeat iSplit; eauto with iFrame.
   Qed.
 
-  Lemma push_refinement A γo st st' mb lk h1 h2 :
-    inv stackN (stackInv A γo st st' mb lk) -∗
+  Lemma push_refinement A γo st st' mb h1 h2 :
+    inv stackN (stackInv A γo st mb st') -∗
     A h1 h2 -∗
     REL push_st #st #mb h1
       <<
-    CG_locked_push (#st', lk)%V h2 : ().
+    CG_locked_push st' h2 : ().
   Proof.
     iIntros "#Hinv #Hh".
     iLöb as "IH".
@@ -491,7 +499,7 @@ Section refinement.
     rel_apply_l mk_offer_l. iIntros (γ off) "Hoff Htok".
     rel_pures_l.
     rel_store_l_atomic. (* we update the mailbox and store the offer in the registry *)
-    iInv stackN as (s1 s2 N) "(Hl & Hst1 & Hst2 & Hrel & Hmb & HNown & HN)" "Hcl".
+    iInv stackN as (ol N ls1 ls2) "(Hol & Hst1 & Hst2 & HA & Hmb & HNown & HN)" "Hcl".
     iModIntro.
     (* first we need to show that mb is allocated / owned *)
     iAssert (∃ v, ▷ mb ↦ v)%I with "[Hmb]" as (v) "Hmb".
@@ -508,14 +516,16 @@ Section refinement.
     iDestruct (offerInv_excl with "HN Hoff") as %?.
     iMod (offerReg_alloc off h2 γ j K' with "HNown") as "[HNown #Hfrag]"; eauto.
     iMod ("Hcl" with "[-]") as "_".
-    { iNext. iExists _,_,_; iFrame.
+    { iNext. iExists _,_,_,_; iFrame.
       iSplitL "Hmb".
       - iRight. iExists off, h1, h2, _, _, _. iFrame "Hmb Hh".
         iPureIntro. by rewrite lookup_insert.
       - rewrite /offerInv big_sepM_insert; eauto with iFrame. }
     iModIntro. iNext.
-    iInv stackN as (s1' s2' N') "(Hl & Hst1 & Hst2 & Hrel & Hmb & >HNown & HN)" "Hcl".
-    iModIntro. iDestruct (offerReg_frag_lookup with "HNown Hfrag") as %Hfoo.
+    iInv stackN as (ol' N' ls1' ls2') "(Hol & Hst1 & Hst2 & HA & Hmb & HNown & HN)" "Hcl".
+    simplify_eq/=.
+    iMod "HNown". iModIntro.
+    iDestruct (offerReg_frag_lookup with "HNown Hfrag") as %Hfoo.
     rewrite /offerInv.
     (* TODO: separate lemma *)
     rewrite (big_sepM_lookup_acc _ N'); eauto.
@@ -524,43 +534,44 @@ Section refinement.
     - (* The offer was already accepted *)
       iSpecialize ("HN" with "Hoff").
       iMod ("Hcl" with "[-]") as "_".
-      { iNext. iExists _,_,_; iFrame. }
+      { iNext. iExists _,_,_,_; iFrame. }
       rel_pures_l. rel_values.
     - (* The offer has been successfully revoked. We have to do the actual push. *)
       iSpecialize ("HN" with "Hoff").
       iMod ("Hcl" with "[-]") as "_".
-      { iNext. iExists _,_,_; iFrame. }
+      { iNext. iExists _,_,_,_; iFrame. }
       clear.
       rel_pures_l. rel_load_l_atomic.
-      iInv stackN as (s1 s2 N) "(>Hl & >Hst1 & >Hst2 & Hrel & Hmb & HNown & HN)" "Hcl"; simplify_eq.
-      iModIntro. iExists _. iFrame "Hst1". iNext. iIntros "Hst1".
+      iInv stackN as (ol N ls1 ls2) "(Hol & Hst1 & Hst2 & HA & Hmb & HNown & HN)" "Hcl".
+      iModIntro. iExists _. iFrame. iNext. iIntros "Hol".
 
       iMod ("Hcl" with "[-]") as "_".
-      { iNext. iExists _,_,_; iFrame. }
+      { iNext. iExists _,_,_,_; iFrame. }
 
       rel_pures_l. rel_alloc_l new as "Hnew". rel_pures_l.
 
-      rel_cmpxchg_l_atomic; first by destruct s1.
-      iInv stackN as (s1' s2' N') "(>Hl & >Hst1 & >Hst2 & Hrel & Hmb & HNown & HN)" "Hcl"; simplify_eq.
-      iModIntro. iExists _. iFrame "Hst1". iSplit.
-      + iIntros (?). iNext. iIntros "Hst1".
+      rel_cmpxchg_l_atomic; first by destruct ol.
+      iInv stackN as (ol' N' ls1' ls2') "(Hol & Hst1 & Hst2 & HA & Hmb & HNown & HN)" "Hcl".
+      iModIntro. iExists _. iFrame "Hol". iSplit.
+      + iIntros (?). iNext. iIntros "Hol".
         iMod ("Hcl" with "[-]") as "_".
-        { iNext. iExists _,_,_; by iFrame. }
+        { iNext. iExists _,_,_,_; by iFrame. }
         rel_pures_l. iApply "IH".
       + iIntros (?); simplify_eq/=. iNext.
-        iIntros "Hst1".
-        rel_apply_r (refines_CG_push_r with "Hst2 Hl").
-        iIntros "Hst2 Hl".
-        iDestruct (stack_link_cons _ new h1 h2
-                     with "Hh Hrel Hnew") as "Hrel".
+        iIntros "Hol".
+        rel_apply_r (refines_CG_push_r with "Hst2").
+        iIntros "Hst2".
         iMod ("Hcl" with "[-]") as "_".
-        { iNext. iExists _,_,_; by iFrame. }
+        { iNext. iExists (Some new),_,(h1::ls1'),_; iFrame.
+          simpl. by eauto with iFrame. }
         rel_pures_l. rel_values.
   Qed.
 
-  Lemma refinement A :
-    ⊢ REL mk_stack #() << CG_mkstack #() : (() → () + A) * (A → ()).
+  Lemma refinement :
+    ⊢ REL mk_stack << CG_mkstack : ∀ A, (() → () + A) * (A → ()).
   Proof.
+    rel_values. iModIntro. iIntros (A). iModIntro.
+    iIntros (? ?) "[-> ->]".
     rel_rec_r. rel_pures_r. rel_rec_r.
     rel_apply_r refines_newlock_r. iIntros (lk) "Hlk".
     rel_pures_r.
@@ -571,12 +582,12 @@ Section refinement.
     rel_alloc_l st as "Hst". do 4 rel_pure_l. (*XXX: doing rel_pures_l reduces too much *)
     iMod (own_alloc (● to_offer_reg ∅ : authR offerRegR)) as (γo) "Hor".
     { apply auth_auth_valid. apply to_offer_reg_valid. }
-    iMod (inv_alloc stackN _ (stackInv A γo st st' mb lk) with "[-]") as "#Hinv".
+    iMod (inv_alloc stackN _ (stackInv A γo st mb (#st', lk)%V) with "[-]") as "#Hinv".
     { iNext. unfold stackInv.
-      iExists None, _, _. iFrame.
+      iExists None, _, [],[]. iFrame.
       iSplit; eauto.
-      - iApply stack_link_empty.
-      - iApply offerInv_empty. }
+      - rewrite /is_stack. iExists _,_. eauto with iFrame.
+      - iSplit; first done. iApply offerInv_empty. }
     iApply refines_pair; last first.
     (* * Push refinement *)
     { rel_arrow_val. iIntros (h1 h2) "#Hh"; simplify_eq/=.

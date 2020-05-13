@@ -34,17 +34,27 @@ Definition CG_stack : val := Λ:
   (CG_new_stack, λ: "stt", CG_locked_pop "stt",
     λ: "stt" "x", CG_locked_push "stt" "x").
 
-Section rules.
-  Context `{relocG Σ}.
+Fixpoint val_of_list (ls : list val) : val :=
+  match ls with
+  | [] => NONEV
+  | v::vs => CONSV v (val_of_list vs)
+  end.
 
-  Lemma refines_CG_push_r st l (v w : val) E t K A :
+Definition is_stack `{!relocG Σ} (rs : val) (ls : list val) : iProp Σ :=
+  ∃ (st : loc) l, ⌜rs = (#st, l)%V⌝ ∗ is_locked_r l false ∗ st ↦ₛ val_of_list ls.
+
+Section rules.
+  Context `{!relocG Σ}.
+
+  Lemma refines_CG_push_r rs tl v E t K A :
     nclose relocN ⊆ E →
-    st ↦ₛ v -∗ is_locked_r l false -∗
-    (st ↦ₛ SOMEV (w, v) -∗ is_locked_r l false
+    is_stack rs tl -∗
+    (is_stack rs (v::tl)
       -∗ REL t << fill K (of_val #()) @ E : A) -∗
-    REL t << fill K (CG_locked_push (#st, l)%V w) @ E : A.
+    REL t << fill K (CG_locked_push rs v) @ E : A.
   Proof.
-    iIntros (?) "Hst Hl Hlog".
+    iIntros (?). iDestruct 1 as (st l ->) "[Hl Hst]".
+    iIntros "Hlog".
     rel_rec_r. repeat rel_pure_r.
     rel_apply_r (refines_acquire_r with "Hl").
     iIntros "Hl". repeat rel_pure_r.
@@ -53,18 +63,19 @@ Section rules.
     rel_store_r. repeat rel_pure_r.
     rel_apply_r (refines_release_r with "Hl").
     iIntros "Hl".
-    iApply ("Hlog" with "Hst Hl").
+    iApply ("Hlog" with "[Hst Hl]").
+    iExists _,_. eauto with iFrame.
   Qed.
 
-  Lemma refines_CG_pop_suc_r st l (w v : val) E t K A :
+  Lemma refines_CG_pop_suc_r rs w tl E t K A :
     nclose relocN ⊆ E →
-    st ↦ₛ SOMEV (w, v) -∗
-    is_locked_r l false -∗
-    (st ↦ₛ v -∗ is_locked_r l false
-      -∗ REL t << fill K (of_val (SOMEV w)) @ E : A) -∗
-    REL t << fill K (CG_locked_pop (#st, l)%V) @ E : A.
+    is_stack rs (w::tl) -∗
+    (is_stack rs tl -∗
+      REL t << fill K (of_val (SOMEV w)) @ E : A) -∗
+    REL t << fill K (CG_locked_pop rs) @ E : A.
   Proof.
-    iIntros (?) "Hst Hl Hlog".
+    iIntros (?). iDestruct 1 as (st l ->) "[Hl Hst]".
+    iIntros "Hlog".
     rel_rec_r. repeat rel_pure_r.
     rel_apply_r (refines_acquire_r with "Hl").
     iIntros "Hl". repeat rel_pure_r. rel_rec_r.
@@ -72,18 +83,18 @@ Section rules.
     rel_store_r. repeat rel_pure_r.
     rel_apply_r (refines_release_r with "Hl").
     iIntros "Hl". repeat rel_pure_r.
-    iApply ("Hlog" with "Hst Hl").
+    iApply ("Hlog" with "[Hst Hl]"). iExists _,_; eauto with iFrame.
   Qed.
 
-  Lemma refines_CG_pop_fail_r st l E t K A :
+  Lemma refines_CG_pop_fail_r rs E t K A :
     nclose relocN ⊆ E →
-    st ↦ₛ NONEV -∗
-    is_locked_r l false -∗
-    (st ↦ₛ NONEV -∗ is_locked_r l false
+    is_stack rs [] -∗
+    (is_stack rs []
       -∗ REL t << fill K (of_val NONEV) @ E : A) -∗
-    REL t << fill K (CG_locked_pop (#st, l)%V) @ E : A.
+    REL t << fill K (CG_locked_pop rs) @ E : A.
   Proof.
-    iIntros (?) "Hst Hl Hlog".
+    iIntros (?). iDestruct 1 as (st l ->) "[Hl Hst]".
+    iIntros "Hlog".
     rel_rec_r. repeat rel_pure_r.
     rel_apply_r (refines_acquire_r with "Hl").
     iIntros "Hl". repeat rel_pure_r.
@@ -91,7 +102,7 @@ Section rules.
     rel_load_r. rel_rec_r. repeat rel_pure_r.
     rel_apply_r (refines_release_r with "Hl").
     iIntros "Hl". repeat rel_pure_r.
-    iApply ("Hlog" with "Hst Hl").
+    iApply ("Hlog" with "[Hst Hl]"). iExists _,_; eauto with iFrame.
   Qed.
 
 End rules.
