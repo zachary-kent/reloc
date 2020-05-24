@@ -102,10 +102,8 @@ Section semtypes.
   Instance lrel_rec1_contractive C : Contractive (lrel_rec1 C).
   Proof.
     intros n. intros P Q HPQ.
-    unfold lrel_rec1. intros w1 w2.
-    apply bi.later_contractive.
-    destruct n; try done.
-    simpl in HPQ; simpl. f_equiv. by apply C.
+    unfold lrel_rec1. intros w1 w2. rewrite {1 4}/lrel_car /=.
+    f_contractive. f_equiv. by apply C.
   Qed.
 
   Definition lrel_rec (C : lrelC Σ -n> lrelC Σ) : lrel Σ := fixpoint (lrel_rec1 C).
