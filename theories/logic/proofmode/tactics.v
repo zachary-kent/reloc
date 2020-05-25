@@ -230,21 +230,17 @@ Proof.
   by apply bi.wand_intro_r.
 Qed.
 
-Lemma tac_rel_load_r `{relocG Σ} K ℶ1 ℶ2 E i1 (l : loc) q e t tres A v :
+Lemma tac_rel_load_r `{relocG Σ} K ℶ1 E i1 (l : loc) q e t tres A v :
   t = fill K (Load (# l)) →
   nclose specN ⊆ E →
   envs_lookup i1 ℶ1 = Some (false, l ↦ₛ{q} v)%I →
-  (* TODO: the line below is a detour! *)
-  envs_simple_replace i1 false
-    (Esnoc Enil i1 (l ↦ₛ{q} v)%I) ℶ1 = Some ℶ2 →
   tres = fill K (of_val v) →
-  envs_entails ℶ2 (refines E e tres A) →
+  envs_entails ℶ1 (refines E e tres A) →
   envs_entails ℶ1 (refines E e t A).
 Proof.
-  rewrite envs_entails_eq. intros ????? Hg.
-  rewrite (envs_simple_replace_sound ℶ1 ℶ2 i1) //; simpl.
-  rewrite right_id.
+  rewrite envs_entails_eq. intros ???? Hg.
   subst t tres.
+  rewrite (envs_lookup_split ℶ1) //; simpl.
   rewrite {1}(refines_load_r E); [ | eassumption ].
   rewrite Hg.
   apply bi.wand_elim_l.
@@ -284,7 +280,6 @@ Tactic Notation "rel_load_r" :=
   (* the remaining goals are from tac_rel_load_r (except for the first one, which has already been solved by this point) *)
   [solve_ndisj || fail "rel_load_r: cannot prove 'nclose specN ⊆ ?'"
   |solve_mapsto ()
-  |pm_reflexivity || fail "rel_load_r: this should not happen O-:"
   |reflexivity
   |rel_finish  (** new goal *)].
 
