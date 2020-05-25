@@ -10,13 +10,13 @@ From iris.proofmode Require Export tactics.
 (* Set Default Proof Using "Type". *)
 
 (** * General-purpose tactics *)
-Lemma tac_rel_bind_l `{relocG Σ} e' K ℶ E e t A :
+Lemma tac_rel_bind_l `{!relocG Σ} e' K ℶ E e t A :
   e = fill K e' →
   envs_entails ℶ (REL fill K e' << t @ E : A) →
   envs_entails ℶ (REL e << t @ E : A).
 Proof. intros. subst. assumption. Qed.
 
-Lemma tac_rel_bind_r `{relocG Σ} t' K ℶ E e t A :
+Lemma tac_rel_bind_r `{!relocG Σ} t' K ℶ E e t A :
   t = fill K t' →
   envs_entails ℶ (REL e << fill K t' @ E : A) →
   envs_entails ℶ (REL e << t @ E : A).
@@ -124,7 +124,7 @@ Tactic Notation "rel_apply_r" open_constr(lem) :=
 
 (** Pure reductions *)
 
-Lemma tac_rel_pure_l `{relocG Σ} K e1 ℶ ℶ' E e e2 eres ϕ n m t A :
+Lemma tac_rel_pure_l `{!relocG Σ} K e1 ℶ ℶ' E e e2 eres ϕ n m t A :
   e = fill K e1 →
   PureExec ϕ n e1 e2 →
   ϕ →
@@ -141,7 +141,7 @@ Proof.
   - rewrite -refines_masked_l //.
 Qed.
 
-Lemma tac_rel_pure_r `{relocG Σ} K e1 ℶ E e e2 eres ϕ n t A :
+Lemma tac_rel_pure_r `{!relocG Σ} K e1 ℶ E e e2 eres ϕ n t A :
   e = fill K e1 →
   PureExec ϕ n e1 e2 →
   ϕ →
@@ -212,7 +212,7 @@ Ltac rel_pures_r :=
 
 (** Load *)
 
-Lemma tac_rel_load_l_simp `{relocG Σ} K ℶ1 ℶ2 i1 (l : loc) q v e t eres A :
+Lemma tac_rel_load_l_simp `{!relocG Σ} K ℶ1 ℶ2 i1 (l : loc) q v e t eres A :
   e = fill K (Load (# l)) →
   MaybeIntoLaterNEnvs 1 ℶ1 ℶ2 →
   envs_lookup i1 ℶ2 = Some (false, l ↦{q} v)%I →
@@ -230,7 +230,7 @@ Proof.
   by apply bi.wand_intro_r.
 Qed.
 
-Lemma tac_rel_load_r `{relocG Σ} K ℶ1 E i1 (l : loc) q e t tres A v :
+Lemma tac_rel_load_r `{!relocG Σ} K ℶ1 E i1 (l : loc) q e t tres A v :
   t = fill K (Load (# l)) →
   nclose specN ⊆ E →
   envs_lookup i1 ℶ1 = Some (false, l ↦ₛ{q} v)%I →
@@ -284,7 +284,7 @@ Tactic Notation "rel_load_r" :=
   |rel_finish  (** new goal *)].
 
 (** Store *)
-Lemma tac_rel_store_l_simpl `{relocG Σ} K ℶ1 ℶ2 ℶ3 i1 (l : loc) v e' v' e t eres A :
+Lemma tac_rel_store_l_simpl `{!relocG Σ} K ℶ1 ℶ2 ℶ3 i1 (l : loc) v e' v' e t eres A :
   e = fill K (Store (# l) e') →
   IntoVal e' v' →
   MaybeIntoLaterNEnvs 1 ℶ1 ℶ2 →
@@ -305,7 +305,7 @@ Proof.
   by rewrite Hg.
 Qed.
 
-Lemma tac_rel_store_r `{relocG Σ} K ℶ1 ℶ2 i1 E (l : loc) v e' v' e t eres A :
+Lemma tac_rel_store_r `{!relocG Σ} K ℶ1 ℶ2 i1 E (l : loc) v e' v' e t eres A :
   e = fill K (Store (# l) e') →
   IntoVal e' v' →
   nclose specN ⊆ E →
@@ -365,7 +365,7 @@ Tactic Notation "rel_store_r" :=
 (** Alloc *)
 Tactic Notation "rel_alloc_l_atomic" := rel_apply_l refines_alloc_l.
 
-Lemma tac_rel_alloc_l_simpl `{relocG Σ} K ℶ1 ℶ2 e t e' v' A :
+Lemma tac_rel_alloc_l_simpl `{!relocG Σ} K ℶ1 ℶ2 e t e' v' A :
   e = fill K (Alloc e') →
   IntoVal e' v' →
   MaybeIntoLaterNEnvs 1 ℶ1 ℶ2 →
@@ -392,7 +392,7 @@ Tactic Notation "rel_alloc_l" ident(l) "as" constr(H) :=
   [iSolveTC        (** IntoLaters *)
   |iIntros (l) H; rel_finish  (** new goal *)].
 
-Lemma tac_rel_alloc_r `{relocG Σ} K' ℶ E t' v' e t A :
+Lemma tac_rel_alloc_r `{!relocG Σ} K' ℶ E t' v' e t A :
   t = fill K' (Alloc t') →
   IntoVal t' v' →
   nclose specN ⊆ E →
@@ -429,7 +429,7 @@ Tactic Notation "rel_alloc_l" :=
 (* TODO: non-atomic tactics for CmpXchg? *)
 Tactic Notation "rel_cmpxchg_l_atomic" := rel_apply_l refines_cmpxchg_l.
 
-Lemma tac_rel_cmpxchg_fail_r `{relocG Σ} K ℶ1 i1 E (l : loc) e1 e2 v1 v2 v e t eres A :
+Lemma tac_rel_cmpxchg_fail_r `{!relocG Σ} K ℶ1 i1 E (l : loc) e1 e2 v1 v2 v e t eres A :
   e = fill K (CmpXchg (# l) e1 e2) →
   IntoVal e1 v1 →
   IntoVal e2 v2 →
@@ -448,7 +448,7 @@ Proof.
   eapply refines_cmpxchg_fail_r; eauto.
 Qed.
 
-Lemma tac_rel_cmpxchg_suc_r `{relocG Σ} K ℶ1 ℶ2 i1 E (l : loc) e1 e2 v1 v2 v e t eres A :
+Lemma tac_rel_cmpxchg_suc_r `{!relocG Σ} K ℶ1 ℶ2 i1 E (l : loc) e1 e2 v1 v2 v e t eres A :
   e = fill K (CmpXchg (# l) e1 e2) →
   IntoVal e1 v1 →
   IntoVal e2 v2 →
@@ -515,7 +515,7 @@ Tactic Notation "rel_cmpxchg_suc_r" :=
 (** NewProph *)
 Tactic Notation "rel_newproph_l_atomic" := rel_apply_l refines_newproph_l.
 
-Lemma tac_rel_newproph_l_simpl `{relocG Σ} K ℶ1 ℶ2 e t A :
+Lemma tac_rel_newproph_l_simpl `{!relocG Σ} K ℶ1 ℶ2 e t A :
   e = fill K NewProph →
   MaybeIntoLaterNEnvs 1 ℶ1 ℶ2 →
   (envs_entails ℶ2 (∀ (vs : list (val*val)) (p : proph_id),
@@ -540,7 +540,7 @@ Tactic Notation "rel_newproph_l" ident(p) ident(vs) "as" constr(H) :=
   [iSolveTC                      (** IntoLaters *)
   |iIntros (p vs) H; rel_finish  (** new goal *)].
 
-Lemma tac_rel_newproph_r `{relocG Σ} K' ℶ E e t A :
+Lemma tac_rel_newproph_r `{!relocG Σ} K' ℶ E e t A :
   t = fill K' NewProph →
   nclose specN ⊆ E →
   envs_entails ℶ (∀ (p : proph_id), refines E e (fill K' #p) A) →
@@ -573,7 +573,7 @@ Tactic Notation "rel_newproph_l" :=
 
 (** ResolveProph *)
 (* TODO: implement this lol *)
-Lemma tac_rel_resolveproph_r `{relocG Σ} K' ℶ E (p :proph_id) w e t A :
+Lemma tac_rel_resolveproph_r `{!relocG Σ} K' ℶ E (p :proph_id) w e t A :
   t = fill K' (ResolveProph #p (of_val w)) →
   nclose specN ⊆ E →
   envs_entails ℶ (refines E e (fill K' #()) A) →
@@ -596,7 +596,7 @@ Tactic Notation "rel_resolveproph_r" :=
 
 
 (** Fork *)
-Lemma tac_rel_fork_l `{relocG Σ} K ℶ E e' eres e t A :
+Lemma tac_rel_fork_l `{!relocG Σ} K ℶ E e' eres e t A :
   e = fill K (Fork e') →
   is_closed_expr [] e' →
   eres = fill K #() →
@@ -618,7 +618,7 @@ Tactic Notation "rel_fork_l" :=
   |reflexivity    || fail "rel_fork_l: this should not happen O-:"
   |rel_finish  (** new goal *)].
 
-Lemma tac_rel_fork_r `{relocG Σ} K ℶ E e' e t eres A :
+Lemma tac_rel_fork_r `{!relocG Σ} K ℶ E e' e t eres A :
   e = fill K (Fork e') →
   nclose specN ⊆ E →
   is_closed_expr [] e' →
