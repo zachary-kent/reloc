@@ -2,7 +2,8 @@
 (** A resource algebra for the specification programs. *)
 From iris.algebra Require Import auth excl gmap agree list frac.
 From iris.bi Require Export fractional.
-From iris.base_logic Require Export gen_heap invariants.
+From iris.base_logic Require Import gen_heap.
+From iris.base_logic Require Export invariants.
 From iris.proofmode Require Import tactics.
 From iris.heap_lang Require Import lang lifting.
 Import uPred.
@@ -12,7 +13,7 @@ Definition specN := relocN .@ "spec".
 
 (** The CMRA for the heap of the specification. *)
 Definition tpoolUR : ucmraT := gmapUR nat (exclR exprO).
-Definition cfgUR := prodUR tpoolUR (gen_heapUR loc val).
+Definition cfgUR := prodUR tpoolUR (gen_heapUR loc (option val)).
 
 (** The CMRA for the thread pool. *)
 Class cfgSG Σ := CFGSG { cfg_inG :> inG Σ (authR cfgUR); cfg_name : gname }.
@@ -27,7 +28,7 @@ Section definitionsS.
   Context `{cfgSG Σ, invG Σ}.
 
   Definition heapS_mapsto_def (l : loc) (q : Qp) (v: val) : iProp Σ :=
-    own cfg_name (◯ (∅, {[ l := (q, to_agree v) ]})).
+    own cfg_name (◯ (∅, {[ l := (q, to_agree (Some v)) ]})).
   Definition heapS_mapsto_aux : { x | x = @heapS_mapsto_def }. by eexists. Qed.
   Definition heapS_mapsto := proj1_sig heapS_mapsto_aux.
   Definition heapS_mapsto_eq :
@@ -40,7 +41,7 @@ Section definitionsS.
   Definition tpool_mapsto_eq :
     @tpool_mapsto = @tpool_mapsto_def := proj2_sig tpool_mapsto_aux.
 
-  Definition mkstate (σ : gmap loc val) (κs : gset proph_id) :=
+  Definition mkstate (σ : gmap loc (option val)) (κs : gset proph_id) :=
     {| heap := σ; used_proph_id := κs |}.
   Definition spec_inv ρ : iProp Σ :=
     (∃ tp σ, own cfg_name (● (to_tpool tp, to_gen_heap (heap σ)))
@@ -124,16 +125,16 @@ End conversions.
 Section mapsto.
   Context `{cfgSG Σ}.
 
-  Global Instance mapsto_fractional l v : Fractional (λ q, l ↦ₛ{q} v)%I.
+  Global Instance mapstoS_fractional l v : Fractional (λ q, l ↦ₛ{q} v)%I.
   Proof.
     intros p q. rewrite heapS_mapsto_eq -own_op -auth_frag_op.
     by rewrite -pair_op singleton_op -pair_op agree_idemp right_id.
   Qed.
-  Global Instance mapsto_as_fractional l q v :
+  Global Instance mapstoS_as_fractional l q v :
     AsFractional (l ↦ₛ{q} v) (λ q, l ↦ₛ{q} v)%I q.
   Proof. split. done. apply _. Qed.
 
-  Lemma mapsto_agree l q1 q2 v1 v2 : l ↦ₛ{q1} v1 -∗ l ↦ₛ{q2} v2 -∗ ⌜v1 = v2⌝.
+  Lemma mapstoS_agree l q1 q2 v1 v2 : l ↦ₛ{q1} v1 -∗ l ↦ₛ{q2} v2 -∗ ⌜v1 = v2⌝.
   Proof.
     apply bi.wand_intro_r.
     rewrite heapS_mapsto_eq -own_op -auth_frag_op own_valid uPred.discrete_valid.
@@ -141,10 +142,10 @@ Section mapsto.
     rewrite -pair_op singleton_op right_id -pair_op.
     move=> [_ Hv]. move:Hv => /=.
     rewrite singleton_valid.
-    by intros [_ ?%agree_op_invL'].
+    by move=> [_] /agree_op_invL' [->].
   Qed.
 
-  Lemma mapsto_valid l q v : l ↦ₛ{q} v -∗ ✓ q.
+  Lemma mapstoS_valid l q v : l ↦ₛ{q} v -∗ ✓ q.
   Proof.
     rewrite heapS_mapsto_eq /heapS_mapsto_def own_valid !uPred.discrete_valid.
     apply pure_mono=> /auth_frag_valid /= [_ Hfoo].
@@ -152,17 +153,17 @@ Section mapsto.
     by intros [? _].
   Qed.
 
-  Lemma mapsto_valid_2 l q1 q2 v1 v2 : l ↦ₛ{q1} v1 -∗ l ↦ₛ{q2} v2 -∗ ✓ (q1 + q2)%Qp.
+  Lemma mapstoS_valid_2 l q1 q2 v1 v2 : l ↦ₛ{q1} v1 -∗ l ↦ₛ{q2} v2 -∗ ✓ (q1 + q2)%Qp.
   Proof.
-    iIntros "H1 H2". iDestruct (mapsto_agree with "H1 H2") as %->.
-    iApply (mapsto_valid l _ v2). by iFrame.
+    iIntros "H1 H2". iDestruct (mapstoS_agree with "H1 H2") as %->.
+    iApply (mapstoS_valid l _ v2). by iFrame.
   Qed.
 
-  Lemma mapsto_half_combine l v1 v2 :
+  Lemma mapstoS_half_combine l v1 v2 :
     l ↦ₛ{1/2} v1 -∗ l ↦ₛ{1/2} v2 -∗ ⌜v1 = v2⌝ ∗ l ↦ₛ v1.
   Proof.
     iIntros "Hl1 Hl2".
-    iDestruct (mapsto_agree with "Hl1 Hl2") as %?. simplify_eq.
+    iDestruct (mapstoS_agree with "Hl1 Hl2") as %?. simplify_eq.
     iSplit; eauto.
     iApply (fractional_half_2 with "Hl1 Hl2").
   Qed.

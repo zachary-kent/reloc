@@ -250,15 +250,15 @@ Section proof.
       rel_load_l. repeat rel_pure_l.
       rel_store_l_atomic.
       iInv sizeN as (m' ls') "(Ha & >Hs1' & >Hs2' & >Htbl1' & >Htbl2' & #Hls)" "Hcl".
-      iDestruct (gen_heap.mapsto_agree with "Hs1 Hs1'") as %Hm'.
+      iDestruct (mapsto_agree with "Hs1 Hs1'") as %Hm'.
       simplify_eq/=.
       iCombine "Hs1 Hs1'" as "Hs1".
-      iDestruct (gen_heap.mapsto_agree with "Htbl1 Htbl1'") as %->.
+      iDestruct (mapsto_agree with "Htbl1 Htbl1'") as %->.
       iModIntro. iExists _. iFrame. iNext. iIntros "[Hs1 Hs1']".
       repeat rel_pure_l.
       rel_apply_r (refines_acquire_r with "Hl2").
       iIntros "Hl2". repeat rel_pure_r.
-      iDestruct (mapsto_half_combine with "Hs2 Hs2'") as "[% Hs2]"; simplify_eq.
+      iDestruct (mapstoS_half_combine with "Hs2 Hs2'") as "[% Hs2]"; simplify_eq.
       rel_load_r. repeat rel_pure_r.
       rel_store_r. repeat rel_pure_r.
       (* Before we close the lock, we need to gather some evidence *)
@@ -277,7 +277,7 @@ Section proof.
       iCombine "Htbl1 Htbl1'" as "Htbl1".
       iModIntro. iExists _. iFrame. iNext. iIntros "[Htbl1 Htbl1']".
       repeat rel_pure_l. repeat rel_pure_r. rel_load_r.
-      iDestruct (mapsto_half_combine with "Htbl2 Htbl2'") as "[% Htbl2]"; simplify_eq.
+      iDestruct (mapstoS_half_combine with "Htbl2 Htbl2'") as "[% Htbl2]"; simplify_eq.
       repeat rel_pure_r. rel_store_r. repeat rel_pure_r.
       rel_apply_r (refines_release_r with "Hl2").
       iIntros "Hl2". repeat rel_pure_r.
@@ -329,15 +329,15 @@ Section proof.
       rel_load_l. repeat rel_pure_l.
       rel_store_l_atomic.
       iInv sizeN as (m' ls') "(Ha & >Hs1' & >Hs2' & >Htbl1' & >Htbl2' & #Hls)" "Hcl".
-      iDestruct (gen_heap.mapsto_agree with "Hs1 Hs1'") as %Hm'.
+      iDestruct (mapsto_agree with "Hs1 Hs1'") as %Hm'.
       simplify_eq/=.
       iCombine "Hs1 Hs1'" as "Hs1".
-      iDestruct (gen_heap.mapsto_agree with "Htbl1 Htbl1'") as %->.
+      iDestruct (mapsto_agree with "Htbl1 Htbl1'") as %->.
       iModIntro. iExists _. iFrame. iNext. iIntros "[Hs1 Hs1']".
       repeat rel_pure_l.
       rel_apply_r (refines_acquire_r with "Hl2").
       iIntros "Hl2". repeat rel_pure_r.
-      iDestruct (mapsto_half_combine with "Hs2 Hs2'") as "[% Hs2]"; simplify_eq.
+      iDestruct (mapstoS_half_combine with "Hs2 Hs2'") as "[% Hs2]"; simplify_eq.
       rel_load_r. repeat rel_pure_r.
       rel_store_r. repeat rel_pure_r.
       (* Before we close the lock, we need to gather some evidence *)
@@ -352,11 +352,11 @@ Section proof.
       rel_store_l_atomic.
       iClear "Hls".
       iInv sizeN as (m ls) "(Ha & >Hs1 & >Hs2 & >Htbl1 & >Htbl2 & #Hls)" "Hcl".
-      iDestruct (gen_heap.mapsto_agree with "Htbl1 Htbl1'") as %->.
+      iDestruct (mapsto_agree with "Htbl1 Htbl1'") as %->.
       iCombine "Htbl1 Htbl1'" as "Htbl1".
       iModIntro. iExists _. iFrame. iNext. iIntros "[Htbl1 Htbl1']".
       repeat rel_pure_l. repeat rel_pure_r. rel_load_r.
-      iDestruct (mapsto_half_combine with "Htbl2 Htbl2'") as "[% Htbl2]"; simplify_eq.
+      iDestruct (mapstoS_half_combine with "Htbl2 Htbl2'") as "[% Htbl2]"; simplify_eq.
       repeat rel_pure_r. rel_store_r. repeat rel_pure_r.
       rel_apply_r (refines_release_r with "Hl2").
       iIntros "Hl2". repeat rel_pure_r.

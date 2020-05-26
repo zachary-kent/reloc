@@ -1,10 +1,12 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Rules for updating the specification program. *)
 From iris.algebra Require Import auth excl frac agree gmap list.
+From iris.base_logic.lib Require Import gen_heap.
 From iris.proofmode Require Import tactics.
 From iris.heap_lang Require Export lang notation tactics.
 From reloc.logic Require Export spec_ra.
 Import uPred.
+
 Section rules.
   Context `{relocG Σ}.
   Implicit Types P Q : iProp Σ.
@@ -157,11 +159,11 @@ Section rules.
         singleton_local_update, (exclusive_local_update _ (Excl (fill K (#l)%E))). }
     iMod (own_update with "Hown") as "[Hown Hl]".
     { eapply auth_update_alloc, prod_local_update_2,
-        (alloc_singleton_local_update _ l (1%Qp,to_agree v)); last done.
+        (alloc_singleton_local_update _ l (1%Qp,to_agree (Some v : leibnizO _))); last done.
       by apply lookup_to_gen_heap_None. }
     rewrite heapS_mapsto_eq /heapS_mapsto_def /=.
     iExists l. iFrame "Hj Hl". iApply "Hclose". iNext.
-    iExists (<[j:=fill K (# l)]> tp), (state_upd_heap <[l:=v]> σ).
+    iExists (<[j:=fill K (# l)]> tp), (state_upd_heap <[l:=Some v]> σ).
     rewrite to_gen_heap_insert to_tpool_insert'; last eauto. iFrame. iPureIntro.
     eapply rtc_r, step_insert_no_fork; eauto.
     rewrite -state_init_heap_singleton. eapply AllocNS; first by lia.
@@ -181,7 +183,8 @@ Section rules.
     iDestruct (own_valid_2 with "Hown Hj")
       as %[[?%tpool_singleton_included' _]%prod_included ?]%auth_both_valid.
     iDestruct (own_valid_2 with "Hown Hl")
-      as %[[? ?%gen_heap_singleton_included]%prod_included ?]%auth_both_valid.     iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
+      as %[[? ?%gen_heap_singleton_included]%prod_included ?]%auth_both_valid.
+    iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
     { by eapply auth_update, prod_local_update_1, singleton_local_update,
         (exclusive_local_update _ (Excl (fill K (of_val v)))). }
     iFrame "Hj Hl". iApply "Hclose". iNext.
@@ -209,11 +212,14 @@ Section rules.
     { by eapply auth_update, prod_local_update_1, singleton_local_update,
         (exclusive_local_update _ (Excl (fill K #()))). }
     iMod (own_update_2 with "Hown Hl") as "[Hown Hl]".
-    { eapply auth_update, prod_local_update_2, singleton_local_update,
-        (exclusive_local_update _ (1%Qp, to_agree v)); last done.
-      by rewrite /to_gen_heap lookup_fmap Hl. }
+    { eapply auth_update, prod_local_update_2.
+      apply: singleton_local_update.
+      { by rewrite /to_gen_heap lookup_fmap Hl. }
+      apply: (exclusive_local_update _
+        (1%Qp, to_agree (Some v : leibnizO (option val)))).
+      apply: pair_exclusive_l. done. }
     iFrame "Hj Hl". iApply "Hclose". iNext.
-    iExists (<[j:=fill K #()]> tp), (state_upd_heap <[l:=v]> σ).
+    iExists (<[j:=fill K #()]> tp), (state_upd_heap <[l:=Some v]> σ).
     rewrite to_gen_heap_insert to_tpool_insert'; last eauto. iFrame. iPureIntro.
     eapply rtc_r, step_insert_no_fork; eauto. econstructor; eauto.
   Qed.
@@ -267,11 +273,14 @@ Section rules.
     { by eapply auth_update, prod_local_update_1, singleton_local_update,
         (exclusive_local_update _ (Excl (fill K (_, #true)%V))). }
     iMod (own_update_2 with "Hown Hl") as "[Hown Hl]".
-    { eapply auth_update, prod_local_update_2, singleton_local_update,
-        (exclusive_local_update _ (1%Qp, to_agree v2)); last done.
-      by rewrite /to_gen_heap lookup_fmap Hl. }
+    { eapply auth_update, prod_local_update_2.
+      apply: singleton_local_update.
+      { by rewrite /to_gen_heap lookup_fmap Hl. }
+      apply: (exclusive_local_update _
+        (1%Qp, to_agree (Some v2 : leibnizO (option val)))).
+      apply: pair_exclusive_l. done. }
     iFrame "Hj Hl". iApply "Hclose". iNext.
-    iExists (<[j:=fill K (_, #true)%V]> tp), (state_upd_heap <[l:=v2]> σ).
+    iExists (<[j:=fill K (_, #true)%V]> tp), (state_upd_heap <[l:=Some v2]> σ).
     rewrite to_gen_heap_insert to_tpool_insert'; last eauto. iFrame. iPureIntro.
     eapply rtc_r, step_insert_no_fork; eauto. econstructor; eauto.
     rewrite bool_decide_true //.
@@ -295,11 +304,14 @@ Section rules.
     { by eapply auth_update, prod_local_update_1, singleton_local_update,
         (exclusive_local_update _ (Excl (fill K (# i1)))). }
     iMod (own_update_2 with "Hown Hl") as "[Hown Hl]".
-    { eapply auth_update, prod_local_update_2, singleton_local_update,
-        (exclusive_local_update _ (1%Qp, to_agree #(i1+i2))); last done.
-      by rewrite /to_gen_heap lookup_fmap Hl. }
+    { eapply auth_update, prod_local_update_2.
+      apply: singleton_local_update.
+      { by rewrite /to_gen_heap lookup_fmap Hl. }
+      apply: (exclusive_local_update _
+        (1%Qp, to_agree (Some #(i1+i2) : leibnizO (option val)))).
+      apply: pair_exclusive_l. done. }
     iFrame "Hj Hl". iApply "Hclose". iNext.
-    iExists (<[j:=fill K (# i1)]> tp), (state_upd_heap <[l:=#(i1+i2)]> σ).
+    iExists (<[j:=fill K (# i1)]> tp), (state_upd_heap <[l:=Some #(i1+i2)]> σ).
     rewrite to_gen_heap_insert to_tpool_insert'; last eauto. iFrame. iPureIntro.
     eapply rtc_r, step_insert_no_fork; eauto. simpl. econstructor; eauto.
   Qed.

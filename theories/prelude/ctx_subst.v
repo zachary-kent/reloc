@@ -21,6 +21,7 @@ Fixpoint subst_map_ctx_item (es : stringmap val) (K : ectx_item)
   | CaseCtx e1 e2 => CaseCtx (subst_map es e1) (subst_map es e2)
   | AllocNLCtx v2 => AllocNLCtx v2
   | AllocNRCtx e1 => AllocNRCtx (subst_map es e1)
+  | FreeCtx => FreeCtx
   | LoadCtx => LoadCtx
   | StoreLCtx v2 => StoreLCtx v2
   | StoreRCtx e1 => StoreRCtx (subst_map es e1)
