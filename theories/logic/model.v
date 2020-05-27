@@ -3,10 +3,9 @@
     - The model for types and type combinators;
     - Closure under context substitutions;
     - Basic monadic rules *)
-From iris.heap_lang Require Export lifting metatheory.
 From iris.base_logic.lib Require Import invariants.
 From iris.algebra Require Import list gmap.
-From iris.heap_lang Require Export lang notation.
+From iris.heap_lang Require Export lang notation derived_laws metatheory.
 From iris.heap_lang Require Import proofmode.
 From reloc Require Import prelude.properness logic.spec_rules prelude.ctx_subst.
 From reloc Require Export logic.spec_ra.

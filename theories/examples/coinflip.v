@@ -1,4 +1,4 @@
-From iris.heap_lang Require Import lifting.
+From iris.heap_lang Require Import derived_laws.
 From reloc Require Import reloc lib.lock.
 
 (* for rand (), val_to_bool *)

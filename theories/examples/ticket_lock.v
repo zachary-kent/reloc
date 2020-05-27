@@ -187,7 +187,7 @@ Section refinement.
       iMod (issueNewTicket with "Hissued") as "[Hissued Hm]".
       iMod ("H" with "[-HP Hm]") as "_".
       { iExists _. iFrame.
-        replace (Z.of_nat n + 1) with (Z.of_nat (S n)) by lia.
+        replace (Z.of_nat n + 1)%Z with (Z.of_nat (S n)) by lia.
         done. }
       clear o o'.
       repeat rel_pure_l.
@@ -259,7 +259,7 @@ Section refinement.
       iMod (issueNewTicket with "Hissued") as "[Hissued Hm]".
       iMod ("Hcl" with "[-Hm]") as "_".
       { iNext.
-        replace (Z.of_nat n + 1) with (Z.of_nat (S n)) by lia.
+        replace (Z.of_nat n + 1)%Z with (Z.of_nat (S n)) by lia.
         iExists _,_,_; by iFrame. }
       repeat rel_pure_l.
       by iApply wait_loop_refinement.
@@ -335,7 +335,7 @@ Section refinement.
       iIntros "Hl'".
       iMod ("Hcl" with "[-]") as "_".
       { iNext.
-        replace (o' + 1) with (Z.of_nat (o' + 1))%nat by lia.
+        replace (o' + 1)%Z with (Z.of_nat (o' + 1))%nat by lia.
         iExists (o' + 1)%nat,_,_. by iFrame. }
       rel_values.
   Qed.
