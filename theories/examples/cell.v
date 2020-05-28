@@ -7,9 +7,9 @@ From reloc.lib Require Export lock.
 (** A type of cells -- basically an abstract type of references. *)
 (* ∀ α, ∃ β, (α → β) × (β → α) × (β → α → ())  *)
 Definition cellτ : type :=
-  ∀: ∃: (TVar 1%nat → TVar 0%nat)
-       * (TVar 0%nat → TVar 1%nat)
-       * (TVar 0%nat → TVar 1%nat → TUnit).
+  ∀: ∃: (TVar 1 → TVar 0)
+       * (TVar 0 → TVar 1)
+       * (TVar 0 → TVar 1 → TUnit).
 (** We show that the canonical implementation `cell1` is equivalent to
 an implementation using two alternating slots *)
 

@@ -327,7 +327,7 @@ Section rules.
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
       as %[[?%tpool_singleton_included' _]%prod_included ?]%auth_both_valid.
-    assert (j < length tp)%nat by eauto using lookup_lt_Some.
+    assert (j < length tp) by eauto using lookup_lt_Some.
     iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
     { by eapply auth_update, prod_local_update_1,
         singleton_local_update, (exclusive_local_update _ (Excl (fill K #()))). }

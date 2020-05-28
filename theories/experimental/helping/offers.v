@@ -70,7 +70,7 @@ Section rules.
       rel_pures_l. iApply ("Hcont" with "[-]").
       iExists _; iFrame.
     - iIntros (?). simplify_eq/=.
-      assert (c = 0%nat) as -> by lia. (* :) *)
+      assert (c = 0) as -> by lia. (* :) *)
       iNext. iIntros "Hl".
       iDestruct "Hoff" as "[[% HP] | [[% ?] | [% ?]]]"; [| congruence..].
       rel_pures_l.

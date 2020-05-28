@@ -190,7 +190,7 @@ Section proofs.
     rel_alloc_r x' as "Hx'".
     rel_pure_r. rel_pure_r.
     iMod (inv_alloc i3n _ (i3 x x' b b') with "[-]") as "#Hinv".
-    { iNext. unfold i3. iExists 0%nat.
+    { iNext. unfold i3. iExists 0.
       iDestruct "Hx" as "[$ Hx]".
       iDestruct "Hx'" as "[$ Hx']".
       iLeft. iFrame. }
@@ -388,7 +388,7 @@ Section proofs.
       { iIntros "[Hc1 [(Hc2 & Ht) | (Hc2 & Ht & Ht' & %)]]";
         iApply ("Hcl" with "[-]"); iNext.
         + iExists n. iLeft. iFrame.
-        + iExists (n-1)%nat. iRight.
+        + iExists (n-1). iRight.
           replace (Z.of_nat (n - 1)) with (Z.of_nat n - 1)%Z by lia.
           replace (n - 1 + 1)%Z with (Z.of_nat n) by lia.
          iFrame. }
@@ -396,7 +396,7 @@ Section proofs.
         iDestruct "Hc" as "[[Hc2 Ht] | [Hc2 [Ht [Ht' %]]]]".
         - rel_apply_r (FG_increment_r with "Hc2"). iIntros "Hc2".
           iMod ("Hcl" with "[-]") as "_".
-          { iNext. iExists (n + 1)%nat.
+          { iNext. iExists (n + 1).
             replace (Z.of_nat (n + 1)) with (Z.of_nat n + 1)%Z by lia.
             iLeft; iFrame. }
           rel_values.
@@ -406,7 +406,7 @@ Section proofs.
           { iNext. iExists n. iRight; iFrame.
             by replace ((n - 1)%nat + 1)%Z with (Z.of_nat n) by lia. }
          rel_values. }
-    - iModIntro. iExists (n + 1)%nat.
+    - iModIntro. iExists (n + 1).
       replace (Z.of_nat n + 1)%Z with (Z.of_nat (n + 1)) by lia. iFrame.
       iSplitL "Hc2 Ht".
       { iRight. replace ((n + 1)%nat - 1)%Z with (Z.of_nat n) by lia.
@@ -463,7 +463,7 @@ Section proofs.
   Proof.
     iDestruct 1 as (m) "[Hc1 Hc2]".
     iDestruct "Hc2" as "[[Hc2 Hp] | (Hc2 & Hs & Ht & %)]";
-      [iExists m; iLeft | iExists (m - 1)%nat; iRight]; iFrame.
+      [iExists m; iLeft | iExists (m - 1); iRight]; iFrame.
     replace ((m - 1)%nat + 1)%Z with (Z.of_nat m) by lia.
     replace (Z.of_nat (m - 1)) with (Z.of_nat m - 1)%Z by lia.
     iFrame.
@@ -540,7 +540,7 @@ Section proofs.
     iMod new_pending as (γ) "Ht".
     iMod (own_alloc (Excl ())) as (γ') "Ht'"; first done.
     iMod (inv_alloc shootN _ (i6 c1 c2 γ γ') with "[Hc1 Hc2 Ht]") as "#Hinv".
-    { iNext. iExists 0%nat. iLeft. iFrame. }
+    { iNext. iExists 0. iLeft. iFrame. }
     repeat rel_pure_l. repeat rel_pure_r.
     iApply (refines_seq lrel_unit).
     { iApply (refines_app with "Hf").

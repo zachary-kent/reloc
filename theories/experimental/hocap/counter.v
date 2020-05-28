@@ -280,7 +280,7 @@ Section refinement.
     iIntros "Hl Hlk".
     iMod ("Hcl" with "[-]") as "_".
     { iNext. iExists (n+1); try iFrame.
-      assert (Z.of_nat (n + 1)%nat = Z.of_nat n + 1)%Z as -> by lia.
+      assert (Z.of_nat (n + 1) = Z.of_nat n + 1)%Z as -> by lia.
       done. }
     rel_values.
   Qed.
@@ -317,12 +317,12 @@ Section refinement.
     rel_alloc_r c' as "Hcnt'".
     rel_alloc_l c as "Hcnt". simpl.
 
-    iMod (Cnt_alloc N _ 0%nat with "Hcnt") as (γ) "[#HCnt Hc]".
+    iMod (Cnt_alloc N _ 0 with "Hcnt") as (γ) "[#HCnt Hc]".
 
     (* establishing the invariant *)
     iMod (inv_alloc N2 _ (∃ m, is_locked_r lk false ∗ cnt γ 1 m ∗ c' ↦ₛ #m)%I
          with "[-]") as "#Hinv".
-    { iNext. iExists 0%nat. by iFrame. }
+    { iNext. iExists 0. by iFrame. }
     (* TODO: here we have to do /exactly/ 4 steps.
        The next step will reduce `(Val v1, Val v2)` to `Val (v1, v2)`,
        and the compatibility rule wouldn't be applicable *)

@@ -203,18 +203,18 @@ Inductive typed_ctx_item :
   | TP_CTX_Unfold Γ τ :
      typed_ctx_item CTX_Unfold Γ (TRec τ) Γ τ.[(TRec τ)/]
   | TP_CTX_TLam Γ τ :
-     typed_ctx_item CTX_TLam (Autosubst_Classes.subst (ren (+1%nat)) <$> Γ) τ Γ (TForall τ)
+     typed_ctx_item CTX_TLam (Autosubst_Classes.subst (ren (+1)) <$> Γ) τ Γ (TForall τ)
   | TP_CTX_TApp Γ τ τ' :
      typed_ctx_item CTX_TApp Γ (TForall τ) Γ τ.[τ'/]
   (* | TP_CTX_Pack Γ τ τ' : *)
   (*    typed_ctx_item CTX_Pack Γ τ.[τ'/] Γ (TExists τ) *)
   | TP_CTX_UnpackL x e2 Γ τ τ2 :
-     <[x:=τ]>(⤉ Γ) ⊢ₜ e2 : (Autosubst_Classes.subst (ren (+1%nat)) τ2) →
+     <[x:=τ]>(⤉ Γ) ⊢ₜ e2 : (Autosubst_Classes.subst (ren (+1)) τ2) →
      typed_ctx_item (CTX_UnpackL x e2) Γ (TExists τ) Γ τ2
   | TP_CTX_UnpackR x e1 Γ τ τ2 :
       Γ ⊢ₜ e1 : TExists τ →
      typed_ctx_item (CTX_UnpackR x e1)
-                    (<[x:=τ]>(⤉ Γ)) (Autosubst_Classes.subst (ren (+1%nat)) τ2)
+                    (<[x:=τ]>(⤉ Γ)) (Autosubst_Classes.subst (ren (+1)) τ2)
                     Γ τ2
 .
 

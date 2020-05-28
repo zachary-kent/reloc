@@ -194,7 +194,7 @@ Section fundamental.
     {Δ;Γ} ⊨ (e1;; e2) ≤log≤ (e1';; e2') : τ2.
   Proof.
     iIntros "He1 He2".
-    iApply (bin_log_related_seq lrel_true _ _ _ _ _ _ τ1.[ren (+1)%nat] with "[He1] He2").
+    iApply (bin_log_related_seq lrel_true _ _ _ _ _ _ τ1.[ren (+1)] with "[He1] He2").
     intro_clause.
     rewrite interp_ren -(interp_ren_up [] Δ τ1).
     by iApply "He1".
@@ -472,7 +472,7 @@ Section fundamental.
     ({Δ;Γ} ⊨ e1 ≤log≤ e1' : ∃: τ) -∗
     (∀ τi : lrel Σ,
       {τi::Δ;<[x:=τ]>(⤉Γ)} ⊨
-        e2 ≤log≤ e2' : (Autosubst_Classes.subst (ren (+1)%nat) τ2)) -∗
+        e2 ≤log≤ e2' : (Autosubst_Classes.subst (ren (+1)) τ2)) -∗
     {Δ;Γ} ⊨ (unpack: x := e1 in e2) ≤log≤ (unpack: x := e1' in e2') : τ2.
   Proof.
     iIntros "IH1 IH2".

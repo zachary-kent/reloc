@@ -76,7 +76,7 @@ Reserved Notation "⊢ᵥ v : τ" (at level 20, v, τ at next level).
 
 (* Shift all the indices in the context by one,
    used when inserting a new type interpretation in Δ. *)
-Notation "⤉ Γ" := (Autosubst_Classes.subst (ren (+1)%nat) <$> Γ) (at level 10, format "⤉ Γ").
+Notation "⤉ Γ" := (Autosubst_Classes.subst (ren (+1)) <$> Γ) (at level 10, format "⤉ Γ").
 
 (** We model type-level lambdas and applications as thunks *)
 Notation "Λ: e" := (λ: <>, e)%E (at level 200, only parsing).
@@ -172,7 +172,7 @@ Inductive typed : stringmap type → expr → type → Prop :=
       Γ ⊢ₜ e : (∃: τ)
   | TUnpack Γ e1 x e2 τ τ2 :
       Γ ⊢ₜ e1 : (∃: τ) →
-      <[x:=τ]>(⤉ Γ) ⊢ₜ e2 : (Autosubst_Classes.subst (ren (+1%nat)) τ2) →
+      <[x:=τ]>(⤉ Γ) ⊢ₜ e2 : (Autosubst_Classes.subst (ren (+1)) τ2) →
       Γ ⊢ₜ (unpack: x := e1 in e2) : τ2
   | TFork Γ e : Γ ⊢ₜ e : TUnit → Γ ⊢ₜ Fork e : TUnit
   | TAlloc Γ e τ : Γ ⊢ₜ e : τ → Γ ⊢ₜ Alloc e : Tref τ

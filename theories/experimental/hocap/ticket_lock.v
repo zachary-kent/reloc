@@ -117,7 +117,7 @@ Section refinement.
     iMod (Cnt_alloc (N.@"cnt1") _ 0 with "Hlo") as (γlo) "[#Hc2 Hlo]".
     iMod newIssuedTickets as (γ) "Hγ".
     iMod (inv_alloc (N.@"lock") _ (lockInv γln γlo γ l') with "[-]") as "#Hinv".
-    { iNext. iExists 0%nat,0%nat,_. iFrame. }
+    { iNext. iExists 0,0,_. iFrame. }
     rel_values. iModIntro. iExists _,_,_,_,_. iSplit; eauto with iFrame.
   Qed.
 

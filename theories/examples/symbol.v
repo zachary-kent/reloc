@@ -60,7 +60,7 @@ Section rules.
   Lemma size_le (n m : nat) :
     own γ (● (n : mnat)) -∗
     own γ (◯ (m : mnat)) -∗
-    ⌜m ≤ n⌝%nat.
+    ⌜m ≤ n⌝.
   Proof.
     iIntros "Hn Hm".
     by iDestruct (own_valid_2 with "Hn Hm")
@@ -225,7 +225,7 @@ Section proof.
     rel_alloc_r size2 as "[Hs2 Hs2']"; repeat rel_pure_r.
     rel_alloc_l tbl1 as "[Htbl1 Htbl1']"; repeat rel_pure_l.
     rel_alloc_r tbl2 as "[Htbl2 Htbl2']"; repeat rel_pure_r.
-    iMod (own_alloc (● (0%nat : mnat))) as (γ) "Ha".
+    iMod (own_alloc (● (0 : mnat))) as (γ) "Ha".
     { by apply auth_auth_valid. }
     iMod (inv_alloc sizeN _ (table_inv γ size1 size2 tbl1 tbl2) with "[Hs1 Hs2 Htbl1 Htbl2 Ha]") as "#Hinv".
     { iNext. iExists _,_. iFrame. iApply lrel_list_nil. }
@@ -233,7 +233,7 @@ Section proof.
     iIntros (l2) "Hl2". rel_pure_r. rel_pure_r.
     pose (N:=(relocN.@"lock1")).
     rel_apply_l (refines_newlock_l N (lok_inv size1 size2 tbl1 tbl2 l2)%I with "[Hs1' Hs2' Htbl1' Htbl2' Hl2]").
-    { iExists 0%nat,_. by iFrame. }
+    { iExists 0,_. by iFrame. }
     iNext. iIntros (l1 γl) "#Hl1". rel_pure_l. rel_pure_l.
     iApply (refines_exists (tableR γ)).
     repeat iApply refines_pair.
@@ -304,7 +304,7 @@ Section proof.
     rel_alloc_r size2 as "[Hs2 Hs2']"; repeat rel_pure_r.
     rel_alloc_l tbl1 as "[Htbl1 Htbl1']"; repeat rel_pure_l.
     rel_alloc_r tbl2 as "[Htbl2 Htbl2']"; repeat rel_pure_r.
-    iMod (own_alloc (● (0%nat : mnat))) as (γ) "Ha".
+    iMod (own_alloc (● (0 : mnat))) as (γ) "Ha".
     { by apply auth_auth_valid. }
     iMod (inv_alloc sizeN _ (table_inv γ size1 size2 tbl1 tbl2) with "[Hs1 Hs2 Htbl1 Htbl2 Ha]") as "#Hinv".
     { iNext. iExists _,_. iFrame. iApply lrel_list_nil. }
@@ -312,7 +312,7 @@ Section proof.
     iIntros (l2) "Hl2". rel_pure_r. rel_pure_r.
     pose (N:=(relocN.@"lock1")).
     rel_apply_l (refines_newlock_l N (lok_inv size1 size2 tbl1 tbl2 l2)%I with "[Hs1' Hs2' Htbl1' Htbl2' Hl2]").
-    { iExists 0%nat,_. by iFrame. }
+    { iExists 0,_. by iFrame. }
     iNext. iIntros (l1 γl) "#Hl1". rel_pure_l. rel_pure_l.
     iApply (refines_exists (tableR γ)).
     repeat iApply refines_pair.

@@ -128,7 +128,7 @@ Lemma tac_rel_pure_l `{!relocG Σ} K e1 ℶ ℶ' E e e2 eres ϕ n m t A :
   e = fill K e1 →
   PureExec ϕ n e1 e2 →
   ϕ →
-  ((m = n ∧ E = ⊤) ∨ m = 0%nat) →
+  ((m = n ∧ E = ⊤) ∨ m = 0) →
   MaybeIntoLaterNEnvs m ℶ ℶ' →
   eres = fill K e2 →
   envs_entails ℶ' (REL eres << t @ E : A) →

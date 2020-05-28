@@ -118,7 +118,7 @@ Section refinement.
     (* Establishing the invariant *)
     iMod newIssuedTickets as (γ) "Hγ".
     iMod (inv_alloc N _ (lockInv lo ln γ l') with "[-]") as "#Hinv".
-    { iNext. iExists 0%nat,0%nat,_. by iFrame. }
+    { iNext. iExists 0,0,_. by iFrame. }
     rel_pure_l.
     rel_values.
     iExists _,_,_. iFrame "Hinv". eauto.
@@ -335,8 +335,8 @@ Section refinement.
       iIntros "Hl'".
       iMod ("Hcl" with "[-]") as "_".
       { iNext.
-        replace (o' + 1)%Z with (Z.of_nat (o' + 1))%nat by lia.
-        iExists (o' + 1)%nat,_,_. by iFrame. }
+        replace (o' + 1)%Z with (Z.of_nat (o' + 1)) by lia.
+        iExists (o' + 1),_,_. by iFrame. }
       rel_values.
   Qed.
 

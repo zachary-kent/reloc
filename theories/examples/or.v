@@ -325,12 +325,12 @@ Proof.
           + econstructor; cbn; eauto.
             econstructor; cbn; eauto.
             econstructor; cbn; eauto.
-            change Z0 with (Z.of_nat 0%nat).
+            change Z0 with (Z.of_nat 0).
             econstructor; cbn; eauto.
             econstructor; cbn; eauto.
             * econstructor; cbn; eauto.
               eapply Seq_typed.
-              ** change 1%Z with (Z.of_nat 1%nat).
+              ** change 1%Z with (Z.of_nat 1).
                  repeat (econstructor; cbn; eauto).
               ** repeat (econstructor; cbn; eauto).
             * repeat (econstructor; cbn; eauto).

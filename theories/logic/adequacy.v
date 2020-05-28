@@ -44,7 +44,7 @@ Proof.
   - iPoseProof (Hlog _) as "Hrel".
     rewrite refines_eq /refines_def /spec_ctx.
     iApply fupd_wp.
-    iSpecialize ("Hrel" $! 0%nat [] with "[Hcfg]"); first by eauto.
+    iSpecialize ("Hrel" $! 0 [] with "[Hcfg]"); first by eauto.
     iApply "Hrel".
     rewrite tpool_mapsto_eq /tpool_mapsto_def. iFrame.
     by rewrite /to_tpool /= insert_empty map_fmap_singleton //.

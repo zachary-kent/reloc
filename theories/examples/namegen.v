@@ -11,8 +11,8 @@ version uses integers. *)
 (*       ^ new name  ^                            *)
 (*                   | compare names for equality *)
 Definition nameGenTy : type :=
-  ∃: (TUnit → TVar 0%nat)
-   * (TVar 0%nat → TVar 0%nat → TBool).
+  ∃: (TUnit → TVar 0)
+   * (TVar 0 → TVar 0 → TBool).
 
 (* TODO: cannot be a value *)
 Definition nameGen1 : expr :=
@@ -35,7 +35,7 @@ Section namegen_refinement.
     (∃ (n : nat) (L : gset (loc * nat)),
         BIJ γ L ∗ c ↦ₛ #n
      ∗  [∗ set] lk ∈ L, match lk with
-                        | (l, k) => l ↦ #() ∗ ⌜k ≤ n⌝%nat
+                        | (l, k) => l ↦ #() ∗ ⌜k ≤ n⌝
                         end)%I.
 
   Lemma nameGen_ref1 :
@@ -46,7 +46,7 @@ Section namegen_refinement.
     iMod alloc_empty_bij as (γ) "HB".
     pose (N:=relocN.@"ng").
     iMod (inv_alloc N _ (ng_Inv γ c) with "[-]") as "#Hinv".
-    { iNext. iExists 0%nat, ∅. iFrame.
+    { iNext. iExists 0, ∅. iFrame.
       by rewrite big_sepS_empty. }
     iApply (refines_exists (ngR γ)).
     do 2 rel_pure_r.
@@ -82,7 +82,7 @@ Section namegen_refinement.
         intros [l x] Hlx. apply bi.sep_mono_r, bi.pure_mono. lia. }
       rel_values. iModIntro.
       replace (Z.of_nat n + 1)%Z with (Z.of_nat (S n)); last lia.
-      iExists l', (S n)%nat; eauto.
+      iExists l', (S n); eauto.
     - (* Name comparison *)
       rel_pure_l. rel_pure_r.
       iApply refines_arrow_val.

@@ -83,7 +83,7 @@ Section interp_ren.
 
   (* TODO: why do I need to unfold lrel_car here? *)
   Lemma interp_ren_up (Δ1 Δ2 : list (lrel Σ)) τ τi :
-    interp τ (Δ1 ++ Δ2) ≡ interp (τ.[upn (length Δ1) (ren (+1)%nat)]) (Δ1 ++ τi :: Δ2).
+    interp τ (Δ1 ++ Δ2) ≡ interp (τ.[upn (length Δ1) (ren (+1))]) (Δ1 ++ τi :: Δ2).
   Proof.
     revert Δ1 Δ2. induction τ => Δ1 Δ2; simpl; eauto;
     try by
@@ -96,7 +96,7 @@ Section interp_ren.
       { by rewrite !lookup_app_l. }
       change (bi_ofeO (uPredI (iResUR Σ))) with (uPredO (iResUR Σ)).
       rewrite !lookup_app_r; [|lia..].
-      assert ((length Δ1 + S (x - length Δ1) - length Δ1) = S (x - length Δ1))%nat as Hwat.
+      assert ((length Δ1 + S (x - length Δ1) - length Δ1) = S (x - length Δ1)) as Hwat.
       { lia. }
       rewrite Hwat. simpl. done.
     - intros v1 v2; unfold lrel_car; simpl;
@@ -151,7 +151,7 @@ Section interp_ren.
       rewrite iter_up; case_decide; simpl; properness.
       { by rewrite !lookup_app_l. }
       rewrite !lookup_app_r; [|lia..].
-      case EQ: (x - length Δ1)%nat => [|n]; simpl.
+      case EQ: (x - length Δ1)=> [|n]; simpl.
       { symmetry.
         pose (HW := interp_weaken [] Δ1 Δ2 τ' w1 w2).
         etrans; last by apply HW.
