@@ -19,33 +19,27 @@ Definition bitτ : type :=
   ∃: (TVar 0) * (TVar 0 → TVar 0) * (TVar 0 → TBool).
 
 Section bit_refinement.
-  Context `{relocG Σ}.
+  Context `{!relocG Σ}.
 
-  Definition bitf (b : bool) : nat :=
-    if b then 1 else 0.
-
-  (* This is the graph of the `bitf` function *)
-  Definition bitτi : lrel Σ := LRel (λ v1 v2,
-    (∃ b : bool, ⌜v1 = #b⌝ ∗ ⌜v2 = #(bitf b)⌝))%I.
+  Definition R : lrel Σ :=
+    LRel (λ v1 v2, (⌜v1 = #true⌝ ∧ ⌜v2 = #1⌝) ∨ (⌜v1 = #false⌝ ∧ ⌜v2 = #0⌝))%I.
 
   Lemma bit_refinement Δ : ⊢ REL bit_bool << bit_nat : interp bitτ Δ.
   Proof.
     unfold bitτ; simpl.
-    iApply (refines_exists bitτi).
+    iApply (refines_exists R).
     progress repeat iApply refines_pair.
     - rel_values.
     - unfold flip_nat. rel_pure_l.
       iApply refines_arrow_val.
       iIntros "!#" (v1 v2) "/=".
-      iIntros ([b [? ?]]); simplify_eq/=.
-      repeat rel_pure_l. repeat rel_pure_r.
-      destruct b; simpl; rel_if_r; rel_values.
+      iIntros ([[-> ->] | [-> ->]]);
+        rel_pures_l; rel_pures_r; rel_values.
     - rel_pure_l. rel_pure_r.
       iApply refines_arrow_val.
       iIntros "!#" (v1 v2) "/=".
-      iIntros ([b [? ?]]); simplify_eq/=.
-      repeat rel_pure_l. repeat rel_pure_r.
-      destruct b; simpl; rel_values.
+      iIntros ([[-> ->] | [-> ->]]);
+        rel_pures_l; rel_pures_r; rel_values.
   Qed.
 
 End bit_refinement.
