@@ -176,8 +176,8 @@ Section proof.
       iIntros (??) "_". repeat rel_pure_l. repeat rel_pure_r.
       rel_alloc_l istk as "Hisk".
       rel_alloc_l st as "Hst".
-      rel_apply_r refines_newlock_r. iIntros (l) "Hl".
-      rel_pure_r. rel_alloc_r st' as "Hst'". rel_pure_r.
+      rel_alloc_r st' as "Hst'". rel_pures_r.
+      rel_apply_r refines_newlock_r. iIntros (l) "Hl". rel_pures_r.
       rel_values.
       iMod (inv_alloc (stackN.@(st,(#st', l)%V)) _ (sinv A st (#st', l)%V) with "[-]")
         as "#Hinv".

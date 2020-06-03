@@ -293,7 +293,7 @@ Section proofs.
     iApply refines_arrow; auto.
     iIntros "!#" (f1 f2) "#Hf".
     rel_let_l. rel_let_r.
-    rel_apply_l (refines_acquire_l N _ l with "Hl").
+    rel_apply_l (refines_acquire_l N _ #l with "Hl").
     iNext. iIntros "Hlocked". iDestruct 1 as (n m) "[Hx Hy]".
     repeat rel_pure_l. rel_store_l. repeat rel_pure_l.
     iApply (refines_seq () with "[Hf]").
@@ -306,7 +306,7 @@ Section proofs.
       rel_values. }
     rel_load_l. repeat rel_pure_l.
     rel_load_r. repeat rel_pure_r.
-    rel_apply_l (refines_release_l N _ l γ with "Hl Hlocked [Hx Hy]"); eauto.
+    rel_apply_l (refines_release_l N _ #l γ with "Hl Hlocked [Hx Hy]"); eauto.
     { iExists _,_. iFrame. }
     iNext. repeat rel_pure_l.
     rel_values.

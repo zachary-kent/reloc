@@ -28,7 +28,9 @@ Definition CG_locked_pop : val := λ: "stt",
   release (Snd "stt");; "v".
 
 Definition CG_new_stack : val := λ: <>,
-  (ref NIL, newlock #())%E.
+  let: "st" := ref NIL in
+  let: "lk" := newlock #() in
+  ("st", "lk")%E.
 
 Definition CG_stack : val := Λ:
   (CG_new_stack, λ: "stt", CG_locked_pop "stt",
@@ -39,6 +41,11 @@ Fixpoint val_of_list (ls : list val) : val :=
   | [] => NONEV
   | v::vs => CONSV v (val_of_list vs)
   end.
+
+Instance val_to_list_inj : Inj (=@{list val}) (=@{val}) val_of_list.
+Proof.
+  intros ls1. induction ls1 as [|h1 ls1]=>ls2; destruct ls2; naive_solver.
+Qed.
 
 Definition is_stack `{!relocG Σ} (rs : val) (ls : list val) : iProp Σ :=
   ∃ (st : loc) l, ⌜rs = (#st, l)%V⌝ ∗ is_locked_r l false ∗ st ↦ₛ val_of_list ls.

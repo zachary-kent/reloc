@@ -573,9 +573,8 @@ Section refinement.
     rel_values. iModIntro. iIntros (A). iModIntro.
     iIntros (? ?) "[-> ->]".
     rel_rec_r. rel_pures_r. rel_rec_r.
+    rel_alloc_r st' as "Hst'". rel_pures_r.
     rel_apply_r refines_newlock_r. iIntros (lk) "Hlk".
-    rel_pures_r.
-    rel_alloc_r st' as "Hst'".
     rel_pure_r. rel_pure_r.  rel_pure_r.  rel_pure_r.  rel_pure_r.
     rel_rec_l. rel_pures_l.
     rel_alloc_l mb as "Hmb". rel_pures_l.

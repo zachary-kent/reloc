@@ -60,12 +60,12 @@ Section lockG_rules.
     iApply "Hlog". iExists l. eauto.
   Qed.
 
-  Lemma refines_release_l (R : iProp Σ) (lk : loc) γ K t A :
-    is_lock γ #lk R -∗
+  Lemma refines_release_l (R : iProp Σ) (lk : val) γ K t A :
+    is_lock γ lk R -∗
     locked γ -∗
     R -∗
     ▷(REL fill K (#() : expr) << t : A) -∗
-    REL fill K (release #lk) << t: A.
+    REL fill K (release lk) << t: A.
   Proof.
     iIntros "Hlock Hlocked HR Hlog".
     iDestruct "Hlock" as (l) "[% #?]"; simplify_eq.
@@ -78,10 +78,10 @@ Section lockG_rules.
     iApply "Hlog".
   Qed.
 
-  Lemma refines_acquire_l (R : iProp Σ) (lk : loc) γ K t A :
-    is_lock γ #lk R -∗
+  Lemma refines_acquire_l (R : iProp Σ) (lk : val) γ K t A :
+    is_lock γ lk R -∗
     ▷(locked γ -∗ R -∗ REL fill K (of_val #()) << t: A) -∗
-    REL fill K (acquire #lk) << t: A.
+    REL fill K (acquire lk) << t: A.
   Proof.
     iIntros "#Hlock Hlog".
     iLöb as "IH".
