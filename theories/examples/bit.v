@@ -15,8 +15,7 @@ Definition flip_nat : val := λ: "n",
 Definition bit_nat : expr :=
   (#1, flip_nat, (λ: "b", "b" = #1)).
 
-Definition bitτ : type :=
-  ∃: (TVar 0) * (TVar 0 → TVar 0) * (TVar 0 → TBool).
+Definition bitτ : type := ∃: #0 * (#0 → #0) * (#0 → TBool).
 
 Section bit_refinement.
   Context `{!relocG Σ}.

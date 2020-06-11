@@ -11,8 +11,7 @@ version uses integers. *)
 (*       ^ new name  ^                            *)
 (*                   | compare names for equality *)
 Definition nameGenTy : type :=
-  ∃: (TUnit → TVar 0)
-   * (TVar 0 → TVar 0 → TBool).
+  ∃: (() → #0) * (#0 → #0 → TBool).
 
 (* TODO: cannot be a value *)
 Definition nameGen1 : expr :=

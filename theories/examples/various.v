@@ -350,8 +350,8 @@ Section proofs.
   Qed.
 
   (** Higher-order profiling *)
-  Definition τg := TArrow TUnit TUnit.
-  Definition τf := TArrow τg TUnit.
+  Definition τg := TArrow () ().
+  Definition τf := TArrow τg ().
   Definition p : val := λ: "g", let: "c" := ref #0 in
                                 (λ: <>, FG_increment "c";; "g" #(), λ: <>, !"c").
   (** The idea for the invariant is that we have to states:

@@ -357,9 +357,7 @@ End refinement.
 
 Open Scope nat.
 Definition lockT : type :=
-  ∃: (TUnit → TVar 0)
-   * (TVar 0 → TUnit)
-   * (TVar 0 → TUnit).
+  ∃: (() → #0) * (#0 → ()) * (#0 → ()).
 
 Lemma ticket_lock_ctx_refinement :
   ∅ ⊨   (newlock, acquire, release)

@@ -208,9 +208,7 @@ End proof.
 Open Scope nat.
 Theorem stack_ctx_refinement :
   ∅ ⊨ FG_stack ≤ctx≤ CG_stack :
-    ∀: ∃: (TUnit → TVar 0)
-         * (TVar 0 → TUnit + TVar 1)
-         * (TVar 0 → TVar 1 → TUnit).
+      ∀: ∃: (() → #0) * (#0 → () + #1) * (#0 → #1 → ()).
 Proof.
   eapply (refines_sound relocΣ).
   iIntros (? ?).

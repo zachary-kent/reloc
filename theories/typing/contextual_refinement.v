@@ -168,17 +168,17 @@ Inductive typed_ctx_item :
      typed_ctx_item (CTX_CaseR e0 e1) Γ (TArrow τ2 τ') Γ τ'
   (* Concurrency *)
   | TP_CTX_Fork Γ :
-     typed_ctx_item CTX_Fork Γ TUnit Γ TUnit
+     typed_ctx_item CTX_Fork Γ () Γ ()
   (* Heap *)
   | TPCTX_Alloc Γ τ :
      typed_ctx_item CTX_Alloc Γ τ Γ (Tref τ)
   | TP_CTX_Load Γ τ :
      typed_ctx_item CTX_Load Γ (Tref τ) Γ τ
   | TP_CTX_StoreL Γ e2 τ :
-     typed Γ e2 τ → typed_ctx_item (CTX_StoreL e2) Γ (Tref τ) Γ TUnit
+     typed Γ e2 τ → typed_ctx_item (CTX_StoreL e2) Γ (Tref τ) Γ ()
   | TP_CTX_StoreR Γ e1 τ :
      typed Γ e1 (Tref τ) →
-     typed_ctx_item (CTX_StoreR e1) Γ τ Γ TUnit
+     typed_ctx_item (CTX_StoreR e1) Γ τ Γ ()
   | TP_CTX_FAAL Γ e2 :
      Γ ⊢ₜ e2 : TNat →
      typed_ctx_item (CTX_FAAL e2) Γ (Tref TNat) Γ TNat

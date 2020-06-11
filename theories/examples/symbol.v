@@ -376,12 +376,10 @@ End proof.
 
 Open Scope nat.
 Definition symbolτ : type :=
-  ∃: (TVar 0 → TVar 0 → TBool)
-   * (TNat → TVar 0)
-   * (TVar 0 → TNat).
+  ∃: (#0 → #0 → TBool) * (TNat → #0) * (#0 → TNat).
 
 Theorem symbol_ctx_refinement1 :
-  ∅ ⊨ symbol1 ≤ctx≤ symbol2 : TUnit → symbolτ.
+  ∅ ⊨ symbol1 ≤ctx≤ symbol2 : () → symbolτ.
 Proof.
   pose (Σ := #[relocΣ;msizeΣ;lockΣ]).
   eapply (refines_sound Σ).
@@ -389,7 +387,7 @@ Proof.
 Qed.
 
 Theorem symbol_ctx_refinement2 :
-  ∅ ⊨ symbol2 ≤ctx≤ symbol1 : TUnit → symbolτ.
+  ∅ ⊨ symbol2 ≤ctx≤ symbol1 : () → symbolτ.
 Proof.
   pose (Σ := #[relocΣ;msizeΣ;lockΣ]).
   eapply (refines_sound Σ).

@@ -36,7 +36,7 @@ Section fundamental.
     by iApply refines_ret.
   Qed.
 
-  Lemma bin_log_related_unit Δ Γ : ⊢ {Δ;Γ} ⊨ #() ≤log≤ #() : TUnit.
+  Lemma bin_log_related_unit Δ Γ : ⊢ {Δ;Γ} ⊨ #() ≤log≤ #() : ().
   Proof. value_case. Qed.
 
   Lemma bin_log_related_nat Δ Γ (n : nat) : ⊢ {Δ;Γ} ⊨ #n ≤log≤ #n : TNat.
@@ -125,8 +125,8 @@ Section fundamental.
   Qed.
 
   Lemma bin_log_related_fork Δ Γ e e' :
-    ({Δ;Γ} ⊨ e ≤log≤ e' : TUnit) -∗
-    {Δ;Γ} ⊨ Fork e ≤log≤ Fork e' : TUnit.
+    ({Δ;Γ} ⊨ e ≤log≤ e' : ()) -∗
+    {Δ;Γ} ⊨ Fork e ≤log≤ Fork e' : ().
   Proof.
     iIntros "IH".
     intro_clause.
@@ -166,7 +166,7 @@ Section fundamental.
     {τi::Δ;⤉Γ} ⊨ (TApp e) ≤log≤ (TApp e') : τ.
   Proof.
     iIntros "IH". intro_clause.
-    iApply (bin_log_related_app _ _ e #() e' #() TUnit τ with "[IH] [] Hvs").
+    iApply (bin_log_related_app _ _ e #() e' #() () τ with "[IH] [] Hvs").
     - iClear (vs) "Hvs". intro_clause.
       rewrite interp_ren.
       iSpecialize ("IH" with "Hvs").
@@ -265,7 +265,7 @@ Section fundamental.
   Lemma bin_log_related_store Δ Γ e1 e2 e1' e2' τ :
     ({Δ;Γ} ⊨ e1 ≤log≤ e1' : Tref τ) -∗
     ({Δ;Γ} ⊨ e2 ≤log≤ e2' : τ) -∗
-    {Δ;Γ} ⊨ Store e1 e2 ≤log≤ Store e1' e2' : TUnit.
+    {Δ;Γ} ⊨ Store e1 e2 ≤log≤ Store e1' e2' : ().
   Proof.
     iIntros "IH1 IH2".
     intro_clause.

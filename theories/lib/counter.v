@@ -226,7 +226,7 @@ End CG_Counter.
 
 Theorem counter_ctx_refinement :
   ∅ ⊨ FG_counter ≤ctx≤ CG_counter :
-         TUnit → ((TUnit → TNat) * (TUnit → TNat)).
+         () → ((() → TNat) * (() → TNat)).
 Proof.
   eapply (refines_sound relocΣ).
   iIntros (? Δ). iApply FG_CG_counter_refinement.

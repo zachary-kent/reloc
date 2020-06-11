@@ -53,6 +53,8 @@ Fixpoint binop_bool_res_type (op : bin_op) : option type :=
 
 Delimit Scope FType_scope with ty.
 Bind Scope FType_scope with type.
+Notation "()" := TUnit : FType_scope.
+Notation "# x" := (TVar x) : FType_scope.
 Infix "*" := TProd : FType_scope.
 Notation "(*)" := TProd (only parsing) : FType_scope.
 Infix "+" := TSum : FType_scope.
@@ -107,7 +109,7 @@ Inductive typed : stringmap type → expr → type → Prop :=
       ⊢ᵥ v : τ →
       Γ ⊢ₜ Val v : τ
   | Unit_typed Γ :
-      Γ ⊢ₜ #() : TUnit
+      Γ ⊢ₜ #() : ()
   | Nat_typed Γ (n : nat) :
       Γ ⊢ₜ #n : TNat
   | Bool_typed Γ (b : bool) :
@@ -121,7 +123,7 @@ Inductive typed : stringmap type → expr → type → Prop :=
      binop_bool_res_type op = Some τ →
      Γ ⊢ₜ BinOp op e1 e2 : τ
   | RefEq_typed Γ e1 e2 τ :
-     Γ ⊢ₜ e1 : Tref τ → Γ ⊢ₜ e2 : Tref τ →
+     Γ ⊢ₜ e1 : ref τ → Γ ⊢ₜ e2 : ref τ →
      Γ ⊢ₜ BinOp EqOp e1 e2 : TBool
   | Pair_typed Γ e1 e2 τ1 τ2 :
       Γ ⊢ₜ e1 : τ1 → Γ ⊢ₜ e2 : τ2 →
@@ -174,38 +176,38 @@ Inductive typed : stringmap type → expr → type → Prop :=
       Γ ⊢ₜ e1 : (∃: τ) →
       <[x:=τ]>(⤉ Γ) ⊢ₜ e2 : (Autosubst_Classes.subst (ren (+1)) τ2) →
       Γ ⊢ₜ (unpack: x := e1 in e2) : τ2
-  | TFork Γ e : Γ ⊢ₜ e : TUnit → Γ ⊢ₜ Fork e : TUnit
-  | TAlloc Γ e τ : Γ ⊢ₜ e : τ → Γ ⊢ₜ Alloc e : Tref τ
-  | TLoad Γ e τ : Γ ⊢ₜ e : Tref τ → Γ ⊢ₜ Load e : τ
-  | TStore Γ e e' τ : Γ ⊢ₜ e : Tref τ → Γ ⊢ₜ e' : τ → Γ ⊢ₜ Store e e' : TUnit
+  | TFork Γ e : Γ ⊢ₜ e : () → Γ ⊢ₜ Fork e : ()
+  | TAlloc Γ e τ : Γ ⊢ₜ e : τ → Γ ⊢ₜ Alloc e : ref τ
+  | TLoad Γ e τ : Γ ⊢ₜ e : ref τ → Γ ⊢ₜ Load e : τ
+  | TStore Γ e e' τ : Γ ⊢ₜ e : ref τ → Γ ⊢ₜ e' : τ → Γ ⊢ₜ Store e e' : ()
   | TFAA Γ e1 e2 :
-     Γ ⊢ₜ e1 : Tref TNat →
+     Γ ⊢ₜ e1 : ref TNat →
      Γ ⊢ₜ e2 : TNat →
      Γ ⊢ₜ FAA e1 e2 : TNat
   | TCmpXchg Γ e1 e2 e3 τ :
      EqType τ → UnboxedType τ →
-     Γ ⊢ₜ e1 : Tref τ → Γ ⊢ₜ e2 : τ → Γ ⊢ₜ e3 : τ →
-     Γ ⊢ₜ CmpXchg e1 e2 e3 : TProd τ TBool
+     Γ ⊢ₜ e1 : ref τ → Γ ⊢ₜ e2 : τ → Γ ⊢ₜ e3 : τ →
+     Γ ⊢ₜ CmpXchg e1 e2 e3 : τ * TBool
 with val_typed : val → type → Prop :=
-  | Unit_val_typed : ⊢ᵥ #() : TUnit
+  | Unit_val_typed : ⊢ᵥ #() : ()
   | Nat_val_typed (n : nat) : ⊢ᵥ #n : TNat
   | Bool_val_typed (b : bool) : ⊢ᵥ #b : TBool
   | Pair_val_typed v1 v2 τ1 τ2 :
       ⊢ᵥ v1 : τ1 →
       ⊢ᵥ v2 : τ2 →
-      ⊢ᵥ PairV v1 v2 : TProd τ1 τ2
+      ⊢ᵥ PairV v1 v2 : (τ1 * τ2)
   | InjL_val_typed v τ1 τ2 :
       ⊢ᵥ v : τ1 →
-      ⊢ᵥ InjLV v : TSum τ1 τ2
+      ⊢ᵥ InjLV v : (τ1 + τ2)
   | InjR_val_typed v τ1 τ2 :
       ⊢ᵥ v : τ2 →
-      ⊢ᵥ InjRV v : TSum τ1 τ2
+      ⊢ᵥ InjRV v : (τ1 + τ2)
   | Rec_val_typed f x e τ1 τ2 :
      <[f:=TArrow τ1 τ2]>(<[x:=τ1]>∅) ⊢ₜ e : τ2 →
-     ⊢ᵥ RecV f x e : TArrow τ1 τ2
+     ⊢ᵥ RecV f x e : (τ1 → τ2)
   | TLam_val_typed e τ :
      ∅ ⊢ₜ e : τ →
-     ⊢ᵥ (Λ: e) : TForall τ
+     ⊢ᵥ (Λ: e) : (∀: τ)
 where "Γ ⊢ₜ e : τ" := (typed Γ e τ)
 and "⊢ᵥ e : τ" := (val_typed e τ).
 

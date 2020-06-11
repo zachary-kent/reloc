@@ -292,16 +292,16 @@ End rules.
 (** Separately, we prove that the ordering induced by ⊕ conincides with
     contextual refinement. *)
 Lemma Seq_typed Γ e1 e2 τ :
-  Γ ⊢ₜ e1 : TUnit →
+  Γ ⊢ₜ e1 : () →
   Γ ⊢ₜ e2 : τ →
   Γ ⊢ₜ (e1;;e2) : τ.
 Proof. by repeat (econstructor; eauto). Qed.
 
 Lemma or_equiv_refines_1 e t :
-  (∅ ⊢ₜ e : TUnit) →
-  (∅ ⊢ₜ t : TUnit) →
-  (∅ ⊨ e ≤ctx≤ t : TUnit) →
-  (∅ ⊨ (e ⊕ t) =ctx= t : TUnit).
+  (∅ ⊢ₜ e : ()) →
+  (∅ ⊢ₜ t : ()) →
+  (∅ ⊨ e ≤ctx≤ t : ()) →
+  (∅ ⊨ (e ⊕ t) =ctx= t : ()).
 Proof.
   intros Te Tt Het. split; last first.
   - eapply (ctx_refines_transitive _ _ _ (t ⊕ e)%V).
@@ -311,11 +311,11 @@ Proof.
       by iApply refines_typed.
     + eapply (refines_sound relocΣ).
       iIntros (? Δ). rel_pures_r.
-      iApply or_comm; by iApply (refines_typed TUnit []).
+      iApply or_comm; by iApply (refines_typed () []).
   - eapply (ctx_refines_transitive _ _ _ (t ⊕ t)%E).
     + ctx_bind_l e.
       ctx_bind_r t.
-      eapply (ctx_refines_congruence ∅ _ _ TUnit);
+      eapply (ctx_refines_congruence ∅ _ _ ());
         last eassumption.
       { cbn.
         econstructor; cbn; eauto.
@@ -337,26 +337,26 @@ Proof.
           + econstructor; cbn; eauto.
             2:{ econstructor; cbn; eauto. }
             enough (typed_ctx_item (CTX_Rec <> <>)
-                       (binder_insert BAnon (TUnit → TUnit)%ty
-                                      (binder_insert BAnon TUnit (∅ : stringmap type)))
-                       TUnit ∅ (TUnit → TUnit)).
+                       (binder_insert BAnon (() → ())%ty
+                                      (binder_insert BAnon ()%ty (∅ : stringmap type)))
+                       () ∅ (() → ())).
             { by simpl in *. }
-            eapply (TP_CTX_Rec ∅ TUnit TUnit BAnon BAnon). }
+            eapply (TP_CTX_Rec ∅ () () BAnon BAnon). }
     + eapply (refines_sound relocΣ).
       iIntros (? Δ). rel_pures_l.
-      iApply or_idemp_l. by iApply (refines_typed TUnit []).
+      iApply or_idemp_l. by iApply (refines_typed () []).
 Qed.
 
 Lemma or_equiv_refines_2 e t :
-  (∅ ⊢ₜ e : TUnit) →
-  (∅ ⊢ₜ t : TUnit) →
-  (∅ ⊨ (e ⊕ t) =ctx= t : TUnit) →
-  (∅ ⊨ e ≤ctx≤ t : TUnit).
+  (∅ ⊢ₜ e : ()) →
+  (∅ ⊢ₜ t : ()) →
+  (∅ ⊨ (e ⊕ t) =ctx= t : ()) →
+  (∅ ⊨ e ≤ctx≤ t : ()).
 Proof.
   intros Te Tt [Het1 Het2].
   eapply (ctx_refines_transitive _ _ _ (e ⊕ t)%E); last assumption.
   eapply (refines_sound relocΣ).
   iIntros (? Δ).
   rel_pures_r. iApply or_choice_1_r.
-  by iApply (refines_typed TUnit []).
+  by iApply (refines_typed () []).
 Qed.

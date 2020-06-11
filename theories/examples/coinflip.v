@@ -333,7 +333,7 @@ Section proofs.
 End proofs.
 
 Theorem coin_lazy_eager_ctx_refinement :
-  ∅ ⊨ coin2 ≤ctx≤ coin1 : (TUnit → TBool) * (TUnit → TUnit).
+  ∅ ⊨ coin2 ≤ctx≤ coin1 : (() → TBool) * (() → ()).
 Proof.
   eapply (ctx_refines_transitive ∅ _).
   - eapply (refines_sound #[relocΣ; lockΣ]).
@@ -343,7 +343,7 @@ Proof.
 Qed.
 
 Theorem coin_eager_lazy_ctx_refinement :
-  ∅ ⊨ coin1 ≤ctx≤ coin2 : (TUnit → TBool) * (TUnit → TUnit).
+  ∅ ⊨ coin1 ≤ctx≤ coin2 : (() → TBool) * (() → ()).
 Proof.
   eapply (ctx_refines_transitive ∅ _).
   - eapply (refines_sound #[relocΣ; lockΣ]).
