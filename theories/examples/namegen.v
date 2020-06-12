@@ -47,7 +47,7 @@ Section namegen_refinement.
     iMod (inv_alloc N _ (ng_Inv γ c) with "[-]") as "#Hinv".
     { iNext. iExists 0, ∅. iFrame.
       by rewrite big_sepS_empty. }
-    iApply (refines_exists (ngR γ)).
+    iApply (refines_pack (ngR γ)).
     do 2 rel_pure_r.
     iApply refines_pair.
     - (* New name *)

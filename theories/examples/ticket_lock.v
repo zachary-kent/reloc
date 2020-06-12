@@ -346,7 +346,7 @@ Section refinement.
         (reloc.lib.lock.newlock, reloc.lib.lock.acquire, reloc.lib.lock.release)
     : lrel_lock.
   Proof.
-    simpl. iApply (refines_exists lockInt).
+    simpl. iApply (refines_pack lockInt).
     repeat iApply refines_pair.
     - by iApply newlock_refinement.
     - by iApply acquire_refinement_direct.

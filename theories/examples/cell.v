@@ -58,7 +58,7 @@ Section cell_refinement.
   Proof.
     unfold cell1, cell2.
     iApply refines_forall. iIntros "!#" (R).
-    iApply (refines_exists (cellR R)).
+    iApply (refines_pack (cellR R)).
     repeat iApply refines_pair.
     - (* New cell *)
       rel_pure_l. rel_pure_r.

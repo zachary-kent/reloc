@@ -169,7 +169,7 @@ Section proof.
   Proof.
     unfold CG_stack, FG_stack.
     iApply refines_forall. iIntros (A). iAlways.
-    iApply (refines_exists (stackInt A)).
+    iApply (refines_pack (stackInt A)).
     repeat iApply refines_pair.
     - unfold CG_new_stack, FG_new_stack.
       iApply refines_arrow_val. iAlways.

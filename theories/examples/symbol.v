@@ -235,7 +235,7 @@ Section proof.
     rel_apply_l (refines_newlock_l N (lok_inv size1 size2 tbl1 tbl2 l2)%I with "[Hs1' Hs2' Htbl1' Htbl2' Hl2]").
     { iExists 0,_. by iFrame. }
     iNext. iIntros (l1 γl) "#Hl1". rel_pure_l. rel_pure_l.
-    iApply (refines_exists (tableR γ)).
+    iApply (refines_pack (tableR γ)).
     repeat iApply refines_pair.
     (* Eq *)
     - iApply eqKey_refinement.
@@ -314,7 +314,7 @@ Section proof.
     rel_apply_l (refines_newlock_l N (lok_inv size1 size2 tbl1 tbl2 l2)%I with "[Hs1' Hs2' Htbl1' Htbl2' Hl2]").
     { iExists 0,_. by iFrame. }
     iNext. iIntros (l1 γl) "#Hl1". rel_pure_l. rel_pure_l.
-    iApply (refines_exists (tableR γ)).
+    iApply (refines_pack (tableR γ)).
     repeat iApply refines_pair.
     (* Eq *)
     - iApply eqKey_refinement.

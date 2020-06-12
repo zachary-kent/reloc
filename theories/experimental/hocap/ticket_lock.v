@@ -126,7 +126,7 @@ Section refinement.
             <<
            (spin_lock.newlock, spin_lock.acquire, spin_lock.release) : interp lockT Δ.
   Proof.
-    iApply (refines_exists lockInt).
+    iApply (refines_pack lockInt).
     repeat iApply refines_pair; simpl.
     - by iApply newlock_refinement.
     - by iApply acquire_refinement.

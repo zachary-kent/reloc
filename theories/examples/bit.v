@@ -26,7 +26,7 @@ Section bit_refinement.
   Lemma bit_refinement Δ : ⊢ REL bit_bool << bit_nat : interp bitτ Δ.
   Proof.
     unfold bitτ; simpl.
-    iApply (refines_exists R).
+    iApply (refines_pack R).
     progress repeat iApply refines_pair.
     - rel_values.
     - unfold flip_nat. rel_pure_l.
