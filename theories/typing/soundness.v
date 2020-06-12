@@ -56,7 +56,7 @@ Proof.
   eapply logrel_adequate; eauto.
 Qed.
 
-Lemma logrel_ctxequiv Σ `{relocPreG Σ} Γ e e' τ :
+Lemma refines_sound_open Σ `{relocPreG Σ} Γ e e' τ :
   (∀ `{relocG Σ} Δ, ⊢ {⊤;Δ;Γ} ⊨ e ≤log≤ e' : τ) →
   Γ ⊨ e ≤ctx≤ e' : τ.
 Proof.
@@ -73,7 +73,7 @@ Lemma refines_sound Σ `{relocPreG Σ} e e' τ :
   (∀ `{relocG Σ} Δ, ⊢ REL e << e' : (interp τ Δ)) →
   ∅ ⊨ e ≤ctx≤ e' : τ.
 Proof.
-  intros Hlog. eapply logrel_ctxequiv. apply _.
+  intros Hlog. eapply refines_sound_open. apply _.
   iIntros (? Δ vs).
   rewrite fmap_empty env_ltyped2_empty_inv.
   iIntros (->).
