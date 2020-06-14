@@ -104,16 +104,12 @@ Instance insert_binder (A : Type): Insert binder A (stringmap A) :=
 
 (** Typing itself *)
 Inductive typed : stringmap type → expr → type → Prop :=
-  | Var_typed Γ x τ : Γ !! x = Some τ → Γ ⊢ₜ Var x : τ
+  | Var_typed Γ x τ :
+     Γ !! x = Some τ →
+     Γ ⊢ₜ Var x : τ
   | Val_typed Γ v τ :
-      ⊢ᵥ v : τ →
-      Γ ⊢ₜ Val v : τ
-  | Unit_typed Γ :
-      Γ ⊢ₜ #() : ()
-  | Nat_typed Γ (n : nat) :
-      Γ ⊢ₜ #n : TNat
-  | Bool_typed Γ (b : bool) :
-      Γ ⊢ₜ #b : TBool
+     ⊢ᵥ v : τ →
+     Γ ⊢ₜ Val v : τ
   | BinOp_typed_nat Γ op e1 e2 τ :
      Γ ⊢ₜ e1 : TNat → Γ ⊢ₜ e2 : TNat →
      binop_nat_res_type op = Some τ →
@@ -126,20 +122,20 @@ Inductive typed : stringmap type → expr → type → Prop :=
      Γ ⊢ₜ e1 : ref τ → Γ ⊢ₜ e2 : ref τ →
      Γ ⊢ₜ BinOp EqOp e1 e2 : TBool
   | Pair_typed Γ e1 e2 τ1 τ2 :
-      Γ ⊢ₜ e1 : τ1 → Γ ⊢ₜ e2 : τ2 →
-      Γ ⊢ₜ (e1, e2) : τ1 * τ2
+     Γ ⊢ₜ e1 : τ1 → Γ ⊢ₜ e2 : τ2 →
+     Γ ⊢ₜ (e1, e2) : τ1 * τ2
   | Fst_typed Γ e τ1 τ2 :
-      Γ ⊢ₜ e : τ1 * τ2 →
-      Γ ⊢ₜ Fst e : τ1
+     Γ ⊢ₜ e : τ1 * τ2 →
+     Γ ⊢ₜ Fst e : τ1
   | Snd_typed Γ e τ1 τ2 :
-      Γ ⊢ₜ e : τ1 * τ2 →
-      Γ ⊢ₜ Snd e : τ2
+     Γ ⊢ₜ e : τ1 * τ2 →
+     Γ ⊢ₜ Snd e : τ2
   | InjL_typed Γ e τ1 τ2 :
-      Γ ⊢ₜ e : τ1 →
-      Γ ⊢ₜ InjL e : τ1 + τ2
+     Γ ⊢ₜ e : τ1 →
+     Γ ⊢ₜ InjL e : τ1 + τ2
   | InjR_typed Γ e τ1 τ2 :
-      Γ ⊢ₜ e : τ2 →
-      Γ ⊢ₜ InjR e : τ1 + τ2
+     Γ ⊢ₜ e : τ2 →
+     Γ ⊢ₜ InjR e : τ1 + τ2
   | Case_typed Γ e0 e1 e2 τ1 τ2 τ3 :
      Γ ⊢ₜ e0 : τ1 + τ2 →
      Γ ⊢ₜ e1 : (τ1 → τ3) →
@@ -164,18 +160,18 @@ Inductive typed : stringmap type → expr → type → Prop :=
      Γ ⊢ₜ e : (∀: τ) →
      Γ ⊢ₜ e #() : τ.[τ'/]
   | TFold Γ e τ :
-      Γ ⊢ₜ e : τ.[(μ: τ)%ty/] →
-      Γ ⊢ₜ e : (μ: τ)
+     Γ ⊢ₜ e : τ.[(μ: τ)%ty/] →
+     Γ ⊢ₜ e : (μ: τ)
   | TUnfold Γ e τ :
-      Γ ⊢ₜ e : (μ: τ)%ty →
-      Γ ⊢ₜ rec_unfold e : τ.[(μ: τ)%ty/]
+     Γ ⊢ₜ e : (μ: τ)%ty →
+     Γ ⊢ₜ rec_unfold e : τ.[(μ: τ)%ty/]
   | TPack Γ e τ τ' :
-      Γ ⊢ₜ e : τ.[τ'/] →
-      Γ ⊢ₜ e : (∃: τ)
+     Γ ⊢ₜ e : τ.[τ'/] →
+     Γ ⊢ₜ e : (∃: τ)
   | TUnpack Γ e1 x e2 τ τ2 :
-      Γ ⊢ₜ e1 : (∃: τ) →
-      <[x:=τ]>(⤉ Γ) ⊢ₜ e2 : (Autosubst_Classes.subst (ren (+1)) τ2) →
-      Γ ⊢ₜ (unpack: x := e1 in e2) : τ2
+     Γ ⊢ₜ e1 : (∃: τ) →
+     <[x:=τ]>(⤉ Γ) ⊢ₜ e2 : (Autosubst_Classes.subst (ren (+1)) τ2) →
+     Γ ⊢ₜ (unpack: x := e1 in e2) : τ2
   | TFork Γ e : Γ ⊢ₜ e : () → Γ ⊢ₜ Fork e : ()
   | TAlloc Γ e τ : Γ ⊢ₜ e : τ → Γ ⊢ₜ Alloc e : ref τ
   | TLoad Γ e τ : Γ ⊢ₜ e : ref τ → Γ ⊢ₜ Load e : τ
@@ -193,15 +189,15 @@ with val_typed : val → type → Prop :=
   | Nat_val_typed (n : nat) : ⊢ᵥ #n : TNat
   | Bool_val_typed (b : bool) : ⊢ᵥ #b : TBool
   | Pair_val_typed v1 v2 τ1 τ2 :
-      ⊢ᵥ v1 : τ1 →
-      ⊢ᵥ v2 : τ2 →
-      ⊢ᵥ PairV v1 v2 : (τ1 * τ2)
+     ⊢ᵥ v1 : τ1 →
+     ⊢ᵥ v2 : τ2 →
+     ⊢ᵥ PairV v1 v2 : (τ1 * τ2)
   | InjL_val_typed v τ1 τ2 :
-      ⊢ᵥ v : τ1 →
-      ⊢ᵥ InjLV v : (τ1 + τ2)
+     ⊢ᵥ v : τ1 →
+     ⊢ᵥ InjLV v : (τ1 + τ2)
   | InjR_val_typed v τ1 τ2 :
-      ⊢ᵥ v : τ2 →
-      ⊢ᵥ InjRV v : (τ1 + τ2)
+     ⊢ᵥ v : τ2 →
+     ⊢ᵥ InjRV v : (τ1 + τ2)
   | Rec_val_typed f x e τ1 τ2 :
      <[f:=TArrow τ1 τ2]>(<[x:=τ1]>∅) ⊢ₜ e : τ2 →
      ⊢ᵥ RecV f x e : (τ1 → τ2)

@@ -36,15 +36,6 @@ Section fundamental.
     by iApply refines_ret.
   Qed.
 
-  Lemma bin_log_related_unit Δ Γ : ⊢ {Δ;Γ} ⊨ #() ≤log≤ #() : ().
-  Proof. value_case. Qed.
-
-  Lemma bin_log_related_nat Δ Γ (n : nat) : ⊢ {Δ;Γ} ⊨ #n ≤log≤ #n : TNat.
-  Proof. value_case. Qed.
-
-  Lemma bin_log_related_bool Δ Γ (b : bool) : ⊢ {Δ;Γ} ⊨ #b ≤log≤ #b : TBool.
-  Proof. value_case. Qed.
-
   Lemma bin_log_related_pair Δ Γ e1 e2 e1' e2' (τ1 τ2 : type) :
     ({Δ;Γ} ⊨ e1 ≤log≤ e1' : τ1) -∗
     ({Δ;Γ} ⊨ e2 ≤log≤ e2' : τ2) -∗
@@ -502,9 +493,6 @@ Section fundamental.
       + by iApply bin_log_related_var.
       + iIntros (γ) "#H". simpl. rel_values.
         iModIntro. by iApply fundamental_val.
-      + iApply bin_log_related_unit.
-      + by iApply bin_log_related_nat.
-      + by iApply bin_log_related_bool.
       + iApply bin_log_related_nat_binop; first done;
           by iApply fundamental.
       + iApply bin_log_related_bool_binop; first done;
