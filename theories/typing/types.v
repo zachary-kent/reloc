@@ -12,11 +12,11 @@ Inductive type :=
   | TProd : type → type → type
   | TSum : type → type → type
   | TArrow : type → type → type
-  | TRec (τ : {bind 1 of type})
-  | TVar (x : var)
-  | TForall (τ : {bind 1 of type})
-  | TExists (τ : {bind 1 of type})
-  | Tref (τ : type).
+  | TRec : {bind 1 of type} → type
+  | TVar : var → type
+  | TForall : {bind 1 of type} → type
+  | TExists : {bind 1 of type} → type
+  | Tref : type → type.
 
 (** Which types support equality testing *)
 Inductive EqType : type → Prop :=
