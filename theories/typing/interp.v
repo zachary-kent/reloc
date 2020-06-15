@@ -37,7 +37,7 @@ Section semtypes.
     | TVar x => ctx_lookup x
     | TForall τ' => λne Δ, lrel_forall (λ τ, interp τ' (τ::Δ))
     | TExists τ' => λne Δ, lrel_exists (λ τ, interp τ' (τ::Δ))
-    | Tref τ => λne Δ, lrel_ref (interp τ Δ)
+    | TRef τ => λne Δ, lrel_ref (interp τ Δ)
     end.
   Solve Obligations with (intros I τ τ' n Δ Δ' HΔ' ??; try solve_proper).
   Next Obligation.

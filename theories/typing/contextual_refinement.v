@@ -171,31 +171,31 @@ Inductive typed_ctx_item :
      typed_ctx_item CTX_Fork Γ () Γ ()
   (* Heap *)
   | TPCTX_Alloc Γ τ :
-     typed_ctx_item CTX_Alloc Γ τ Γ (Tref τ)
+     typed_ctx_item CTX_Alloc Γ τ Γ (TRef τ)
   | TP_CTX_Load Γ τ :
-     typed_ctx_item CTX_Load Γ (Tref τ) Γ τ
+     typed_ctx_item CTX_Load Γ (TRef τ) Γ τ
   | TP_CTX_StoreL Γ e2 τ :
-     typed Γ e2 τ → typed_ctx_item (CTX_StoreL e2) Γ (Tref τ) Γ ()
+     typed Γ e2 τ → typed_ctx_item (CTX_StoreL e2) Γ (TRef τ) Γ ()
   | TP_CTX_StoreR Γ e1 τ :
-     typed Γ e1 (Tref τ) →
+     typed Γ e1 (TRef τ) →
      typed_ctx_item (CTX_StoreR e1) Γ τ Γ ()
   | TP_CTX_FAAL Γ e2 :
      Γ ⊢ₜ e2 : TNat →
-     typed_ctx_item (CTX_FAAL e2) Γ (Tref TNat) Γ TNat
+     typed_ctx_item (CTX_FAAL e2) Γ (TRef TNat) Γ TNat
   | TP_CTX_FAAR Γ e1 :
-     Γ ⊢ₜ e1 : Tref TNat →
+     Γ ⊢ₜ e1 : TRef TNat →
      typed_ctx_item (CTX_FAAR e1) Γ TNat Γ TNat
   | TP_CTX_CasL Γ e1 e2 τ :
      EqType τ → UnboxedType τ →
      typed Γ e1 τ → typed Γ e2 τ →
-     typed_ctx_item (CTX_CmpXchgL e1 e2) Γ (Tref τ) Γ (TProd τ TBool)
+     typed_ctx_item (CTX_CmpXchgL e1 e2) Γ (TRef τ) Γ (TProd τ TBool)
   | TP_CTX_CasM Γ e0 e2 τ :
      EqType τ → UnboxedType τ →
-     typed Γ e0 (Tref τ) → typed Γ e2 τ →
+     typed Γ e0 (TRef τ) → typed Γ e2 τ →
      typed_ctx_item (CTX_CmpXchgM e0 e2) Γ τ Γ (TProd τ TBool)
   | TP_CTX_CasR Γ e0 e1 τ :
      EqType τ → UnboxedType τ →
-     typed Γ e0 (Tref τ) → typed Γ e1 τ →
+     typed Γ e0 (TRef τ) → typed Γ e1 τ →
      typed_ctx_item (CTX_CmpXchgR e0 e1) Γ τ Γ (TProd τ TBool)
   (* Polymorphic & recursive types *)
   | TP_CTX_Fold Γ τ :

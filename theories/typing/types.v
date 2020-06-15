@@ -16,7 +16,7 @@ Inductive type :=
   | TVar : var → type
   | TForall : {bind 1 of type} → type
   | TExists : {bind 1 of type} → type
-  | Tref : type → type.
+  | TRef : type → type.
 
 (** Which types support equality testing *)
 Inductive EqType : type → Prop :=
@@ -31,7 +31,7 @@ Inductive UnboxedType : type → Prop :=
   | UnboxedTUnit : UnboxedType TUnit
   | UnboxedTNat : UnboxedType TNat
   | UnboxedTBool : UnboxedType TBool
-  | UnboxedTref τ : UnboxedType (Tref τ).
+  | UnboxedTRef τ : UnboxedType (TRef τ).
 
 (** Autosubst instances *)
 Instance Ids_type : Ids type. derive. Defined.
@@ -70,7 +70,7 @@ Notation "∀: τ" :=
 Notation "∃: τ" :=
   (TExists τ%ty)
   (at level 100, τ at level 200) : FType_scope.
-Notation "'ref' τ" := (Tref τ%ty) (at level 10, τ at next level, right associativity): FType_scope.
+Notation "'ref' τ" := (TRef τ%ty) (at level 10, τ at next level, right associativity): FType_scope.
 
 (** * Typing judgements *)
 Reserved Notation "Γ ⊢ₜ e : τ" (at level 74, e, τ at next level).

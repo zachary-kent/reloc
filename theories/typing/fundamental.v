@@ -244,7 +244,7 @@ Section fundamental.
   Qed.
 
   Lemma bin_log_related_load Δ Γ e e' τ :
-    ({Δ;Γ} ⊨ e ≤log≤ e' : (Tref τ)) -∗
+    ({Δ;Γ} ⊨ e ≤log≤ e' : (TRef τ)) -∗
     {Δ;Γ} ⊨ Load e ≤log≤ Load e' : τ.
   Proof.
     iIntros "IH".
@@ -254,7 +254,7 @@ Section fundamental.
   Qed.
 
   Lemma bin_log_related_store Δ Γ e1 e2 e1' e2' τ :
-    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : Tref τ) -∗
+    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : TRef τ) -∗
     ({Δ;Γ} ⊨ e2 ≤log≤ e2' : τ) -∗
     {Δ;Γ} ⊨ Store e1 e2 ≤log≤ Store e1' e2' : ().
   Proof.
@@ -266,7 +266,7 @@ Section fundamental.
   Qed.
 
   Lemma bin_log_related_FAA Δ Γ e1 e2 e1' e2' :
-    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : Tref TNat) -∗
+    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : TRef TNat) -∗
     ({Δ;Γ} ⊨ e2 ≤log≤ e2' : TNat) -∗
     {Δ;Γ} ⊨ FAA e1 e2 ≤log≤ FAA e1' e2' : TNat.
   Proof.
@@ -291,7 +291,7 @@ Section fundamental.
   Lemma bin_log_related_CmpXchg Δ Γ e1 e2 e3 e1' e2' e3' τ
     (HEqτ : EqType τ)
     (HUbτ : UnboxedType τ) :
-    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : Tref τ) -∗
+    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : TRef τ) -∗
     ({Δ;Γ} ⊨ e2 ≤log≤ e2' : τ) -∗
     ({Δ;Γ} ⊨ e3 ≤log≤ e3' : τ) -∗
     {Δ;Γ} ⊨ CmpXchg e1 e2 e3 ≤log≤ CmpXchg e1' e2' e3' : TProd τ TBool.
@@ -329,7 +329,7 @@ Section fundamental.
 
   Lemma bin_log_related_alloc Δ Γ e e' τ :
     ({Δ;Γ} ⊨ e ≤log≤ e' : τ) -∗
-    {Δ;Γ} ⊨ Alloc e ≤log≤ Alloc e' : Tref τ.
+    {Δ;Γ} ⊨ Alloc e ≤log≤ Alloc e' : TRef τ.
   Proof.
     iIntros "IH".
     intro_clause.
@@ -343,8 +343,8 @@ Section fundamental.
   Qed.
 
   Lemma bin_log_related_ref_binop Δ Γ e1 e2 e1' e2' τ :
-    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : Tref τ) -∗
-    ({Δ;Γ} ⊨ e2 ≤log≤ e2' : Tref τ) -∗
+    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : TRef τ) -∗
+    ({Δ;Γ} ⊨ e2 ≤log≤ e2' : TRef τ) -∗
     {Δ;Γ} ⊨ BinOp EqOp e1 e2 ≤log≤ BinOp EqOp e1' e2' : TBool.
   Proof.
     iIntros "IH1 IH2".
