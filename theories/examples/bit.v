@@ -45,7 +45,4 @@ End bit_refinement.
 
 Theorem bit_ctx_refinement :
   ∅ ⊨ bit_bool ≤ctx≤ bit_nat : bitτ.
-Proof.
-  eapply (refines_sound relocΣ).
-  iIntros (? Δ). iApply (bit_refinement Δ).
-Qed.
+Proof. auto using (refines_sound relocΣ), bit_refinement. Qed.
