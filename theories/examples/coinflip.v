@@ -5,28 +5,28 @@ From reloc Require Import reloc lib.lock.
 From reloc.examples Require Import lateearlychoice.
 
 Definition newcoin : val := λ: <>, ref #false.
-Definition flip : val := λ: "c" <>, "c" <- rand #().
-Definition read : val := λ: "c" <>, !"c".
+Definition flip : val := λ: "c", "c" <- rand #().
+Definition read : val := λ: "c", !"c".
 
 Definition newcoin_lazy : val := λ: <>, ref (SOME #false).
 
-Definition flip_lazy : val := λ: "c" <>,
+Definition flip_lazy : val := λ: "c",
   "c" <- NONE.
-Definition flip_lazy' : val := λ: "c" "lk" "p" <>,
+Definition flip_lazy' : val := λ: "c" "lk" "p",
   acquire "lk";;
   "c" <- NONE;;
   release "lk".
 
-Definition read_lazy : val := rec: "read" "c" <> :=
+Definition read_lazy : val := rec: "read" "c" :=
   match: !"c" with
     SOME "v" => "v"
   | NONE  =>
       let: "x" := rand #() in
       if: CAS "c" NONEV (SOME "x")
       then "x"
-      else "read" "c" #()
+      else "read" "c"
   end.
-Definition read_lazy' : val := λ: "c" "lk" "p" <>,
+Definition read_lazy' : val := λ: "c" "lk" "p",
   acquire "lk";;
   let: "r" :=
     match: !"c" with
@@ -42,15 +42,15 @@ Definition read_lazy' : val := λ: "c" "lk" "p" <>,
 
 Definition coin1 : expr :=
   let: "c" := newcoin #() in
-  (read "c", flip "c").
+  ((λ: <>, read "c"), (λ: <>, flip "c")).
 Definition coin2 : expr :=
   let: "c" := newcoin_lazy #() in
-  (read_lazy "c", flip_lazy "c").
+  ((λ: <>, read_lazy "c"), (λ: <>, flip_lazy "c")).
 Definition coin2' : expr :=
   let: "c" := newcoin_lazy #() in
   let: "p" := NewProph in
   let: "lk" := newlock #() in
-  (read_lazy' "c" "lk" "p", flip_lazy' "c" "lk" "p").
+  ((λ: <>, read_lazy' "c" "lk" "p"), (λ: <>, flip_lazy' "c" "lk" "p")).
 
 Section proofs.
   Context `{!relocG Σ, !lockG Σ}.
@@ -77,10 +77,8 @@ Section proofs.
     clear vs.
     iNext. iIntros (lk γ) "#Hlk /=". do 2 rel_pure_l.
     iApply refines_pair.
-    - rel_rec_l. repeat rel_pure_l.
-      rel_rec_r. repeat rel_pure_r.
-      iApply refines_arrow. iModIntro. iIntros (??) "_".
-      rel_pure_l. rel_pure_r.
+    - rel_pure_l; rel_pure_r. iApply refines_arrow. iIntros (??) "!> _".
+      rel_pure_l; rel_rec_l; rel_pure_r; rel_rec_r. repeat rel_pure_l.
       rel_apply_l (refines_acquire_l with "Hlk").
       iNext. iIntros "Hlocked".
       iDestruct 1 as (vs) "[Hp H]". repeat rel_pure_l.
@@ -96,10 +94,8 @@ Section proofs.
       + rel_apply_l (refines_release_l with "Hlk Hlocked [-]").
         { iExists vs. iFrame. iRight. iExists x. iFrame. }
         iNext. repeat rel_pure_l; rel_values.
-    - rel_rec_l. repeat rel_pure_l.
-      rel_rec_r. repeat rel_pure_r.
-      iApply refines_arrow. iModIntro. iIntros (??) "_".
-      rel_pure_l. rel_pure_r.
+    - rel_pure_l; rel_pure_r. iApply refines_arrow. iIntros (??) "!> _".
+      rel_pure_l; rel_rec_l; rel_pure_r; rel_rec_r. repeat rel_pure_l.
       rel_apply_l (refines_acquire_l with "Hlk").
       iNext. iIntros "Hlocked".
       iDestruct 1 as (vs) "[Hp H]". repeat rel_pure_l.
@@ -137,12 +133,10 @@ Section proofs.
             with "[-]") as "#Hinv".
     { iNext. iExists false. iFrame. }
     iApply refines_pair.
-    - rel_rec_l. repeat rel_pure_l.
-      rel_rec_r. repeat rel_pure_r.
-      iApply refines_arrow. iModIntro. iIntros (??) "_".
-      rel_pure_l. rel_pure_r.
+    - rel_pure_l; rel_pure_r. iApply refines_arrow. iIntros (??) "!> _".
+      rel_pure_l; rel_rec_l; rel_pure_r; rel_rec_r. repeat rel_pure_l.
       rel_load_l_atomic. iInv coinN as (b) "(Hlk & Hce & H)" "Hclose".
-      iModIntro. iExists _. iFrame. iNext. iIntros "Hce".
+      iModIntro. iExists _. iFrame. iNext. iIntros "Hce". repeat rel_pure_r.
       rel_apply_r (refines_acquire_r with "Hlk"). iIntros "Hlk".
       repeat rel_pure_r.
       iDestruct "H" as "[Hcl|Hcl]"; rel_load_r; repeat rel_pure_r.
@@ -157,13 +151,11 @@ Section proofs.
         repeat rel_pure_r. iMod ("Hclose" with "[-]") as "_".
         { eauto with iFrame. }
         rel_values.
-    - rel_rec_l. repeat rel_pure_l.
-      rel_rec_r. repeat rel_pure_r.
-      iApply refines_arrow. iModIntro. iIntros (??) "_".
-      rel_pure_l. rel_pure_r.
+    - rel_pure_l; rel_pure_r. iApply refines_arrow. iIntros (??) "!> _".
+      rel_pure_l; rel_rec_l; rel_pure_r; rel_rec_r. repeat rel_pure_l.
       rel_apply_l refines_rand_l. iNext. iIntros (b).
       rel_store_l_atomic. iInv coinN as (b') "(Hlk & Hce & H)" "Hclose".
-      iModIntro. iExists _. iFrame. iNext. iIntros "Hce".
+      iModIntro. iExists _. iFrame. iNext. iIntros "Hce". repeat rel_pure_r.
       rel_apply_r (refines_acquire_r with "Hlk"). iIntros "Hlk".
       repeat rel_pure_r.
       iDestruct "H" as "[Hcl|Hcl]"; rel_store_r; repeat rel_pure_r.
@@ -198,10 +190,8 @@ Section proofs.
     clear vs.
     iNext. iIntros (lk γ) "#Hlk /=". do 2 rel_pure_l.
     iApply refines_pair.
-    - rel_rec_l. repeat rel_pure_l.
-      rel_rec_r. repeat rel_pure_r.
-      iApply refines_arrow. iModIntro. iIntros (??) "_".
-      rel_pure_l. rel_pure_r.
+    - rel_pure_l; rel_pure_r. iApply refines_arrow. iIntros (??) "!> _".
+      rel_pure_l; rel_rec_l; rel_pure_r; rel_rec_r. repeat rel_pure_l.
       rel_apply_l (refines_acquire_l with "Hlk").
       iNext. iIntros "Hlocked".
       iDestruct 1 as (vs) "[Hp H]". repeat rel_pure_l.
@@ -221,10 +211,8 @@ Section proofs.
         rel_apply_l (refines_release_l with "Hlk Hlocked [-]").
         { iExists vs. iFrame. iRight. iExists x. iFrame. }
         iNext. repeat rel_pure_l; rel_values.
-    - rel_rec_l. repeat rel_pure_l.
-      rel_rec_r. repeat rel_pure_r.
-      iApply refines_arrow. iModIntro. iIntros (??) "_".
-      rel_pure_l. rel_pure_r.
+    - rel_pure_l; rel_pure_r. iApply refines_arrow. iIntros (??) "!> _".
+      rel_pure_l; rel_rec_l; rel_pure_r; rel_rec_r. repeat rel_pure_l.
       rel_apply_l (refines_acquire_l with "Hlk").
       iNext. iIntros "Hlocked".
       iDestruct 1 as (vs) "[Hp H]". repeat rel_pure_l.
@@ -260,11 +248,10 @@ Section proofs.
     do 2 rel_pure_r.
 
     iApply refines_pair.
-    - rel_rec_r. repeat rel_pure_r.
-      rel_rec_l. repeat rel_pure_l.
-      iApply refines_arrow. iModIntro. iIntros (??) "_".
-      rel_pure_l. rel_pure_r.
-      iLöb as "IH".
+    - rel_pure_l; rel_pure_r.
+      iApply refines_arrow. iIntros (??) "!> _". rel_pure_l; rel_pure_r.
+      rel_rec_r. repeat rel_pure_r.
+      iLöb as "IH". rel_rec_l.
       rel_load_l_atomic. iInv coinN as "(Hlk & [[Hc' Hc]|H])" "Hclose";
         iModIntro.
       + iExists _. iFrame. iNext. iIntros "Hc".
@@ -277,7 +264,7 @@ Section proofs.
         * iModIntro; iExists _. iFrame. iSplit.
           { iIntros (?); simplify_eq/=. }
           iIntros (_). iNext. iIntros "Hc".
-          rel_pures_l. rel_apply_r (refines_acquire_r with "Hlk").
+          rel_pures_l. rel_pures_r. rel_apply_r (refines_acquire_r with "Hlk").
           iIntros "Hlk". repeat rel_pure_r. rel_load_r.
           repeat rel_pure_r. rel_apply_r (refines_rand_r b).
           repeat rel_pure_r. rel_store_r.
@@ -291,7 +278,7 @@ Section proofs.
           iModIntro; iExists _. iFrame. iSplit; last first.
           { iIntros (?); simplify_eq/=. }
           iIntros (_). iNext. iIntros "Hc".
-          rel_pures_l. rel_rec_l. do 2 rel_pure_l.
+          rel_pures_l.
           iMod ("Hclose" with "[-]") as "_".
           { eauto with iFrame. }
           iApply "IH".
@@ -305,10 +292,9 @@ Section proofs.
         iMod ("Hclose" with "[-]") as "_".
         { eauto with iFrame. }
         rel_values.
-    - rel_rec_l. repeat rel_pure_l.
-      rel_rec_r. repeat rel_pure_r.
-      iApply refines_arrow. iModIntro. iIntros (??) "_".
-      repeat rel_pure_l. rel_pure_r.
+    - rel_pure_l. rel_pure_r.
+      iApply refines_arrow. iIntros (??) "!> _".
+      repeat rel_rec_l. repeat rel_rec_r. repeat rel_pure_l. repeat rel_pure_r.
       rel_store_l_atomic. iInv coinN as "(Hlk & [[Hc' Hc]|H])" "Hclose";
         iModIntro.
       + iExists _. iFrame. iNext. iIntros "Hc".
