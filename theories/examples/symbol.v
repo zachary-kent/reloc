@@ -6,7 +6,7 @@ In this example we implement a symbol lookup table, where a symbol is
 an abstract data type. Because the only way to obtain a symbol is to
 insert something into the table, we can show that the dynamic check in
 the lookup function in `symbol2` is redundant. *)
-From iris.algebra Require Import auth.
+From iris.algebra Require Import auth numbers.
 From reloc Require Import reloc.
 From reloc.lib Require Import lock list.
 
@@ -46,8 +46,8 @@ Definition symbol2 : val := λ: <>,
 
 (** * The actual refinement proof.
       Requires monotonic state *)
-Class msizeG Σ := MSizeG { msize_inG :> inG Σ (authR mnatUR) }.
-Definition msizeΣ : gFunctors := #[GFunctor (authR mnatUR)].
+Class msizeG Σ := MSizeG { msize_inG :> inG Σ (authR max_natUR) }.
+Definition msizeΣ : gFunctors := #[GFunctor (authR max_natUR)].
 
 Instance subG_msizeΣ {Σ} : subG msizeΣ Σ → msizeG Σ.
 Proof. solve_inG. Qed.
@@ -58,40 +58,41 @@ Section rules.
   Context (γ : gname).
 
   Lemma size_le (n m : nat) :
-    own γ (● (n : mnat)) -∗
-    own γ (◯ (m : mnat)) -∗
+    own γ (● (MaxNat n)) -∗
+    own γ (◯ (MaxNat m)) -∗
     ⌜m ≤ n⌝.
   Proof.
     iIntros "Hn Hm".
     by iDestruct (own_valid_2 with "Hn Hm")
-      as %[?%mnat_included _]%auth_both_valid.
+      as %[?%max_nat_included _]%auth_both_valid.
   Qed.
 
   Lemma same_size (n m : nat) :
-    own γ (● (n : mnat)) ∗ own γ (◯ (m : mnat))
-    ==∗ own γ (● (n : mnat)) ∗ own γ (◯ (n : mnat)).
+    own γ (● (MaxNat n)) ∗ own γ (◯ (MaxNat m))
+    ==∗ own γ (● (MaxNat n)) ∗ own γ (◯ (MaxNat n)).
   Proof.
     iIntros "[Hn Hm]".
-    iMod (own_update_2 γ _ _ (● (n : mnat) ⋅ ◯ (n : mnat)) with "Hn Hm")
+    iMod (own_update_2 γ _ _ (● (MaxNat n) ⋅ ◯ (MaxNat n)) with "Hn Hm")
       as "[$ $]"; last done.
-    apply auth_update, (mnat_local_update _ _ n); auto.
+    apply auth_update, (max_nat_local_update _ _ (MaxNat n)); auto.
   Qed.
 
   Lemma inc_size' (n m : nat) :
-    own γ (● (n : mnat)) ∗ own γ (◯ (m : mnat))
-    ==∗ own γ (● (S n : mnat)).
+    own γ (● (MaxNat n)) ∗ own γ (◯ (MaxNat m))
+    ==∗ own γ (● (MaxNat (S n))).
   Proof.
     iIntros "[Hn #Hm]".
-    iMod (own_update_2 γ _ _ (● (S n : mnat) ⋅ ◯ (S n : mnat)) with "Hn Hm") as "[$ _]"; last done.
-    apply auth_update, (mnat_local_update _ _ (S n)); auto.
+    iMod (own_update_2 γ _ _ (● (MaxNat (S n)) ⋅ ◯ (MaxNat (S n)))
+      with "Hn Hm") as "[$ _]"; last done.
+    apply auth_update, (max_nat_local_update _ _ (MaxNat (S n))); simpl; auto.
   Qed.
 
   Lemma conjure_0 :
-    ⊢ |==> own γ (◯ (O : mnat)).
+    ⊢ |==> own γ (◯ (MaxNat O)).
   Proof. by apply own_unit. Qed.
 
   Lemma inc_size (n : nat) :
-    own γ (● (n : mnat)) ==∗ own γ (● (S n : mnat)).
+    own γ (● (MaxNat n)) ==∗ own γ (● (MaxNat (S n))).
   Proof.
     iIntros "Hn".
     iMod (conjure_0) as "Hz".
@@ -99,10 +100,10 @@ Section rules.
   Qed.
 
   Definition tableR : lrel Σ := LRel (λ v1 v2,
-    (∃ n : nat, ⌜v1 = #n⌝ ∗ ⌜v2 = #n⌝ ∗ own γ (◯ (n : mnat))))%I.
+    (∃ n : nat, ⌜v1 = #n⌝ ∗ ⌜v2 = #n⌝ ∗ own γ (◯ (MaxNat n))))%I.
 
   Definition table_inv (size1 size2 tbl1 tbl2 : loc) : iProp Σ :=
-    (∃ (n : nat) (ls : val), own γ (● (n : mnat))
+    (∃ (n : nat) (ls : val), own γ (● (MaxNat n))
                            ∗ size1 ↦{1/2} #n ∗ size2 ↦ₛ{1/2} #n
                            ∗ tbl1 ↦{1/2} ls ∗ tbl2 ↦ₛ{1/2} ls
                            ∗ lrel_list lrel_int ls ls)%I.
@@ -152,7 +153,7 @@ Section proof.
     iModIntro. iExists _. iFrame. iNext. iIntros "Hs1'".
     rel_load_r. rel_pure_r. rel_pure_r.
     iDestruct (own_valid_2 with "Ha Hn")
-      as %[?%mnat_included _]%auth_both_valid.
+      as %[?%max_nat_included _]%auth_both_valid; simpl in *.
     rel_op_l. rel_op_r. rewrite bool_decide_true; last lia.
     rel_pure_r. rel_load_r. rel_op_r.
     iMod ("Hcl" with "[Ha Hs1' Hs2' Htbl1' Htbl2' Hls]") as "_".
@@ -189,7 +190,7 @@ Section proof.
     iInv sizeN as (m ls) "(Ha & Hs1' & >Hs2' & >Htbl1' & >Htbl2' & Hls)" "Hcl".
     iModIntro. iExists _. iFrame. iNext. iIntros "Hs1'".
     iDestruct (own_valid_2 with "Ha Hn")
-      as %[?%mnat_included _]%auth_both_valid.
+      as %[?%max_nat_included _]%auth_both_valid; simpl in *.
     iMod ("Hcl" with "[Ha Hs1' Hs2' Htbl1' Htbl2' Hls]") as "_".
     { iNext. iExists _,_. by iFrame. }
     clear ls. repeat rel_pure_l.
@@ -225,7 +226,7 @@ Section proof.
     rel_alloc_r size2 as "[Hs2 Hs2']"; repeat rel_pure_r.
     rel_alloc_l tbl1 as "[Htbl1 Htbl1']"; repeat rel_pure_l.
     rel_alloc_r tbl2 as "[Htbl2 Htbl2']"; repeat rel_pure_r.
-    iMod (own_alloc (● (0 : mnat))) as (γ) "Ha".
+    iMod (own_alloc (● (MaxNat 0))) as (γ) "Ha".
     { by apply auth_auth_valid. }
     iMod (inv_alloc sizeN _ (table_inv γ size1 size2 tbl1 tbl2) with "[Hs1 Hs2 Htbl1 Htbl2 Ha]") as "#Hinv".
     { iNext. iExists _,_. iFrame. iApply lrel_list_nil. }
@@ -304,7 +305,7 @@ Section proof.
     rel_alloc_r size2 as "[Hs2 Hs2']"; repeat rel_pure_r.
     rel_alloc_l tbl1 as "[Htbl1 Htbl1']"; repeat rel_pure_l.
     rel_alloc_r tbl2 as "[Htbl2 Htbl2']"; repeat rel_pure_r.
-    iMod (own_alloc (● (0 : mnat))) as (γ) "Ha".
+    iMod (own_alloc (● (MaxNat 0))) as (γ) "Ha".
     { by apply auth_auth_valid. }
     iMod (inv_alloc sizeN _ (table_inv γ size1 size2 tbl1 tbl2) with "[Hs1 Hs2 Htbl1 Htbl2 Ha]") as "#Hinv".
     { iNext. iExists _,_. iFrame. iApply lrel_list_nil. }
