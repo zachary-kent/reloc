@@ -26,7 +26,7 @@ Inductive EqType : type → Prop :=
   | EqTProd τ τ' : EqType τ → EqType τ' → EqType (TProd τ τ')
   | EqSum τ τ' : EqType τ → EqType τ' → EqType (TSum τ τ').
 
-(** Which types are unboxed *)
+(** Which types are unboxed -- we can only do CAS on locations which hold unboxed types *)
 Inductive UnboxedType : type → Prop :=
   | UnboxedTUnit : UnboxedType TUnit
   | UnboxedTNat : UnboxedType TNat
@@ -39,15 +39,25 @@ Instance Rename_type : Rename type. derive. Defined.
 Instance Subst_type : Subst type. derive. Defined.
 Instance SubstLemmas_typer : SubstLemmas type. derive. Qed.
 
-Fixpoint binop_nat_res_type (op : bin_op) : option type :=
+Definition binop_nat_res_type (op : bin_op) : option type :=
   match op with
   | MultOp => Some TNat | PlusOp => Some TNat | MinusOp => Some TNat
   | EqOp => Some TBool | LeOp => Some TBool | LtOp => Some TBool
   | _ => None
   end.
-Fixpoint binop_bool_res_type (op : bin_op) : option type :=
+Definition binop_bool_res_type (op : bin_op) : option type :=
   match op with
   | XorOp => Some TBool | EqOp => Some TBool
+  | _ => None
+  end.
+Definition unop_nat_res_type (op : un_op) : option type :=
+  match op with
+  | MinusUnOp => Some TNat
+  | _ => None
+  end.
+Definition unop_bool_res_type (op : un_op) : option type :=
+  match op with
+  | NegOp => Some TBool
   | _ => None
   end.
 
@@ -118,6 +128,14 @@ Inductive typed : stringmap type → expr → type → Prop :=
      Γ ⊢ₜ e1 : TBool → Γ ⊢ₜ e2 : TBool →
      binop_bool_res_type op = Some τ →
      Γ ⊢ₜ BinOp op e1 e2 : τ
+  | UnOp_typed_nat Γ op e τ :
+     Γ ⊢ₜ e : TNat →
+     unop_nat_res_type op = Some τ →
+     Γ ⊢ₜ UnOp op e : τ
+  | UnOp_typed_bool Γ op e τ :
+     Γ ⊢ₜ e : TBool →
+     unop_bool_res_type op = Some τ →
+     Γ ⊢ₜ UnOp op e : τ
   | RefEq_typed Γ e1 e2 τ :
      Γ ⊢ₜ e1 : ref τ → Γ ⊢ₜ e2 : ref τ →
      Γ ⊢ₜ BinOp EqOp e1 e2 : TBool
@@ -213,4 +231,12 @@ Proof. destruct op; simpl; eauto. discriminate. Qed.
 
 Lemma binop_bool_typed_safe (op : bin_op) (b1 b2 : bool) τ :
   binop_bool_res_type op = Some τ → is_Some (bin_op_eval op #b1 #b2).
+Proof. destruct op; naive_solver. Qed.
+
+Lemma unop_nat_typed_safe (op : un_op) (n : Z) τ :
+  unop_nat_res_type op = Some τ → is_Some (un_op_eval op #n).
+Proof. destruct op; simpl; eauto.  Qed.
+
+Lemma unop_bool_typed_safe (op : un_op) (b : bool) τ :
+  unop_bool_res_type op = Some τ → is_Some (un_op_eval op #b).
 Proof. destruct op; naive_solver. Qed.

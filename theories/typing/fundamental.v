@@ -407,6 +407,36 @@ Section fundamental.
     destruct op; inversion Hopv'; simplify_eq/=; eauto.
   Qed.
 
+  Lemma bin_log_related_nat_unop Δ Γ op e e' τ :
+    unop_nat_res_type op = Some τ →
+    ({Δ;Γ} ⊨ e ≤log≤ e' : TNat) -∗
+    {Δ;Γ} ⊨ UnOp op e ≤log≤ UnOp op e' : τ.
+  Proof.
+    iIntros (Hopτ) "IH".
+    intro_clause.
+    rel_bind_ap e e' "IH" v v' "IH".
+    iDestruct "IH" as (n) "[% %]"; simplify_eq/=.
+    destruct (unop_nat_typed_safe op n _ Hopτ) as [v' Hopv'].
+    rel_pure_l. rel_pure_r.
+    value_case.
+    destruct op; inversion Hopv'; simplify_eq/=; try case_match; eauto.
+  Qed.
+
+  Lemma bin_log_related_bool_unop Δ Γ op e e' τ :
+    unop_bool_res_type op = Some τ →
+    ({Δ;Γ} ⊨ e ≤log≤ e' : TBool) -∗
+    {Δ;Γ} ⊨ UnOp op e ≤log≤ UnOp op e' : τ.
+  Proof.
+    iIntros (Hopτ) "IH".
+    intro_clause.
+    rel_bind_ap e e' "IH" v v' "IH".
+    iDestruct "IH" as (n) "[% %]"; simplify_eq/=.
+    destruct (unop_bool_typed_safe op n _ Hopτ) as [v' Hopv'].
+    rel_pure_l. rel_pure_r.
+    value_case.
+    destruct op; inversion Hopv'; simplify_eq/=; try case_match; eauto.
+  Qed.
+
   Lemma bin_log_related_unfold Δ Γ e e' τ :
     ({Δ;Γ} ⊨ e ≤log≤ e' : μ: τ) -∗
     {Δ;Γ} ⊨ rec_unfold e ≤log≤ rec_unfold e' : τ.[(TRec τ)/].
@@ -497,6 +527,10 @@ Section fundamental.
           by iApply fundamental.
       + iApply bin_log_related_bool_binop; first done;
           by iApply fundamental.
+      + iApply bin_log_related_nat_unop; first done.
+        by iApply fundamental.
+      + iApply bin_log_related_bool_unop; first done.
+        by iApply fundamental.
       + iApply bin_log_related_ref_binop;
           by iApply fundamental.
       + iApply bin_log_related_pair;

@@ -15,13 +15,10 @@ Definition relocΣ : gFunctors := #[heapΣ; authΣ cfgUR].
 Instance subG_relocPreG {Σ} : subG relocΣ Σ → relocPreG Σ.
 Proof. solve_inG. Qed.
 
-Definition pure_lrel `{relocG Σ} (P : val → val → Prop) :=
-  @LRel Σ (λ v v', ⌜P v v'⌝)%I _.
-
 Lemma refines_adequate Σ `{relocPreG Σ}
   (A : ∀ `{relocG Σ}, lrel Σ)
   (P : val → val → Prop) e e' σ :
-  (∀ `{relocG Σ}, ∀ v v', A v v' -∗ pure_lrel P v v') →
+  (∀ `{relocG Σ}, ∀ v v', A v v' -∗ ⌜P v v'⌝) →
   (∀ `{relocG Σ}, ⊢ REL e << e' : A) →
   adequate NotStuck e σ
     (λ v _, ∃ thp' h v', rtc erased_step ([e'], σ) (of_val v' :: thp', h)

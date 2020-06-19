@@ -116,6 +116,12 @@ Inductive typed_ctx_item :
      typed Γ e1 (TArrow τ τ') →
      typed_ctx_item (CTX_AppR e1) Γ τ Γ τ'
   (* Base types and operations *)
+  | TP_CTX_UnOp_Nat op Γ τ :
+     unop_nat_res_type op = Some τ →
+     typed_ctx_item (CTX_UnOp op) Γ TNat Γ τ
+  | TP_CTX_UnOp_Bool op Γ τ :
+     unop_bool_res_type op = Some τ →
+     typed_ctx_item (CTX_UnOp op) Γ TBool Γ τ
   | TP_CTX_BinOpL_Nat op Γ e2 τ :
      typed Γ e2 TNat →
      binop_nat_res_type op = Some τ →
@@ -132,6 +138,12 @@ Inductive typed_ctx_item :
      typed Γ e1 TBool →
      binop_bool_res_type op = Some τ →
      typed_ctx_item (CTX_BinOpR op e1) Γ TBool Γ τ
+  | TP_CTX_BinOpL_PtrEq e2 Γ τ :
+     typed Γ e2 (ref τ) →
+     typed_ctx_item (CTX_BinOpL EqOp e2) Γ (ref τ) Γ TBool
+  | TP_CTX_BinOpR_PtrEq e1 Γ τ :
+     typed Γ e1 (ref τ) →
+     typed_ctx_item (CTX_BinOpR EqOp e1) Γ (ref τ) Γ TBool
   | TP_CTX_IfL Γ e1 e2 τ :
      typed Γ e1 τ → typed Γ e2 τ →
      typed_ctx_item (CTX_IfL e1 e2) Γ (TBool) Γ τ
@@ -324,18 +336,26 @@ Section bin_log_related_under_typed_ctx.
       + iApply (bin_log_related_app _ _ _ _ _ _ τ2 with "[]").
         by iApply fundamental.
         iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_nat_binop with "[]");
+      + iApply bin_log_related_nat_unop; eauto.
+        by iApply (IHK with "Hrel").
+      + iApply bin_log_related_bool_unop; eauto.
+        by iApply (IHK with "Hrel").
+      + iApply bin_log_related_nat_binop;
           try (by iApply fundamental); eauto.
-        iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_nat_binop with "[]");
+        by iApply (IHK with "Hrel").
+      + iApply bin_log_related_nat_binop;
           try (by iApply fundamental); eauto.
-        iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_bool_binop with "[]");
+        by iApply (IHK with "Hrel"); auto.
+      + iApply bin_log_related_bool_binop;
           try (by iApply fundamental); eauto.
-        iApply (IHK with "[Hrel]"); auto.
-      + iApply (bin_log_related_bool_binop with "[]");
+        by iApply (IHK with "Hrel").
+      + iApply bin_log_related_bool_binop;
           try (by iApply fundamental); eauto.
-        iApply (IHK with "[Hrel]"); auto.
+        by iApply (IHK with "Hrel").
+      + iApply bin_log_related_ref_binop; try (by iApply fundamental).
+        by iApply (IHK with "Hrel").
+      + iApply bin_log_related_ref_binop; try (by iApply fundamental).
+        by iApply (IHK with "Hrel").
       + iApply (bin_log_related_if with "[] []");
           try by iApply fundamental.
         iApply (IHK with "[Hrel]"); auto.
