@@ -358,6 +358,23 @@ Section rules.
     iNext. iIntros (vs'). by rewrite -bi.wand_curry.
   Qed.
 
+  Lemma refines_resolveatomic_l K E (p : proph_id) e w t A :
+    Atomic StronglyAtomic e →
+    to_val e = None →
+    (|={⊤,E}=> ∃ vs,
+           ▷ (proph p vs) ∗
+           WP e @ E {{ v, ∀ (vs' : list (val*val)), ⌜vs = (v,w)::vs'⌝ -∗
+                  proph p vs' -∗
+                  REL fill K (of_val v) << t @ E : A }})%I
+    -∗ REL fill K (Resolve e #p w) << t : A.
+  Proof.
+    iIntros (??) "Hlog".
+    iApply refines_atomic_l; auto.
+    { apply strongly_atomic_atomic. apply _. }
+    iMod "Hlog" as (vs) "[>Hp Hlog]". iModIntro.
+    iApply (wp_resolve with "Hp"); auto.
+  Qed.
+
   Lemma refines_load_l K E l q t A :
     (|={⊤,E}=> ∃ v',
       ▷(l ↦{q} v') ∗
