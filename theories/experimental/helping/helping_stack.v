@@ -252,7 +252,7 @@ Section refinement.
       This is also the only place where we need to unfold the definition of the refinement proposition. *)
   Lemma revoke_offer_l γ off E K (v : val) e1 e2 A :
     offer_token γ -∗
-    (∀ j K', (j ⤇ fill K' e1)  ={E, ⊤, E}▷=∗
+    (∀ j K', (j ⤇ fill K' e1)  ={E}[⊤]▷=∗
       ▷ is_offer γ off (j ⤇ fill K' e1) (j ⤇ fill K' e2) ∗
       ▷ (is_offer γ off (j ⤇ fill K' e1) (j ⤇ fill K' e2) -∗
            ((REL fill K (of_val NONEV) << e2 @ E : A)
