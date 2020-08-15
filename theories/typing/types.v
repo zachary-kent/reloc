@@ -1,7 +1,7 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** (Syntactic) Typing for System F_mu_ref with existential types and concurrency *)
 From Autosubst Require Export Autosubst.
-From stdpp Require Export stringmap.
+From stdpp Require Export stringmap fin_map_dom gmap.
 From iris.heap_lang Require Export lang notation metatheory.
 
 (** * Types *)
@@ -242,23 +242,101 @@ Lemma unop_bool_typed_safe (op : un_op) (b : bool) τ :
   unop_bool_res_type op = Some τ → is_Some (un_op_eval op #b).
 Proof. destruct op; naive_solver. Qed.
 
-(* From stdpp Require Import fin_map_dom. *)
+(***********************************)
+(** Closedness of typed programs   *)
 
-(* Lemma typed_is_closed Γ e τ : *)
-(*   Γ ⊢ₜ e : τ → is_closed_expr (elements (dom stringset Γ)) e *)
-(* with typed_is_closed_val v τ : *)
-(*     ⊢ᵥ v : τ → is_closed_val v. *)
+(* DF: It is not trivial to prove the closedness lemma for
+[is_closed_expr], because it requires a lemma like this:
+
+    Lemma elements_insert Γ x τ :
+        elements (dom stringset (<[x:=τ]> Γ)) = x :: elements (dom stringset Γ).
+
+But this does not hold (only up to multiset equality).
+So we use an auxiliary definition with sets *)
+
+Definition maybe_insert_binder (x : binder) (X : stringset) : stringset :=
+  match x with
+  | BAnon => X
+  | BNamed f => {[f]} ∪ X
+  end.
+
+Fixpoint is_closed_expr_set (X : stringset) (e : expr) : bool :=
+  match e with
+  | Val v => is_closed_val_set v
+  | Var x => bool_decide (x ∈ X)
+  | Rec f x e => is_closed_expr_set (maybe_insert_binder f (maybe_insert_binder x X)) e
+  | UnOp _ e | Fst e | Snd e | InjL e | InjR e | Fork e | Free e | Load e =>
+     is_closed_expr_set X e
+  | App e1 e2 | BinOp _ e1 e2 | Pair e1 e2 | AllocN e1 e2 | Store e1 e2 | FAA e1 e2 =>
+     is_closed_expr_set X e1 && is_closed_expr_set X e2
+  | If e0 e1 e2 | Case e0 e1 e2 | CmpXchg e0 e1 e2 | Resolve e0 e1 e2 =>
+     is_closed_expr_set X e0 && is_closed_expr_set X e1 && is_closed_expr_set X e2
+  | NewProph => true
+  end
+with is_closed_val_set (v : val) : bool :=
+  match v with
+  | LitV _ => true
+  | RecV f x e => is_closed_expr_set (maybe_insert_binder f (maybe_insert_binder x ∅)) e
+  | PairV v1 v2 => is_closed_val_set v1 && is_closed_val_set v2
+  | InjLV v | InjRV v => is_closed_val_set v
+  end.
+
+(* Lemma is_closed_expr_set_sound (X : stringset) (e : expr) : *)
+(*   is_closed_expr_set X e → is_closed_expr (elements X) e *)
+(* with is_closed_val_set_sound (v : val) : *)
+(*   is_closed_val_set v → is_closed_val v. *)
 (* Proof. *)
-(*   - inversion 1; simpl; try naive_solver. *)
-(*     + destruct f as [|f], x as [|x]; simpl; first naive_solver. *)
-(*       * specialize (typed_is_closed (<[x:=τ1]>Γ) e0 τ2 H0). *)
-(*         revert typed_is_closed. rewrite dom_insert_L. *)
-(*         admit. *)
-(*       * admit. *)
-(*       * admit. *)
-(*     + specialize (typed_is_closed (⤉Γ) e0 τ0 H0). *)
-(*       revert typed_is_closed. by rewrite dom_fmap_L. *)
-(*     + admit. *)
-(*   - inversion 1; simpl; try naive_solver. *)
-(* Admitted. *)
+(*   - induction e; simplify_eq/=. *)
+(*     + apply is_closed_val_set_sound. *)
+(*     + intros. case_bool_decide; last done. *)
+(*       apply bool_decide_pack.  by apply (elem_of_elements X x). *)
+(*     +  *)
+
+Lemma typed_is_closed Γ e τ :
+  Γ ⊢ₜ e : τ → is_closed_expr_set (dom stringset Γ) e
+with typed_is_closed_val v τ :
+    ⊢ᵥ v : τ → is_closed_val_set v.
+Proof.
+  - induction 1; simplify_eq/=; try (split_and?; by eapply typed_is_closed).
+    + apply bool_decide_pack. apply elem_of_dom. eauto.
+    + by eapply typed_is_closed_val.
+    + destruct f as [|f], x as [|x]; simplify_eq/=.
+      * eapply typed_is_closed. eauto.
+      * specialize (typed_is_closed (<[x:=τ1]>Γ) e τ2 H).
+        revert typed_is_closed. by rewrite dom_insert_L.
+      * specialize (typed_is_closed (<[f:=(τ1→τ2)%ty]>Γ) e τ2 H).
+        revert typed_is_closed. by rewrite dom_insert_L.
+      * specialize (typed_is_closed _ e τ2 H).
+        revert typed_is_closed.
+        rewrite (dom_insert_L (D:=stringset) (<[x:=τ1]> Γ) f (τ1→τ2)%ty).
+        by rewrite dom_insert_L.
+    + specialize (typed_is_closed (⤉Γ) e τ H).
+      revert typed_is_closed. by rewrite dom_fmap_L.
+    + by split_and?.
+    + by split_and?.
+    + split_and?; eauto. try (apply bool_decide_pack; by set_solver).
+      destruct x as [|x]; simplify_eq/=.
+      ++ specialize (typed_is_closed _ _ _ H0).
+         revert typed_is_closed. by rewrite dom_fmap_L.
+      ++ specialize (typed_is_closed _ _ _ H0).
+         revert typed_is_closed. rewrite (dom_insert_L (D:=stringset) (⤉Γ) x).
+         by rewrite dom_fmap_L.
+  - induction 1; simplify_eq/=; try done.
+    + by split_and?.
+    + destruct f as [|f], x as [|x]; simplify_eq/=.
+      * specialize (typed_is_closed _ _ _ H).
+        revert typed_is_closed. by rewrite dom_empty_L.
+      * specialize (typed_is_closed (<[x:=τ1]>∅) _ _ H).
+        revert typed_is_closed. by rewrite dom_insert_L dom_empty_L.
+      * specialize (typed_is_closed _ _ _ H).
+        revert typed_is_closed.
+        rewrite (dom_insert_L (D:=stringset) _ f (τ1→τ2)%ty).
+        by rewrite dom_empty_L.
+      * specialize (typed_is_closed _ _ _ H).
+        revert typed_is_closed.
+        rewrite (dom_insert_L (D:=stringset) (<[x:=τ1]> ∅) f (τ1→τ2)%ty).
+        by rewrite dom_insert_L dom_empty_L.
+    + specialize (typed_is_closed _ _ _ H).
+      revert typed_is_closed. by rewrite dom_empty_L.
+Qed.
 
