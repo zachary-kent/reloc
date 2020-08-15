@@ -53,7 +53,7 @@ Section namegen_refinement.
     - (* New name *)
       rel_pure_l. rel_pure_r.
       iApply refines_arrow.
-      iAlways. iIntros (? ?) "/= _".
+      iModIntro. iIntros (? ?) "/= _".
       rel_pure_l. rel_pure_r.
       rel_alloc_l_atomic.
       iInv N as (n L) "(HB & Hc & HL)" "Hcl".
@@ -85,11 +85,11 @@ Section namegen_refinement.
     - (* Name comparison *)
       rel_pure_l. rel_pure_r.
       iApply refines_arrow_val.
-      iAlways. iIntros (? ?) "/= #Hv".
+      iModIntro. iIntros (? ?) "/= #Hv".
       iDestruct "Hv" as (l n) "(% & % & #Hln)". simplify_eq.
       do 2 rel_pure_l. do 2 rel_pure_r.
       iApply refines_arrow_val.
-      iAlways. iIntros (? ?) "/= #Hv".
+      iModIntro. iIntros (? ?) "/= #Hv".
       iDestruct "Hv" as (l' n') "(% & % & #Hl'n')". simplify_eq.
       do 2 rel_pure_l. do 2 rel_pure_r.
       iInv N as (m L) "(>HB & >Hc & HL)" "Hcl".

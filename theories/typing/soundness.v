@@ -66,7 +66,7 @@ Proof.
   eapply (logrel_simul Σ); last by apply Hstep.
   iIntros (? ?).
   iApply (bin_log_related_under_typed_ctx with "[]"); eauto.
-  iAlways. iIntros (?). iApply Hlog.
+  iModIntro. iIntros (?). iApply Hlog.
 Qed.
 
 Lemma refines_sound Σ `{relocPreG Σ} e e' τ :

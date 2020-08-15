@@ -28,8 +28,8 @@ Section rules.
   Proof.
     iIntros "#H".
     iApply refines_arrow_val; eauto.
-    iAlways. iIntros (v1 v2) "#HA".
-    iApply "H". iAlways.
+    iModIntro. iIntros (v1 v2) "#HA".
+    iApply "H". iModIntro.
     by iApply refines_ret.
   Qed.
 

@@ -548,11 +548,11 @@ Section fundamental.
       + iApply bin_log_related_if;
           by iApply fundamental.
       + iApply bin_log_related_rec.
-        iAlways. by iApply fundamental.
+        iModIntro. by iApply fundamental.
       + iApply bin_log_related_app;
           by iApply fundamental.
       + iApply bin_log_related_tlam.
-        iIntros (A). iAlways. by iApply fundamental.
+        iIntros (A). iModIntro. by iApply fundamental.
       + iApply bin_log_related_tapp'; by iApply fundamental.
       + iApply bin_log_related_fold; by iApply fundamental.
       + iApply bin_log_related_unfold; by iApply fundamental.
@@ -577,7 +577,7 @@ Section fundamental.
         repeat iSplit; eauto; by iApply fundamental_val.
       + iExists _,_. iRight.
         repeat iSplit; eauto; by iApply fundamental_val.
-      + iLöb as "IH". iAlways.
+      + iLöb as "IH". iModIntro.
         iIntros (v1 v2) "#Hv".
         pose (Γ := (<[f:=(τ1 → τ2)%ty]> (<[x:=τ1]> ∅)):stringmap type).
         pose (γ := (binder_insert f ((rec: f x := e)%V,(rec: f x := e)%V)
@@ -590,7 +590,7 @@ Section fundamental.
           iApply env_ltyped2_empty. }
         rewrite /γ /=. rewrite !binder_insert_fmap !fmap_empty /=.
         by rewrite !subst_map_binder_insert_2_empty.
-      + iIntros (A). iAlways. iIntros (v1 v2) "_".
+      + iIntros (A). iModIntro. iIntros (v1 v2) "_".
         rel_pures_l. rel_pures_r.
         iPoseProof (fundamental (A::Δ) ∅ e τ $! ∅ with "[]") as "H"; eauto.
         { rewrite fmap_empty. iApply env_ltyped2_empty. }

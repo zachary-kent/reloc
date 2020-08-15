@@ -168,11 +168,11 @@ Section proof.
     ⊢ REL FG_stack << CG_stack : ∀ A, ∃ B, (() → B) * (B → () + A) * (B → A → ()).
   Proof.
     unfold CG_stack, FG_stack.
-    iApply refines_forall. iIntros (A). iAlways.
+    iApply refines_forall. iIntros (A). iModIntro.
     iApply (refines_pack (stackInt A)).
     repeat iApply refines_pair.
     - unfold CG_new_stack, FG_new_stack.
-      iApply refines_arrow_val. iAlways.
+      iApply refines_arrow_val. iModIntro.
       iIntros (??) "_". repeat rel_pure_l. repeat rel_pure_r.
       rel_alloc_l istk as "Hisk".
       rel_alloc_l st as "Hst".
@@ -187,17 +187,17 @@ Section proof.
         iExists _,_; eauto with iFrame. }
       iModIntro. iExists _. eauto with iFrame.
     - rel_pure_l. rel_pure_r. iApply refines_arrow_val.
-      iAlways. iIntros (st1 st2) "Hst".
+      iModIntro. iIntros (st1 st2) "Hst".
       rel_rec_l. rel_rec_r.
       iDestruct "Hst" as (??) "#Hst". simplify_eq/=.
       iApply (FG_CG_pop_refinement with "Hst").
       solve_ndisj.
     - rel_pure_l. rel_pure_r. iApply refines_arrow_val.
-      iAlways. iIntros (st1 st2) "Hst".
+      iModIntro. iIntros (st1 st2) "Hst".
       rel_rec_l. rel_rec_r.
       iDestruct "Hst" as (??) "#Hst". simplify_eq/=.
       rel_pure_l. rel_pure_r. iApply refines_arrow_val.
-      iAlways. iIntros (x1 x2) "Hx".
+      iModIntro. iIntros (x1 x2) "Hx".
       rel_rec_l. rel_rec_r.
       iApply (FG_CG_push_refinement with "Hst Hx").
       solve_ndisj.

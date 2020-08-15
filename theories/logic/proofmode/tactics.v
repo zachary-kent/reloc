@@ -692,10 +692,10 @@ Ltac rel_arrow_val :=
   rel_pures_l; rel_pures_r;
   (iApply refines_arrow_val
   || fail "rel_arrow_val: cannot apply the closure rule");
-  iAlways.
+  iModIntro.
 
 Ltac rel_arrow :=
   rel_pures_l; rel_pures_r;
   (iApply refines_arrow
   || fail "rel_arrow: cannot apply the closure rule");
-  iAlways.
+  iModIntro.

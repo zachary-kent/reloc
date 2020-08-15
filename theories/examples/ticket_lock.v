@@ -169,7 +169,7 @@ Section refinement.
     rewrite /acquire.
     repeat rel_pure_l.
     rel_apply_l (FG_increment_atomic_l (fun n : nat => ∃ o : nat, lo ↦ #o ∗ issuedTickets γ n ∗ R o)%I P%I with "HP").
-    iAlways.
+    iModIntro.
     iPoseProof "H" as "H2".
     iMod "H" as (o n) "(Hlo & Hln & Hissued & HR & Hrest)". iModIntro.
     iExists _; iFrame.
@@ -218,7 +218,7 @@ Section refinement.
                    (fun o => ∃ st, is_locked_r lk st ∗
                              if st then ticket γ o else True)%I
                    True%I γ); first done.
-    iAlways.
+    iModIntro.
     openI.
     iModIntro. iExists _,_; iFrame.
     iSplitL "Hbticket Hl'".
@@ -248,7 +248,7 @@ Section refinement.
     iDestruct "Hl" as (lo ln γ) "(% & Hin)". simplify_eq.
     rel_rec_l. repeat rel_proj_l.
     rel_apply_l (FG_increment_atomic_l (issuedTickets γ)%I True%I); first done.
-    iAlways.
+    iModIntro.
     openI.
     iModIntro. iExists _; iFrame.
     iSplit.
@@ -318,7 +318,7 @@ Section refinement.
                  ∗ issuedTickets γ n ∗ is_locked_r lk st ∗
                  if st then ticket γ o else True)%I).
     rel_apply_l (wkincr_atomic_l R True%I); first done.
-    iAlways.
+    iModIntro.
     openI.
     iModIntro. iExists o; iFrame "Hlo".
     rewrite {1}/R. iSplitR "Hcl".

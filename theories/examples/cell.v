@@ -63,7 +63,7 @@ Section cell_refinement.
     - (* New cell *)
       rel_pure_l. rel_pure_r.
       iApply refines_arrow_val.
-      iAlways. iIntros (v1 v2) "/= #Hv".
+      iModIntro. iIntros (v1 v2) "/= #Hv".
       rel_let_l. rel_let_r.
       rel_alloc_r r as "Hr".
 
@@ -83,7 +83,7 @@ Section cell_refinement.
     - (* Read cell *)
       rel_pure_l. rel_pure_r.
       iApply refines_arrow_val.
-      iAlways. iIntros (v1 v2) "/=".
+      iModIntro. iIntros (v1 v2) "/=".
       iDestruct 1 as (r1 r2 r3 l r) "[% [% #Hrs]]". simplify_eq.
       repeat rel_pure_l.
       rewrite /cellInt. iDestruct "Hrs" as (γlk N) "#Hlk".
@@ -103,11 +103,11 @@ Section cell_refinement.
     - (* Insert cell *)
       rel_pure_l. rel_pure_r.
       iApply refines_arrow_val.
-      iAlways. iIntros (v1 v2) "/=".
+      iModIntro. iIntros (v1 v2) "/=".
       iDestruct 1 as (r1 r2 r3 l r) "[% [% #Hrs]]". simplify_eq.
       repeat rel_pure_l. repeat rel_pure_r.
       iApply refines_arrow_val.
-      iAlways. iIntros (v1 v2) "/= #Hv".
+      iModIntro. iIntros (v1 v2) "/= #Hv".
       repeat rel_pure_l. repeat rel_pure_r.
       rewrite /cellInt. iDestruct "Hrs" as (γlk N) "#Hlk".
       rel_apply_l (refines_acquire_l with "Hlk"); first auto.

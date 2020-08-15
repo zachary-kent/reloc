@@ -122,11 +122,11 @@ Section proof.
   Proof.
     unfold eqKey.
     iApply refines_arrow_val.
-    iAlways. iIntros (k1 k2) "/= #Hk".
+    iModIntro. iIntros (k1 k2) "/= #Hk".
     iDestruct "Hk" as (n) "(% & % & #Hn)"; simplify_eq.
     rel_let_l. rel_let_r. rel_pure_l. rel_pure_r.
     iApply refines_arrow_val.
-    iAlways. iIntros (k1 k2) "/= #Hk".
+    iModIntro. iIntros (k1 k2) "/= #Hk".
     iDestruct "Hk" as (m) "(% & % & #Hm)"; simplify_eq.
     rel_let_l. rel_let_r.
     rel_op_l. rel_op_r. rel_values.
@@ -144,7 +144,7 @@ Section proof.
   Proof.
     iIntros "#Hinv".
     iApply refines_arrow_val.
-    iAlways. iIntros (k1 k2) "/= #Hk".
+    iModIntro. iIntros (k1 k2) "/= #Hk".
     iDestruct "Hk" as (n) "(% & % & #Hn)"; simplify_eq.
     rel_let_l. rel_let_r.
     rel_load_l_atomic.
@@ -183,7 +183,7 @@ Section proof.
   Proof.
     iIntros "#Hinv".
     iApply refines_arrow_val.
-    iAlways. iIntros (k1 k2) "#Hk /=".
+    iModIntro. iIntros (k1 k2) "#Hk /=".
     iDestruct "Hk" as (n) "(% & % & #Hn)"; simplify_eq.
     repeat rel_pure_l. repeat rel_pure_r.
     rel_load_l_atomic.
@@ -220,7 +220,7 @@ Section proof.
     ⊢ REL symbol1 << symbol2 : () → lrel_symbol.
   Proof.
     iApply refines_arrow_val.
-    iAlways. iIntros (? ?) "[% %]"; simplify_eq/=.
+    iModIntro. iIntros (? ?) "[% %]"; simplify_eq/=.
     rel_rec_l. rel_rec_r.
     rel_alloc_l size1 as "[Hs1 Hs1']"; repeat rel_pure_l.
     rel_alloc_r size2 as "[Hs2 Hs2']"; repeat rel_pure_r.
@@ -243,7 +243,7 @@ Section proof.
     (* Insert *)
     - rel_pure_l. rel_pure_r.
       iApply refines_arrow_val.
-      iAlways. iIntros (? ?). iDestruct 1 as (n) "[% %]"; simplify_eq/=.
+      iModIntro. iIntros (? ?). iDestruct 1 as (n) "[% %]"; simplify_eq/=.
       repeat rel_pure_l. repeat rel_pure_r.
       rel_apply_l (refines_acquire_l with "Hl1").
       iNext. iIntros "Hlk Htbl". repeat rel_pure_l.
@@ -299,7 +299,7 @@ Section proof.
     ⊢ REL symbol2 << symbol1 : () → lrel_symbol.
   Proof.
     iApply refines_arrow_val.
-    iAlways. iIntros (? ?) "[% %]"; simplify_eq/=.
+    iModIntro. iIntros (? ?) "[% %]"; simplify_eq/=.
     rel_rec_l. rel_rec_r.
     rel_alloc_l size1 as "[Hs1 Hs1']"; repeat rel_pure_l.
     rel_alloc_r size2 as "[Hs2 Hs2']"; repeat rel_pure_r.
@@ -322,7 +322,7 @@ Section proof.
     (* Insert *)
     - rel_pure_l. rel_pure_r.
       iApply refines_arrow_val.
-      iAlways. iIntros (? ?). iDestruct 1 as (n) "[% %]"; simplify_eq/=.
+      iModIntro. iIntros (? ?). iDestruct 1 as (n) "[% %]"; simplify_eq/=.
       repeat rel_pure_l. repeat rel_pure_r.
       rel_apply_l (refines_acquire_l with "Hl1").
       iNext. iIntros "Hlk Htbl". repeat rel_pure_l.

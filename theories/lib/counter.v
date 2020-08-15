@@ -152,7 +152,7 @@ Section CG_Counter.
       (FG_increment_atomic_l
               (fun n => is_locked_r lk false ∗ cnt' ↦ₛ #n)%I
               True%I); first done.
-    iAlways. iInv counterN as ">Hcnt" "Hcl". iModIntro.
+    iModIntro. iInv counterN as ">Hcnt" "Hcl". iModIntro.
     iDestruct "Hcnt" as (n) "(Hl & Hcnt & Hcnt')".
     iExists _; iFrame.
     iSplit.
@@ -177,7 +177,7 @@ Section CG_Counter.
       (counter_read_atomic_l
          (fun n => is_locked_r lk false ∗ cnt' ↦ₛ #n)%I
          True%I); first done.
-    iAlways. iInv counterN as (n) "[>Hl [>Hcnt >Hcnt']]" "Hclose".
+    iModIntro. iInv counterN as (n) "[>Hl [>Hcnt >Hcnt']]" "Hclose".
     iModIntro.
     iExists n. iFrame "Hcnt Hcnt' Hl".
     iSplit.
@@ -196,7 +196,7 @@ Section CG_Counter.
   Proof.
     unfold FG_counter, CG_counter.
     iApply refines_arrow_val.
-    iAlways. iIntros (? ?) "_"; simplify_eq/=.
+    iModIntro. iIntros (? ?) "_"; simplify_eq/=.
     rel_rec_l. rel_rec_r.
     rel_apply_r refines_newlock_r; auto.
     iIntros (l) "Hl".
@@ -216,10 +216,10 @@ Section CG_Counter.
     do 4 rel_pure_r. do 4 rel_pure_l.
     iApply refines_pair .
     - iApply refines_arrow_val.
-      iAlways. iIntros (? ?) "_". rel_seq_l; rel_seq_r.
+      iModIntro. iIntros (? ?) "_". rel_seq_l; rel_seq_r.
       iApply (FG_CG_increment_refinement with "Hinv").
     - iApply refines_arrow_val.
-      iAlways. iIntros (? ?) "_". rel_seq_l; rel_seq_r.
+      iModIntro. iIntros (? ?) "_". rel_seq_l; rel_seq_r.
       iApply (counter_read_refinement with "Hinv").
   Qed.
 End CG_Counter.

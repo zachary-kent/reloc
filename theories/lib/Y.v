@@ -34,7 +34,7 @@ Section contents.
   Proof.
     unfold Y.
     iApply refines_arrow.
-    iAlways. iIntros (f1 f2) "#Hff".
+    iModIntro. iIntros (f1 f2) "#Hff".
     rel_let_l. rel_let_r.
     rel_pure_l. rel_pure_r.
     rel_pure_l. rel_pure_r.
@@ -49,7 +49,7 @@ Section contents.
   Proof.
     unfold F.
     iApply refines_arrow.
-    iAlways. iIntros (f1 f2) "#Hff".
+    iModIntro. iIntros (f1 f2) "#Hff".
     iLöb as "IH".
     rel_let_l. rel_let_r.
     iApply (refines_app with "Hff").
@@ -62,7 +62,7 @@ Section contents.
   Proof.
     unfold Y, Knot.
     iApply refines_arrow.
-    iAlways. iIntros (f1 f2) "#Hff".
+    iModIntro. iIntros (f1 f2) "#Hff".
     rel_let_l. rel_let_r.
     rel_pure_r. rel_pure_r.
     rel_alloc_l z as "Hz". repeat rel_pure_l.
@@ -79,7 +79,7 @@ Section contents.
   Proof.
     unfold Y, Knot.
     iApply refines_arrow.
-    iAlways. iIntros (f1 f2) "#Hff".
+    iModIntro. iIntros (f1 f2) "#Hff".
     rel_let_l. rel_let_r.
     rel_pure_l. rel_pure_l.
     rel_alloc_r z as "Hz". repeat rel_pure_r.
@@ -97,7 +97,7 @@ Section contents.
   Proof.
     unfold Y, F.
     iApply refines_arrow.
-    iAlways. iIntros (f1 f2) "#Hff".
+    iModIntro. iIntros (f1 f2) "#Hff".
     rel_pure_r. rel_pure_r. rel_pure_r.
     iLöb as "IH".
     rel_let_l. rel_let_r.
@@ -110,7 +110,7 @@ Section contents.
   Proof.
     unfold Y, F.
     iApply refines_arrow.
-    iAlways. iIntros (f1 f2) "#Hff".
+    iModIntro. iIntros (f1 f2) "#Hff".
     rel_pure_l. rel_pure_l. rel_pure_l.
     iLöb as "IH".
     rel_let_l. rel_let_r.

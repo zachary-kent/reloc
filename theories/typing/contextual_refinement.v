@@ -329,7 +329,7 @@ Section bin_log_related_under_typed_ctx.
       inversion Hx1; subst; simpl; iIntros "#Hrel";
         iIntros (Δ).
       + iApply (bin_log_related_rec with "[-]"); auto.
-        iAlways. iApply (IHK with "[Hrel]"); auto.
+        iModIntro. iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_app with "[]").
         iApply (IHK with "[Hrel]"); auto.
         by iApply fundamental.
@@ -423,7 +423,7 @@ Section bin_log_related_under_typed_ctx.
       + iApply (bin_log_related_unfold with "[]").
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_tlam with "[]").
-        iIntros (τi). iAlways.
+        iIntros (τi). iModIntro.
         iApply (IHK with "[Hrel]"); auto.
       + iApply (bin_log_related_tapp' with "[]").
         iApply (IHK with "[Hrel]"); auto.

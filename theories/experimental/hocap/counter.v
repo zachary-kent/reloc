@@ -309,7 +309,7 @@ Section refinement.
   Proof.
     unfold FG_counter, CG_counter.
     iApply refines_arrow_val.
-    iAlways. iIntros (? ?) "_"; simplify_eq/=.
+    iModIntro. iIntros (? ?) "_"; simplify_eq/=.
     rel_rec_l. rel_rec_r.
     rel_apply_r refines_newlock_r; auto.
     iIntros (lk) "Hlk".
@@ -329,10 +329,10 @@ Section refinement.
     do 4 rel_pure_r. do 4 rel_pure_l.
     iApply refines_pair .
     - iApply refines_arrow_val.
-      iAlways. iIntros (? ?) "_". rel_seq_l; rel_seq_r.
+      iModIntro. iIntros (? ?) "_". rel_seq_l; rel_seq_r.
       iApply (incr_refinement with "HCnt Hinv").
     - iApply refines_arrow_val.
-      iAlways. iIntros (? ?) "_". rel_seq_l; rel_seq_r.
+      iModIntro. iIntros (? ?) "_". rel_seq_l; rel_seq_r.
       iApply (read_refinement with "HCnt Hinv").
   Qed.
 

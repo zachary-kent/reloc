@@ -28,7 +28,7 @@ Section proofs.
     repeat rel_pure_l.
     iMod (inv_alloc (nroot.@"xinv") _ (x ↦ #1)%I with "Hx") as "#Hinv".
     rel_pure_r. iApply refines_arrow.
-    iAlways. iIntros (f1 f2) "#Hff".
+    iModIntro. iIntros (f1 f2) "#Hff".
     rel_rec_l. rel_rec_r.
     iApply (refines_seq with "[Hff]").
     - iApply refines_app; eauto.
@@ -197,7 +197,7 @@ Section proofs.
     iApply refines_pair.
     - rel_pure_l. rel_pure_r.
       iApply refines_arrow.
-      iAlways. iIntros (f f') "Hf".
+      iModIntro. iIntros (f f') "Hf".
       rel_let_l. rel_let_r.
       rel_cmpxchg_l_atomic.
       iInv i3n as (n) "(Hx & Hx' & >Hbb)" "Hcl".
@@ -254,7 +254,7 @@ Section proofs.
           iFrame. iLeft. iFrame. }
         rel_values. }
     - rel_pure_l. rel_pure_r. iApply refines_arrow.
-      iAlways. iIntros (u u') "_".
+      iModIntro. iIntros (u u') "_".
       rel_let_l. rel_let_r.
       rel_load_l_atomic.
       iInv i3n as (n) "(>Hx & Hx' & >Hbb)" "Hcl".
@@ -331,7 +331,7 @@ Section proofs.
     : (() → ()) → lrel_int.
   Proof.
     rel_pure_l. rel_pure_r. iApply refines_arrow; eauto.
-    iAlways. iIntros (f1 f2) "Hf".
+    iModIntro. iIntros (f1 f2) "Hf".
     rel_let_l. rel_let_r.
     rel_alloc_l x as "Hx". repeat rel_pure_l.
     rel_alloc_l y as "Hy". repeat rel_pure_l.
@@ -379,7 +379,7 @@ Section proofs.
     { iApply (refines_app with "Hg").  rel_values. }
     rel_apply_l (FG_increment_atomic_l
       (fun (n : nat) => (c2 ↦ₛ #n ∗ pending γ) ∨ (c2 ↦ₛ #(n-1) ∗ shot γ ∗ own γ' (Excl ()) ∗ ⌜1 ≤ n⌝))%I True%I); first done.
-    iAlways.
+    iModIntro.
     iInv shootN as (n) ">[(Hc1 & Hc2 & Ht) | (Hc1 & Hc2 & Ht)]" "Hcl".
       iModIntro.
     - iExists n. iFrame "Hc1".  iSplitL "Hc2 Ht".
@@ -450,7 +450,7 @@ Section proofs.
   Proof.
     iIntros "#Hinv #Hg".
     iApply refines_arrow_val; auto.
-    iAlways. iIntros (? ?) "[% %]". simplify_eq/=.
+    iModIntro. iIntros (? ?) "[% %]". simplify_eq/=.
     rel_seq_l. rel_seq_r.
     iApply profiled_g; eauto.
   Qed.
@@ -548,7 +548,7 @@ Section proofs.
     rel_seq_l.
     rel_apply_l (FG_increment_atomic_l
       (fun (n : nat) => (c2 ↦ₛ #n ∗ pending γ) ∨ (c2 ↦ₛ #(n-1) ∗ shot γ ∗ own γ' (Excl ()) ∗ ⌜1 ≤ n⌝))%I with "Ht'").
-    iAlways.
+    iModIntro.
     iInv shootN as (n) ">[(Hc1 & Hc2 & Ht) | (Hc1 & Hc2 & Ht & Ht'2)]" "Hcl";
       iModIntro; last first.
     { iExists (S n). replace (Z.of_nat (S n)) with (Z.of_nat n + 1)%Z by lia.
