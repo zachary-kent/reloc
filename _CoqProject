@@ -43,6 +43,7 @@ theories/lib/counter.v
 theories/lib/Y.v
 theories/lib/assert.v
 theories/lib/list.v
+theories/lib/polyeq.v
 
 theories/examples/bit.v
 theories/examples/or.v
