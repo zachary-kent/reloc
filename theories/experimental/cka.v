@@ -20,7 +20,15 @@ Tactic Notation "use_logrel/=" :=
   use_logrel; rel_pures_l; rel_pures_r.
 
 
+Lemma typed_is_closed_empty e τ :
+  ∅ ⊢ₜ e : τ → is_closed_expr [] e.
+Proof.
+  intros H%typed_is_closed. revert H.
+  by rewrite dom_empty_L elements_empty.
+Qed.
+
 Ltac fundamental := by iApply (refines_typed TUnit []).
+Ltac closedness := by (eapply typed_is_closed_empty; eauto).
 
 Lemma plus_zero e :
   ∅ ⊢ₜ e : TUnit →
@@ -91,12 +99,10 @@ Proof.
          (((resolve_proph: "p" to: #0);; f) ⊕
           ((resolve_proph: "p" to: #1);; g)))%E).
     eapply (ctx_refines_transitive ∅ TUnit _ P).
-    + use_logrel. iApply seq_or_2_instrument; try fundamental.
-      admit. admit. admit.
-    + use_logrel. iApply seq_or_2'; try fundamental.
-      admit. admit. admit.
+    + use_logrel. iApply seq_or_2_instrument; (fundamental || closedness).
+    + use_logrel. iApply seq_or_2'; (fundamental || closedness).
   - use_logrel. iApply seq_or_1; fundamental.
-Abort.
+Qed.
 
 Lemma mult_distr_plus_r e f g :
   ∅ ⊢ₜ e : TUnit →
@@ -138,9 +144,8 @@ Proof.
   intros He. split.
   - use_logrel.
     (* TODO!!! we need unary interpretation to show that e is safe *)
-    admit.
-  - use_logrel. rel_apply_l bot_l.
-Abort.
+    Abort.
+  (* - use_logrel. rel_apply_l bot_l. *)
 
 Lemma mult_zero_l e :
   ∅ ⊢ₜ e : TUnit →
@@ -158,12 +163,10 @@ Lemma par_comm e f :
 Proof.
   intros He Hf. split.
   - use_logrel.
-    iApply par_comm; try fundamental.
-    admit. admit.
+    iApply par_comm; (fundamental || closedness).
   - use_logrel.
-    iApply par_comm; try fundamental.
-    admit. admit. (* TODO: closed expr *)
-Abort.
+    iApply par_comm; (fundamental || closedness).
+Qed.
 
 Definition star : val := rec: "star" "f" :=
   #() ⊕ ("f" #();; "star" "f").
