@@ -38,6 +38,7 @@ they can illustrate the usage of the logic.
   + `lock.v` - symbolic execution rules for a simple spin lock
   + `counter.v` - symbolic execution rules and refinements for two different counters
   + `list.v` - rules for the recursive type of lists
+  + `polyeq.v` - polymoprhic equality predicate
 - `examples`
   + `bit.v` - "representation independence example" for a simple bit interface
   + `or.v` - expressing non-determinism with concurrency
