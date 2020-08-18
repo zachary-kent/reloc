@@ -2,6 +2,7 @@
 
 This is the Coq development of [ReLoC](https://cs.ru.nl/~dfrumin/reloc/).
 It consists of the formalization of all the logical rules, tactics, and examples.
+Please take a look at the [most recent paper](https://arxiv.org/abs/2006.13635) which contains a more in-depth description of ReLoC.
 
 ## Usage guide
 
@@ -45,8 +46,11 @@ they can illustrate the usage of the logic.
   + `cell.v` - higher-order cell objects
   + `ticket_lock.v` - ticket lock refines spin lock
   + `various.v` - lots of examples with higher-order functions with local state, in the style of "The effects of higher-order state and control on local relational reasoning" paper
+  + `coinflip.v` and `lateearlychoice.v` - examples with prophecy variable
 - `experimental` more "experimental" stuff
-  + `helping/helping_stack.v` linearizability of stack with helping
+  + `helping/helping_stack.v` - linearizability of stack with helping, see [this technical appendix](https://cs.ru.nl/~dfrumin/reloc/tech-appendix.pdf) for a detailed description
+  + `hocap/` - hocap style specifications for a concurrent counter and a refinement proof for a ticket lock
+  + `cka.v` - some axioms from the CKA equational theory
 
 ## Differences with the old version
 
