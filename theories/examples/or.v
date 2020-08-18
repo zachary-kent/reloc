@@ -153,7 +153,7 @@ Section rules.
   Qed.
 
   (** Associativity *)
-  Lemma or_assoc_l e1 e2 e3 e1' e2' e3' A :
+  Lemma or_assoc_l_v e1 e2 e3 e1' e2' e3' A :
     (REL e1 << e1' : A) -∗
     (REL e2 << e2' : A) -∗
     (REL e3 << e3' : A) -∗
@@ -168,16 +168,48 @@ Section rules.
     - rel_apply_r or_refines_r. by iRight.
   Qed.
 
+  Lemma or_assoc_l e1 e2 e3 e1' e2' e3' A :
+    (REL e1 << e1' : A) -∗
+    (REL e2 << e2' : A) -∗
+    (REL e3 << e3' : A) -∗
+    REL (e1 ⊕ (e2 ⊕ e3)) << ((e1' ⊕ e2') ⊕ e3') : A.
+  Proof.
+    iIntros "H1 H2 H3".
+    rel_pures_r.
+    repeat (rel_pures_l; rel_apply_l or_refines_l; iSplit).
+    - rel_apply_r or_refines_r. iLeft.
+      rel_pures_r. rel_apply_r or_refines_r. by iLeft.
+    - rel_apply_r or_refines_r. iLeft.
+      rel_pures_r. rel_apply_r or_refines_r. by iRight.
+    - rel_apply_r or_refines_r. by iRight.
+  Qed.
+
+  Lemma or_assoc_r e1 e2 e3 e1' e2' e3' A :
+    (REL e1 << e1' : A) -∗
+    (REL e2 << e2' : A) -∗
+    (REL e3 << e3' : A) -∗
+    REL ((e1 ⊕ e2) ⊕ e3) << (e1' ⊕ (e2' ⊕ e3')) : A.
+  Proof.
+    iIntros "H1 H2 H3".
+    rel_pures_r.
+    repeat (rel_pures_l; rel_apply_l or_refines_l; iSplit).
+    - rel_apply_r or_refines_r. by iLeft.
+    - rel_apply_r or_refines_r. iRight.
+      rel_pures_r. rel_apply_r or_refines_r. by iLeft.
+    - rel_apply_r or_refines_r. iRight.
+      rel_pures_r. rel_apply_r or_refines_r. by iRight.
+  Qed.
+
   (** Interaction between OR and sequencing. *)
   (** Standard in algebraic models of programming. *)
   Lemma or_seq_1 (f g h f' g' h' : expr) A :
     (REL f << f' : A) -∗
     (REL g << g' : A) -∗
     (REL h << h' : A) -∗
-    REL ((f ⊕ g)%V;; h)
-      << ((f';; h') ⊕ (g';; h'))%V : A.
+    REL ((f ⊕ g);; h)
+      << ((f';; h') ⊕ (g';; h')) : A.
   Proof.
-    iIntros "Hf Hg Hh".
+    iIntros "Hf Hg Hh". rel_pures_l. rel_pures_r.
     rel_apply_l or_refines_l; iSplit; simpl.
     - rel_apply_r or_refines_r.
       iLeft. iApply (refines_seq with "Hf Hh").
@@ -188,10 +220,10 @@ Section rules.
     (REL f << f' : A) -∗
     (REL g << g' : A) -∗
     (REL h << h' : A) -∗
-    REL ((f;; h) ⊕ (g;; h))%V
-      << ((f' ⊕ g')%V;; h') : A.
+    REL ((f;; h) ⊕ (g;; h))
+      << ((f' ⊕ g');; h') : A.
   Proof.
-    iIntros "Hf Hg Hh".
+    iIntros "Hf Hg Hh". rel_pures_l. rel_pures_r.
     rel_apply_l or_refines_l; iSplit; simpl.
     - rel_apply_r or_refines_r.
       iLeft. iApply (refines_seq with "Hf Hh").
@@ -206,15 +238,15 @@ Section rules.
     (REL f << f' : A) -∗
     (REL g << g' : A) -∗
     (REL h << h' : A) -∗
-    REL ((f;; g) ⊕ (f;; h))%V
-      << (f';; (g' ⊕ h')%V) : A.
+    REL ((f;; g) ⊕ (f;; h))
+      << (f';; (g' ⊕ h')) : A.
   Proof.
-    iIntros "Hf Hg Hh".
+    iIntros "Hf Hg Hh". rel_pures_l.
     rel_apply_l or_refines_l. iSplit.
     - iApply (refines_seq with "Hf").
-      rel_apply_r or_refines_r. by iLeft.
+      rel_pures_r. rel_apply_r or_refines_r. by iLeft.
     - iApply (refines_seq with "Hf").
-      rel_apply_r or_refines_r. by iRight.
+      rel_pures_r. rel_apply_r or_refines_r. by iRight.
   Qed.
 
 
@@ -238,9 +270,9 @@ Section rules.
          f;;
          (((resolve_proph: "p" to: #0);; g) ⊕
           ((resolve_proph: "p" to: #1);; h))%E) << (* Here we *have to* use the expr scope, otherwise "p" won't be substituted *)
-      ((f';; g') ⊕ (f';; h'))%V : A.
+      ((f';; g') ⊕ (f';; h')) : A.
   Proof.
-    iIntros (???) "Hf Hg Hh".
+    iIntros (???) "Hf Hg Hh". rel_pures_r.
     rel_newproph_l vs p as "Hp". repeat rel_pure_l.
     (rewrite !(subst_is_closed []) //; try by set_solver); [].
     rel_apply_r or_refines_r.
@@ -271,7 +303,7 @@ Section rules.
     (REL f << f' : A) -∗
     (REL g << g' : A) -∗
     (REL h << h' : A) -∗
-    REL (f;; (g ⊕ h)%V) <<
+    REL (f;; (g ⊕ h)) <<
     (let: "p" := NewProph in
          f';;
          (((resolve_proph: "p" to: #0);; g') ⊕
@@ -281,7 +313,8 @@ Section rules.
     rel_newproph_r p. repeat rel_pure_r.
     (rewrite !(subst_is_closed []) //; try by set_solver); [].
     iApply (refines_seq with "Hf").
-    repeat rel_pure_r. iApply (or_compatible with "[Hg] [Hh]").
+    rel_pures_l. rel_pures_r.
+    iApply (or_compatible with "[Hg] [Hh]").
     - rel_resolveproph_r. by repeat rel_pure_r.
     - rel_resolveproph_r. by repeat rel_pure_r.
   Qed.
