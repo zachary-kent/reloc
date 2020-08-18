@@ -251,7 +251,7 @@ Proof. destruct op; naive_solver. Qed.
     Lemma elements_insert Γ x τ :
         elements (dom stringset (<[x:=τ]> Γ)) = x :: elements (dom stringset Γ).
 
-But this does not hold (only up to multiset equality).
+But this does not hold (it holds only up to multiset equality).
 So we use an auxiliary definition with sets *)
 
 Definition maybe_insert_binder (x : binder) (X : stringset) : stringset :=
@@ -260,7 +260,7 @@ Definition maybe_insert_binder (x : binder) (X : stringset) : stringset :=
   | BNamed f => {[f]} ∪ X
   end.
 
-Fixpoint is_closed_expr_set (X : stringset) (e : expr) : bool :=
+Local Fixpoint is_closed_expr_set (X : stringset) (e : expr) : bool :=
   match e with
   | Val v => is_closed_val_set v
   | Var x => bool_decide (x ∈ X)
@@ -281,62 +281,105 @@ with is_closed_val_set (v : val) : bool :=
   | InjLV v | InjRV v => is_closed_val_set v
   end.
 
-(* Lemma is_closed_expr_set_sound (X : stringset) (e : expr) : *)
-(*   is_closed_expr_set X e → is_closed_expr (elements X) e *)
-(* with is_closed_val_set_sound (v : val) : *)
-(*   is_closed_val_set v → is_closed_val v. *)
-(* Proof. *)
-(*   - induction e; simplify_eq/=. *)
-(*     + apply is_closed_val_set_sound. *)
-(*     + intros. case_bool_decide; last done. *)
-(*       apply bool_decide_pack.  by apply (elem_of_elements X x). *)
-(*     +  *)
+Lemma is_closed_expr_permute (e : expr) (xs ys : list string) :
+  xs ≡ₚ ys →
+  is_closed_expr xs e = is_closed_expr ys e.
+Proof.
+  revert xs ys. induction e=>xs ys Hxsys /=;
+    repeat match goal with
+    | [ |- _ && _ = _ && _ ] => f_equal
+    | [ H : ∀ xs ys, xs ≡ₚ ys → is_closed_expr xs _ = is_closed_expr ys _
+      |- is_closed_expr _ _ = is_closed_expr _ _ ] => eapply H; eauto
+    end; try done.
+  - apply bool_decide_iff. by rewrite Hxsys.
+  - by rewrite Hxsys.
+Qed.
 
-Lemma typed_is_closed Γ e τ :
+Global Instance is_closed_expr_proper : Proper (Permutation ==> eq ==> eq) is_closed_expr.
+Proof.
+  intros X1 X2 HX x y ->. by eapply is_closed_expr_permute.
+Qed.
+
+Lemma is_closed_expr_set_sound (X : stringset) (e : expr) :
+  is_closed_expr_set X e → is_closed_expr (elements X) e
+with is_closed_val_set_sound (v : val) :
+  is_closed_val_set v → is_closed_val v.
+Proof.
+  - induction e; simplify_eq/=; try by (intros; destruct_and?; split_and?; eauto).
+    + intros. case_bool_decide; last done.
+      by apply bool_decide_pack, elem_of_elements.
+    + destruct f as [|f], x as [|x]; simplify_eq/=.
+      * eapply IHe.
+      * intros H%is_closed_expr_set_sound.
+        eapply is_closed_weaken; eauto. by set_solver.
+      * intros H%is_closed_expr_set_sound.
+        eapply is_closed_weaken; eauto. by set_solver.
+      * intros H%is_closed_expr_set_sound.
+        eapply is_closed_weaken; eauto. by set_solver.
+  - induction v; simplify_eq/=; try naive_solver.
+    destruct f as [|f], x as [|x]; simplify_eq/=;
+      intros H%is_closed_expr_set_sound; revert H.
+    + set_solver.
+    + by rewrite ?right_id_L elements_singleton.
+    + by rewrite ?right_id_L elements_singleton.
+    + rewrite ?right_id_L.
+      intros. eapply is_closed_weaken; eauto.
+      destruct (decide (f = x)) as [->|?].
+      * rewrite union_idemp_L elements_singleton.
+        set_solver.
+      * rewrite elements_disj_union; last set_solver.
+        rewrite !elements_singleton. set_solver.
+Qed.
+
+Local Lemma typed_is_closed_set Γ e τ :
   Γ ⊢ₜ e : τ → is_closed_expr_set (dom stringset Γ) e
-with typed_is_closed_val v τ :
+with typed_is_closed_val_set v τ :
     ⊢ᵥ v : τ → is_closed_val_set v.
 Proof.
-  - induction 1; simplify_eq/=; try (split_and?; by eapply typed_is_closed).
+  - induction 1; simplify_eq/=; try (split_and?; by eapply typed_is_closed_set).
     + apply bool_decide_pack. apply elem_of_dom. eauto.
-    + by eapply typed_is_closed_val.
+    + by eapply typed_is_closed_val_set.
     + destruct f as [|f], x as [|x]; simplify_eq/=.
-      * eapply typed_is_closed. eauto.
-      * specialize (typed_is_closed (<[x:=τ1]>Γ) e τ2 H).
-        revert typed_is_closed. by rewrite dom_insert_L.
-      * specialize (typed_is_closed (<[f:=(τ1→τ2)%ty]>Γ) e τ2 H).
-        revert typed_is_closed. by rewrite dom_insert_L.
-      * specialize (typed_is_closed _ e τ2 H).
-        revert typed_is_closed.
+      * eapply typed_is_closed_set. eauto.
+      * specialize (typed_is_closed_set (<[x:=τ1]>Γ) e τ2 H).
+        revert typed_is_closed_set. by rewrite dom_insert_L.
+      * specialize (typed_is_closed_set (<[f:=(τ1→τ2)%ty]>Γ) e τ2 H).
+        revert typed_is_closed_set. by rewrite dom_insert_L.
+      * specialize (typed_is_closed_set _ e τ2 H).
+        revert typed_is_closed_set.
         rewrite (dom_insert_L (D:=stringset) (<[x:=τ1]> Γ) f (τ1→τ2)%ty).
         by rewrite dom_insert_L.
-    + specialize (typed_is_closed (⤉Γ) e τ H).
-      revert typed_is_closed. by rewrite dom_fmap_L.
+    + specialize (typed_is_closed_set (⤉Γ) e τ H).
+      revert typed_is_closed_set. by rewrite dom_fmap_L.
     + by split_and?.
     + by split_and?.
     + split_and?; eauto. try (apply bool_decide_pack; by set_solver).
       destruct x as [|x]; simplify_eq/=.
-      ++ specialize (typed_is_closed _ _ _ H0).
-         revert typed_is_closed. by rewrite dom_fmap_L.
-      ++ specialize (typed_is_closed _ _ _ H0).
-         revert typed_is_closed. rewrite (dom_insert_L (D:=stringset) (⤉Γ) x).
+      ++ specialize (typed_is_closed_set _ _ _ H0).
+         revert typed_is_closed_set. by rewrite dom_fmap_L.
+      ++ specialize (typed_is_closed_set _ _ _ H0).
+         revert typed_is_closed_set. rewrite (dom_insert_L (D:=stringset) (⤉Γ) x).
          by rewrite dom_fmap_L.
   - induction 1; simplify_eq/=; try done.
     + by split_and?.
     + destruct f as [|f], x as [|x]; simplify_eq/=.
-      * specialize (typed_is_closed _ _ _ H).
-        revert typed_is_closed. by rewrite dom_empty_L.
-      * specialize (typed_is_closed (<[x:=τ1]>∅) _ _ H).
-        revert typed_is_closed. by rewrite dom_insert_L dom_empty_L.
-      * specialize (typed_is_closed _ _ _ H).
-        revert typed_is_closed.
+      * specialize (typed_is_closed_set _ _ _ H).
+        revert typed_is_closed_set. by rewrite dom_empty_L.
+      * specialize (typed_is_closed_set (<[x:=τ1]>∅) _ _ H).
+        revert typed_is_closed_set. by rewrite dom_insert_L dom_empty_L.
+      * specialize (typed_is_closed_set _ _ _ H).
+        revert typed_is_closed_set.
         rewrite (dom_insert_L (D:=stringset) _ f (τ1→τ2)%ty).
         by rewrite dom_empty_L.
-      * specialize (typed_is_closed _ _ _ H).
-        revert typed_is_closed.
+      * specialize (typed_is_closed_set _ _ _ H).
+        revert typed_is_closed_set.
         rewrite (dom_insert_L (D:=stringset) (<[x:=τ1]> ∅) f (τ1→τ2)%ty).
         by rewrite dom_insert_L dom_empty_L.
-    + specialize (typed_is_closed _ _ _ H).
-      revert typed_is_closed. by rewrite dom_empty_L.
+    + specialize (typed_is_closed_set _ _ _ H).
+      revert typed_is_closed_set. by rewrite dom_empty_L.
 Qed.
+
+Theorem typed_is_closed Γ e τ :
+  Γ ⊢ₜ e : τ → is_closed_expr (elements (dom stringset Γ)) e.
+Proof. intros. eapply is_closed_expr_set_sound, typed_is_closed_set; eauto. Qed.
 
