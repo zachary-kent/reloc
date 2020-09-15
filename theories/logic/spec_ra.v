@@ -142,7 +142,7 @@ Section mapsto.
     rewrite -pair_op singleton_op right_id -pair_op.
     move=> [_ Hv]. move:Hv => /=.
     rewrite singleton_valid.
-    by move=> [_] /agree_op_invL' [->].
+    by move=> [_] /to_agree_op_inv_L' [->].
   Qed.
 
   Lemma mapstoS_valid l q v : l ↦ₛ{q} v -∗ ✓ q.
