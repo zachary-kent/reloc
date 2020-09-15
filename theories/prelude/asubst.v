@@ -11,8 +11,6 @@ Section Autosubst_Lemmas.
     upn m f x = if decide (x < m) then ids x else rename (+m) (f (x - m)).
   Proof.
     revert x; induction m as [|m IH]=> -[|x];
-    repeat (case_match || asimpl || rewrite IH); auto with omega.
-    { exfalso. clear Heqs. revert l. lia. }
-    { exfalso. apply n. lia. }
+      repeat (case_match || asimpl || rewrite IH); auto with lia.
   Qed.
 End Autosubst_Lemmas.

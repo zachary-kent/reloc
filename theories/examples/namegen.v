@@ -69,7 +69,7 @@ Section namegen_refinement.
       iAssert (⌜(∃ x, (x, S n) ∈ L) → False⌝)%I with "[HL]" as %Hc.
       { iIntros (Hx). destruct Hx as [x Hy].
         rewrite (big_sepS_elem_of _ L (x,S n) Hy).
-        iDestruct "HL" as "[_ %]". omega. }
+        iDestruct "HL" as "[_ %]". lia. }
       iMod (bij_alloc_alt _ _ γ _ l' (S n) with "HB") as "[HB #Hl'n]"; auto.
       iMod ("Hcl" with "[-]").
       { iNext.

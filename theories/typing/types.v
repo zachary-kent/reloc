@@ -102,12 +102,10 @@ Definition rec_unfold : val := λ: "x", "x".
 Definition unpack : val := λ: "x" "y", "y" "x".
 
 Notation "'unpack:' x := e1 'in' e2" := (unpack e1%E (Lam x%binder e2%E))
-  (at level 200, x at level 1, e1, e2 at level 200, only parsing,
-   format "'[' 'unpack:'  x  :=  '[' e1 ']'  'in'  '/' e2 ']'") : expr_scope.
+  (at level 200, x at level 1, e1, e2 at level 200, only parsing) : expr_scope.
 
 Notation "'unpack:' x := e1 'in' e2" := (unpack e1%E (LamV x%binder e2%E))
-  (at level 200, x at level 1, e1, e2 at level 200, only parsing,
-   format "'[' 'unpack:'  x  :=  '[' e1 ']'  'in'  '/' e2 ']'") : val_scope.
+  (at level 200, x at level 1, e1, e2 at level 200, only parsing) : val_scope.
 
 (** Operation lifts *)
 Instance insert_binder (A : Type): Insert binder A (stringmap A) :=

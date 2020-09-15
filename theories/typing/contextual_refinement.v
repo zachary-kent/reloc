@@ -53,7 +53,7 @@ Inductive ctx_item :=
   | CTX_UnpackR (x : binder) (e1 : expr)
 .
 
-Fixpoint fill_ctx_item (ctx : ctx_item) (e : expr) : expr :=
+Definition fill_ctx_item (ctx : ctx_item) (e : expr) : expr :=
   match ctx with
   (* Base lambda calculus *)
   | CTX_Rec f x => Rec f x e
