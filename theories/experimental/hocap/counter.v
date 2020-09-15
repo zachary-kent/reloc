@@ -71,7 +71,7 @@ Section cnt_model.
     iPureIntro. revert Hfoo.
     rewrite -auth_frag_op -Some_op -pair_op.
     rewrite auth_frag_valid Some_valid.
-    by intros [_ foo%to_agree_op_inv_L']%pair_valid.
+    by intros [_ foo%to_agree_op_inv_L]%pair_valid.
   Qed.
 
   Lemma cnt_agree_2 γ q n m :
