@@ -132,7 +132,7 @@ Section offerReg_rules.
   Proof.
     iIntros "HN Hfrag".
     iDestruct (own_valid_2 with "HN Hfrag") as %Hfoo.
-    apply auth_both_valid in Hfoo.
+    apply auth_both_valid_discrete in Hfoo.
     simpl in Hfoo. destruct Hfoo as [Hfoo _].
     iAssert (⌜✓ ((to_offer_reg N) !! o)⌝)%I as %Hvalid.
     { iDestruct (own_valid with "HN") as %HNvalid.

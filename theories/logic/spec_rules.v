@@ -65,7 +65,7 @@ Section rules.
     iInv specN as (tp σ) ">[Hown Hrtc]" "Hclose".
     iDestruct "Hrtc" as %Hrtc.
     iDestruct (own_valid_2 with "Hown Hj")
-      as %[[Htpj%tpool_singleton_included' _]%prod_included ?]%auth_both_valid.
+      as %[[Htpj%tpool_singleton_included' _]%prod_included ?]%auth_both_valid_discrete.
     iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
     { eapply auth_update, prod_local_update_1.
       by eapply (singleton_local_update _ j (Excl (fill K e))),
@@ -110,7 +110,7 @@ Section rules.
     iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
-      as %[[?%tpool_singleton_included' _]%prod_included _]%auth_both_valid.
+      as %[[?%tpool_singleton_included' _]%prod_included _]%auth_both_valid_discrete.
     destruct (exist_fresh (used_proph_id σ)) as [p Hp].
     iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
     { by eapply auth_update, prod_local_update_1,
@@ -131,7 +131,7 @@ Section rules.
     iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
-      as %[[?%tpool_singleton_included' _]%prod_included _]%auth_both_valid.
+      as %[[?%tpool_singleton_included' _]%prod_included _]%auth_both_valid_discrete.
     iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
     { by eapply auth_update, prod_local_update_1,
          singleton_local_update, (exclusive_local_update _ (Excl (fill K #()))). }
@@ -153,7 +153,7 @@ Section rules.
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     destruct (exist_fresh (dom (gset loc) (heap σ))) as [l Hl%not_elem_of_dom].
     iDestruct (own_valid_2 with "Hown Hj")
-      as %[[?%tpool_singleton_included' _]%prod_included ?]%auth_both_valid.
+      as %[[?%tpool_singleton_included' _]%prod_included ?]%auth_both_valid_discrete.
     iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
     { by eapply auth_update, prod_local_update_1,
         singleton_local_update, (exclusive_local_update _ (Excl (fill K (#l)%E))). }
@@ -181,9 +181,9 @@ Section rules.
     rewrite heapS_mapsto_eq /heapS_mapsto_def /=.
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
-      as %[[?%tpool_singleton_included' _]%prod_included ?]%auth_both_valid.
+      as %[[?%tpool_singleton_included' _]%prod_included ?]%auth_both_valid_discrete.
     iDestruct (own_valid_2 with "Hown Hl")
-      as %[[? ?%gen_heap_singleton_included]%prod_included ?]%auth_both_valid.
+      as %[[? ?%gen_heap_singleton_included]%prod_included ?]%auth_both_valid_discrete.
     iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
     { by eapply auth_update, prod_local_update_1, singleton_local_update,
         (exclusive_local_update _ (Excl (fill K (of_val v)))). }
@@ -205,9 +205,9 @@ Section rules.
     rewrite heapS_mapsto_eq /heapS_mapsto_def /=.
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
-      as %[[?%tpool_singleton_included' _]%prod_included _]%auth_both_valid.
+      as %[[?%tpool_singleton_included' _]%prod_included _]%auth_both_valid_discrete.
     iDestruct (own_valid_2 with "Hown Hl")
-      as %[[_ Hl%gen_heap_singleton_included]%prod_included _]%auth_both_valid.
+      as %[[_ Hl%gen_heap_singleton_included]%prod_included _]%auth_both_valid_discrete.
     iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
     { by eapply auth_update, prod_local_update_1, singleton_local_update,
         (exclusive_local_update _ (Excl (fill K #()))). }
@@ -239,9 +239,9 @@ Section rules.
     iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
-      as %[[?%tpool_singleton_included' _]%prod_included ?]%auth_both_valid.
+      as %[[?%tpool_singleton_included' _]%prod_included ?]%auth_both_valid_discrete.
     iDestruct (own_valid_2 with "Hown Hl")
-      as %[[_ ?%gen_heap_singleton_included]%prod_included _]%auth_both_valid.
+      as %[[_ ?%gen_heap_singleton_included]%prod_included _]%auth_both_valid_discrete.
     iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
     { by eapply auth_update, prod_local_update_1, singleton_local_update,
         (exclusive_local_update _ (Excl (fill K (_, #false)%V))). }
@@ -266,9 +266,9 @@ Section rules.
     iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
-      as %[[?%tpool_singleton_included' _]%prod_included _]%auth_both_valid.
+      as %[[?%tpool_singleton_included' _]%prod_included _]%auth_both_valid_discrete.
     iDestruct (own_valid_2 with "Hown Hl")
-      as %[[_ Hl%gen_heap_singleton_included]%prod_included _]%auth_both_valid.
+      as %[[_ Hl%gen_heap_singleton_included]%prod_included _]%auth_both_valid_discrete.
     iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
     { by eapply auth_update, prod_local_update_1, singleton_local_update,
         (exclusive_local_update _ (Excl (fill K (_, #true)%V))). }
@@ -297,9 +297,9 @@ Section rules.
     iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
-      as %[[?%tpool_singleton_included' _]%prod_included _]%auth_both_valid.
+      as %[[?%tpool_singleton_included' _]%prod_included _]%auth_both_valid_discrete.
     iDestruct (own_valid_2 with "Hown Hl")
-      as %[[_ Hl%gen_heap_singleton_included]%prod_included _]%auth_both_valid.
+      as %[[_ Hl%gen_heap_singleton_included]%prod_included _]%auth_both_valid_discrete.
     iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
     { by eapply auth_update, prod_local_update_1, singleton_local_update,
         (exclusive_local_update _ (Excl (fill K (# i1)))). }
@@ -326,7 +326,7 @@ Section rules.
     iDestruct "Hspec" as (ρ) "Hspec".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iDestruct (own_valid_2 with "Hown Hj")
-      as %[[?%tpool_singleton_included' _]%prod_included ?]%auth_both_valid.
+      as %[[?%tpool_singleton_included' _]%prod_included ?]%auth_both_valid_discrete.
     assert (j < length tp) by eauto using lookup_lt_Some.
     iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
     { by eapply auth_update, prod_local_update_1,

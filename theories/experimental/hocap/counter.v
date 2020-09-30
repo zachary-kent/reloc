@@ -48,7 +48,7 @@ Section cnt_model.
     rewrite /cnt_auth /cnt.
     iMod (own_alloc (● (Some (1%Qp, to_agree n))⋅
             ◯ (Some (1%Qp, to_agree n)))) as (γ) "H".
-    { apply auth_both_valid. split; done. }
+    { apply auth_both_valid_discrete. split; done. }
     iModIntro. iExists γ. by rewrite -own_op.
   Qed.
 
@@ -80,7 +80,7 @@ Section cnt_model.
     apply bi.wand_intro_r. rewrite /cnt /cnt_auth - !own_op.
     iIntros "H". iDestruct (own_valid with "H") as %Hfoo.
     iPureIntro; revert Hfoo.
-    rewrite auth_both_valid.
+    rewrite auth_both_valid_discrete.
     intros [[_ foo%to_agree_included]%Some_pair_included_total_2 _].
     by unfold_leibniz.
   Qed.
