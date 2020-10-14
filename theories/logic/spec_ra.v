@@ -12,8 +12,10 @@ Definition relocN := nroot .@ "reloc".
 Definition specN := relocN .@ "spec".
 
 (** The CMRA for the heap of the specification. *)
+Definition heapUR (L V : Type) `{Countable L} : ucmraT :=
+  gmapUR L (prodR fracR (agreeR (leibnizO V))).
 Definition tpoolUR : ucmraT := gmapUR nat (exclR exprO).
-Definition cfgUR := prodUR tpoolUR (gen_heapUR loc (option val)).
+Definition cfgUR := prodUR tpoolUR (heapUR loc (option val)).
 
 (** The CMRA for the thread pool. *)
 Class cfgSG Σ := CFGSG { cfg_inG :> inG Σ (authR cfgUR); cfg_name : gname }.
@@ -22,6 +24,8 @@ Class relocG Σ := RelocG {
   relocG_cfgG :> cfgSG Σ;
 }.
 
+Definition to_heap {L V} `{Countable L} : gmap L V → heapUR L V :=
+  fmap (λ v, (1%Qp, to_agree (v : leibnizO V))).
 Definition to_tpool (tp : list expr) : tpoolUR := Excl <$> (map_seq 0 tp).
 
 Section definitionsS.
@@ -44,7 +48,7 @@ Section definitionsS.
   Definition mkstate (σ : gmap loc (option val)) (κs : gset proph_id) :=
     {| heap := σ; used_proph_id := κs |}.
   Definition spec_inv ρ : iProp Σ :=
-    (∃ tp σ, own cfg_name (● (to_tpool tp, to_gen_heap (heap σ)))
+    (∃ tp σ, own cfg_name (● (to_tpool tp, to_heap (heap σ)))
                  ∗ ⌜rtc erased_step ρ (tp,σ)⌝)%I.
   Definition spec_ctx : iProp Σ :=
     (∃ ρ, inv specN (spec_inv ρ))%I.
@@ -121,6 +125,30 @@ Section conversions.
     {[j := Excl e]} ≼ to_tpool tp → to_tpool tp !! j = Excl' e.
   Proof. rewrite tpool_lookup. by move=> /tpool_singleton_included=> ->. Qed.
 End conversions.
+
+Section to_heap.
+  Context (L V : Type) `{Countable L}.
+  Implicit Types σ : gmap L V.
+  Implicit Types m : gmap L gname.
+
+  Lemma lookup_to_heap_None σ l : σ !! l = None → to_heap σ !! l = None.
+  Proof. by rewrite /to_heap lookup_fmap=> ->. Qed.
+  Lemma to_heap_insert l v σ :
+    to_heap (<[l:=v]> σ) = <[l:=(1%Qp, to_agree (v:leibnizO V))]> (to_heap σ).
+  Proof. by rewrite /to_heap fmap_insert. Qed.
+
+  Lemma heap_singleton_included σ l q v :
+    {[l := (q, to_agree v)]} ≼ to_heap σ → σ !! l = Some v.
+  Proof.
+    rewrite singleton_included_l=> -[[q' av] []].
+    rewrite /to_heap lookup_fmap fmap_Some_equiv => -[v' [Hl [/= -> ->]]].
+    move=> /Some_pair_included_total_2 [_] /to_agree_included /leibniz_equiv_iff -> //.
+  Qed.
+
+  Lemma to_heap_valid σ : ✓ to_heap σ.
+  Proof. intros l. rewrite lookup_fmap. by case (σ !! l). Qed.
+
+End to_heap.  
 
 Section mapsto.
   Context `{cfgSG Σ}.

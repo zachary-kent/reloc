@@ -26,13 +26,13 @@ Lemma refines_adequate Σ `{relocPreG Σ}
 Proof.
   intros HA Hlog.
   eapply (heap_adequacy Σ _); iIntros (Hinv) "_".
-  iMod (own_alloc (● (to_tpool [e'], to_gen_heap (heap σ))
+  iMod (own_alloc (● (to_tpool [e'], to_heap (heap σ))
     ⋅ ◯ ((to_tpool [e'] : tpoolUR, ∅) : cfgUR)))
     as (γc) "[Hcfg1 Hcfg2]".
   { apply auth_both_valid_discrete. split=>//.
     - apply prod_included. split=>///=.
       apply: ucmra_unit_least.
-    - split=>//. apply to_tpool_valid. apply to_gen_heap_valid. }
+    - split=>//. apply to_tpool_valid. apply to_heap_valid. }
   set (Hcfg := RelocG _ _ (CFGSG _ _ γc)).
   iMod (inv_alloc specN _ (spec_inv ([e'], σ)) with "[Hcfg1]") as "#Hcfg".
   { iNext. iExists [e'], σ. eauto. }
