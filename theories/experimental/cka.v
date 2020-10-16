@@ -53,7 +53,7 @@ Lemma plus_comm e f :
   ∅ ⊢ₜ f : TUnit →
   ∅ ⊨ (e ⊕ f) =ctx= (f ⊕ e) : TUnit.
 Proof.
-  intros He Hf. split; use_logrel/=; iApply or_comm; fundamental.
+  intros He Hf. split; use_logrel/=; iApply or.or_comm; fundamental.
 Qed.
 
 Lemma plus_assoc e f g :
