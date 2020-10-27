@@ -1,7 +1,6 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Rules for updating the specification program. *)
 From iris.algebra Require Import auth excl frac agree gmap list.
-From iris.base_logic.lib Require Import gen_heap.
 From iris.proofmode Require Import tactics.
 From iris.heap_lang Require Export lang notation tactics.
 From reloc.logic Require Export spec_ra.

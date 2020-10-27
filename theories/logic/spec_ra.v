@@ -2,7 +2,6 @@
 (** A resource algebra for the specification programs. *)
 From iris.algebra Require Import auth excl gmap agree list frac.
 From iris.bi Require Export fractional.
-From iris.base_logic Require Import gen_heap.
 From iris.base_logic Require Export invariants.
 From iris.proofmode Require Import tactics.
 From iris.heap_lang Require Import lang primitive_laws.
