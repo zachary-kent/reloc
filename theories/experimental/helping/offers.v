@@ -37,7 +37,7 @@ Section rules.
     is_offer γ1 l P1 Q1 -∗ is_offer γ2 l P2 Q2 -∗ False.
   Proof.
     iDestruct 1 as (?) "[Hl1 _]". iDestruct 1 as (?) "[Hl2 _]".
-    iDestruct (gen_heap.mapsto_valid_2 with "Hl1 Hl2") as %?. contradiction.
+    iDestruct (gen_heap.mapsto_valid_2 with "Hl1 Hl2") as %[??]. contradiction.
   Qed.
 
   Lemma make_is_offer γ l P Q : l ↦ #0 -∗ P -∗ is_offer γ l P Q.

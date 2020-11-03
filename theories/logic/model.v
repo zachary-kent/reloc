@@ -170,7 +170,7 @@ Section semtypes_properties.
     iInv (relocN.@"ref".@(l, l1')) as (? ?) "[>Hl ?]" "Hcl".
     iInv (relocN.@"ref".@(l, l2')) as (? ?) "[>Hl' ?]" "Hcl'".
     simpl. iExFalso.
-    iDestruct (gen_heap.mapsto_valid_2 with "Hl Hl'") as %Hfoo.
+    iDestruct (gen_heap.mapsto_valid_2 with "Hl Hl'") as %[Hfoo _].
     compute in Hfoo. eauto.
   Qed.
 
