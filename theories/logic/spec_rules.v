@@ -39,18 +39,6 @@ Section rules.
     erased_step (tp, σ) (<[j:=fill K e']> tp, σ').
   Proof. rewrite -(right_id_L [] (++) (<[_:=_]>_)). by apply step_insert. Qed.
 
-  Lemma nsteps_inv_r {A} n (R : A → A → Prop) x y :
-    relations.nsteps R (S n) x y → ∃ z, relations.nsteps R n x z ∧ R z y.
-  Proof.
-    revert x y; induction n; intros x y.
-    - inversion 1; subst.
-      match goal with H : relations.nsteps _ 0 _ _ |- _ => inversion H end; subst.
-      eexists; repeat econstructor; eauto.
-    - inversion 1; subst.
-      edestruct IHn as [z [? ?]]; eauto.
-      exists z; split; eauto using relations.nsteps_l.
-  Qed.
-
   (** * Main rules *)
   (** Pure reductions *)
   Lemma step_pure E j K e e' (P : Prop) n :
