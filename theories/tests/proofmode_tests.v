@@ -7,7 +7,7 @@ Context `{relocG Σ}.
 
 Definition EqI : lrel Σ := LRel (λ v1 v2, ⌜v1 = v2⌝)%I.
 (* Pure reductions *)
-Lemma test1 A P t :
+Lemma test1 A P (t: expr) :
   ▷ P -∗
   (P -∗ REL #4 << t : A) -∗
   REL (#2 + #2) << (λ: <>, t) #() : A.

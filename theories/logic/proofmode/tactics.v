@@ -16,7 +16,7 @@ Lemma tac_rel_bind_l `{!relocG Σ} e' K ℶ E e t A :
   envs_entails ℶ (REL e << t @ E : A).
 Proof. intros. subst. assumption. Qed.
 
-Lemma tac_rel_bind_r `{!relocG Σ} t' K ℶ E e t A :
+Lemma tac_rel_bind_r `{!relocG Σ} (t' : expr) K ℶ E e t A :
   t = fill K t' →
   envs_entails ℶ (REL e << fill K t' @ E : A) →
   envs_entails ℶ (REL e << t @ E : A).
@@ -73,10 +73,10 @@ Ltac rel_reshape_cont_l tac :=
 
 Ltac rel_reshape_cont_r tac :=
   lazymatch goal with
-  | |- envs_entails _ (refines _ _ (fill ?K ?e) _) =>
+  | |- envs_entails _ (refines _ _ (in_1 (fill ?K ?e)) _) =>
     reshape_expr e ltac:(fun K' e' =>
       tac (K' ++ K) e')
-  | |- envs_entails _ (refines _ _ ?e _) =>
+  | |- envs_entails _ (refines _ _ (in_1 ?e) _) =>
     reshape_expr e ltac:(fun K' e' => tac K' e')
   end.
 
@@ -141,7 +141,7 @@ Proof.
   - rewrite -refines_masked_l //.
 Qed.
 
-Lemma tac_rel_pure_r `{!relocG Σ} K e1 ℶ E e e2 eres ϕ n t A :
+Lemma tac_rel_pure_r `{!relocG Σ} K e1 ℶ E (e e2 eres : expr) ϕ n t A :
   e = fill K e1 →
   PureExec ϕ n e1 e2 →
   ϕ →
@@ -153,19 +153,6 @@ Proof.
   intros Hfill Hpure Hϕ ?? Hp. subst.
   rewrite -refines_pure_r //.
 Qed.
-
-(* Tactic Notation "rel_pure_l" open_constr(ef) := *)
-(*   iStartProof; *)
-(*   (eapply tac_rel_pure_l; *)
-(*    [tac_bind_helper ef                           (** e = fill K e1' *) *)
-(*    |iSolveTC                                     (** PureClosed ϕ n e1 e2 *) *)
-(*    |try fast_done                                (** The pure condition for PureClosed *) *)
-(*    |first [left; split; reflexivity              (** Here we decide if the mask E is ⊤ *) *)
-(*           | right; reflexivity]                  (**    (m = n ∧ E = ⊤) ∨ (m = 0) *) *)
-(*    |iSolveTC                                     (** IntoLaters *) *)
-(*    |simpl; reflexivity                           (** eres = fill K e2 *) *)
-(*    |rel_finish                                   (** new goal *)]) *)
-(*   || fail "rel_pure_l: cannot find the reduct". *)
 
 Tactic Notation "rel_pure_l" open_constr(ef) :=
   iStartProof;
@@ -623,11 +610,11 @@ Lemma tac_rel_fork_r `{!relocG Σ} K ℶ E e' e t eres A :
   nclose specN ⊆ E →
   is_closed_expr [] e' →
   eres = fill K #() →
-  envs_entails ℶ (∀ i, i ⤇ e' -∗ refines E t eres A) →
+  envs_entails ℶ (∀ k, refines_right k e' -∗ refines E t eres A) →
   envs_entails ℶ (refines E t e A).
 Proof.
   intros ?????. subst e eres.
-  rewrite -refines_fork_r //.
+  by rewrite -refines_fork_r //.
 Qed.
 
 Tactic Notation "rel_fork_r" ident(i) "as" constr(H) :=

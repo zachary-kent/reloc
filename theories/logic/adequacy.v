@@ -17,7 +17,7 @@ Proof. solve_inG. Qed.
 
 Lemma refines_adequate Σ `{relocPreG Σ}
   (A : ∀ `{relocG Σ}, lrel Σ)
-  (P : val → val → Prop) e e' σ :
+  (P : val → val → Prop) (e e' : expr) σ :
   (∀ `{relocG Σ}, ∀ v v', A v v' -∗ ⌜P v v'⌝) →
   (∀ `{relocG Σ}, ⊢ REL e << e' : A) →
   adequate NotStuck e σ
@@ -40,11 +40,11 @@ Proof.
   iSplitL.
   - iPoseProof (Hlog _) as "Hrel".
     rewrite refines_eq /refines_def /spec_ctx.
-    iApply fupd_wp.
-    iSpecialize ("Hrel" $! 0 [] with "[Hcfg]"); first by eauto.
-    iApply "Hrel".
-    rewrite tpool_mapsto_eq /tpool_mapsto_def. iFrame.
-    by rewrite /to_tpool /= insert_empty map_fmap_singleton //.
+    iApply fupd_wp. iApply ("Hrel" $! 0 []).
+    iSplitR.
+    + iExists _. by iFrame.
+    + rewrite tpool_mapsto_eq /tpool_mapsto_def.
+      by rewrite /to_tpool /= insert_empty map_fmap_singleton //.
   - iIntros (v).
     iDestruct 1 as (v') "[Hj Hinterp]".
     rewrite HA.
@@ -60,7 +60,7 @@ Proof.
     iIntros "!> !%"; eauto.
 Qed.
 
-Theorem refines_typesafety Σ `{relocPreG Σ} e e' e1
+Theorem refines_typesafety Σ `{relocPreG Σ} (e e' : expr) e1
         (A : ∀ `{relocG Σ}, lrel Σ) thp σ σ' :
   (∀ `{relocG Σ}, ⊢ REL e << e' : A) →
   rtc erased_step ([e], σ) (thp, σ') → e1 ∈ thp →

@@ -8,7 +8,8 @@ From reloc.logic Require Export model rules.
 From reloc.logic Require Import proofmode.tactics proofmode.spec_tactics model.
 
 Section compatibility.
-  Context `{relocG Σ}.
+  Context `{!relocG Σ}.
+  Implicit Types e : expr.
 
   Local Ltac value_case :=
     try rel_pure_l; try rel_pure_r; rel_values.
@@ -51,21 +52,6 @@ Section compatibility.
     rel_bind_ap e1 e1' "IH1" v v' "#Hvv".
     repeat rel_pure_l. repeat rel_pure_r.
     done.
-  Qed.
-
-  Lemma refines_fork e e' E :
-    ↑relocN ⊆ E →
-    (REL e << e' @ E : ()) -∗
-    REL Fork e << Fork e' @ E : ().
-  Proof.
-    iIntros (?) "IH".
-    rewrite refines_eq /refines_def.
-    iIntros (j K) "Hs Hj /=".
-    tp_fork j as i "Hi".
-    iMod ("IH" $! i [] with "Hs Hi") as "IH".
-    iApply (wp_fork with "[-Hj]").
-    - iNext. iApply (wp_wand with "IH"). eauto.
-    - iExists #(); eauto.
   Qed.
 
   Lemma refines_pack (A : lrel Σ) e e' (C : lrel Σ → lrel Σ) :

@@ -24,6 +24,7 @@ Notation "e1 ∥ e2" := (((e1;; #()) ||| (e2;; #()));; #())%E
 
 Section rules.
   Context `{!relocG Σ, !spawnG Σ}.
+  Implicit Type e t : expr.
 
   Lemma par_l_2 e1 e2 t :
     (WP e1 {{ _, True }}) -∗
@@ -85,54 +86,60 @@ Section rules.
     rel_pures_l. rel_rec_l.
     rel_pures_l.
     pose (N:=nroot.@"par").
-    rewrite refines_eq /refines_def. iIntros (j K) "#Hspec Hj".
-    iModIntro. wp_bind (spawn _).
-    iApply (spawn_spec N (λ _, j ⤇ fill K #())%I with "[He1 Hj]").
+    iApply refines_split. iIntros (k) "Hk".
+    rel_bind_l (spawn _). iApply refines_wp_l.
+    iApply (spawn_spec N (λ _, refines_right k #())%I with "[He1 Hk]").
     - wp_pures. wp_bind e1.
-      iMod ("He1" with "Hspec Hj") as "He1".
+      rewrite refines_eq /refines_def.
+      iDestruct "Hk" as "[#Hs Hj]".
+      iMod ("He1" with "[$Hs $Hj]") as "He1".
       iApply (wp_wand with "He1").
       iIntros (?)  "P". wp_pures.
-      by iDestruct "P" as (v') "[Hj [-> ->]]".
+      iFrame "Hs".
+      by iDestruct "P" as (v') "[? [-> ->]]".
     - iNext. iIntros (l) "hndl". iSimpl.
-      wp_pures. wp_bind e2.
+      rel_pures_l. rel_bind_l e2.
+      iApply refines_wp_l.
       iApply (wp_wand with "He2"). iIntros (?) "_".
-      wp_pures.
-      wp_apply (join_spec with "hndl").
-      iIntros (?) "Hj". wp_pures. iExists #(). eauto with iFrame.
+      simpl. rel_pures_l. rel_bind_l (spawn.join _).
+      iApply refines_wp_l.
+      iApply (join_spec with "hndl"). iNext.
+      iIntros (?) "Hk". simpl. rel_pures_l. iApply (refines_combine with "[] Hk").
+      rel_values.
   Qed.
 
-  Lemma par_l_1' Q K e1 e2 t :
-    (REL e1 << t : ()) -∗
-    (WP e2 {{ _, Q }}) -∗
-    (Q -∗ REL #() << fill K (#() : expr) : ()) -∗
-    REL (e1 ∥ e2) << fill K t : ().
-  Proof.
-    iIntros "He1 He2 Ht".
-    rel_pures_l. rel_rec_l.
-    rel_pures_l.
-    pose (N:=nroot.@"par").
-    rewrite {1 3}refines_eq /refines_def. iIntros (j K') "#Hspec Hj".
-    iModIntro. wp_bind (spawn _).
-    iApply (spawn_spec N (λ _, j ⤇ fill (K++K') #())%I with "[He1 Hj]").
-    - wp_pures. wp_bind e1.
-      rewrite -fill_app.
-      iMod ("He1" with "Hspec Hj") as "He1".
-      iApply (wp_wand with "He1").
-      iIntros (?)  "P". wp_pures.
-      by iDestruct "P" as (v') "[Hj [-> ->]]".
-    - iNext. iIntros (l) "hndl". iSimpl.
-      wp_pures. wp_bind e2.
-      iApply (wp_wand with "He2"). iIntros (?) "HQ".
-      wp_pures.
-      wp_apply (join_spec with "hndl").
-      iIntros (?) "Hj".
-      iSpecialize ("Ht" with "HQ").
-      rewrite refines_eq /refines_def.
-      rewrite fill_app.
-      iMod ("Ht" with "Hspec Hj") as "Ht".
-      rewrite wp_value_inv. iMod "Ht" as (?) "[Ht [_ ->]]".
-      wp_pures. iExists #(). eauto with iFrame.
-  Qed.
+  (* Lemma par_l_1' Q K e1 e2 t : *)
+  (*   (REL e1 << t : ()) -∗ *)
+  (*   (WP e2 {{ _, Q }}) -∗ *)
+  (*   (Q -∗ REL #() << fill K (#() : expr) : ()) -∗ *)
+  (*   REL (e1 ∥ e2) << fill K t : (). *)
+  (* Proof. *)
+  (*   iIntros "He1 He2 Ht". *)
+  (*   rel_pures_l. rel_rec_l. *)
+  (*   rel_pures_l. *)
+  (*   pose (N:=nroot.@"par"). *)
+  (*   rewrite {1 3}refines_eq /refines_def. iIntros (j K') "#Hspec Hj". *)
+  (*   iModIntro. wp_bind (spawn _). *)
+  (*   iApply (spawn_spec N (λ _, j ⤇ fill (K++K') #())%I with "[He1 Hj]"). *)
+  (*   - wp_pures. wp_bind e1. *)
+  (*     rewrite -fill_app. *)
+  (*     iMod ("He1" with "Hspec Hj") as "He1". *)
+  (*     iApply (wp_wand with "He1"). *)
+  (*     iIntros (?)  "P". wp_pures. *)
+  (*     by iDestruct "P" as (v') "[Hj [-> ->]]". *)
+  (*   - iNext. iIntros (l) "hndl". iSimpl. *)
+  (*     wp_pures. wp_bind e2. *)
+  (*     iApply (wp_wand with "He2"). iIntros (?) "HQ". *)
+  (*     wp_pures. *)
+  (*     wp_apply (join_spec with "hndl"). *)
+  (*     iIntros (?) "Hj". *)
+  (*     iSpecialize ("Ht" with "HQ"). *)
+  (*     rewrite refines_eq /refines_def. *)
+  (*     rewrite fill_app. *)
+  (*     iMod ("Ht" with "Hspec Hj") as "Ht". *)
+  (*     rewrite wp_value_inv. iMod "Ht" as (?) "[Ht [_ ->]]". *)
+  (*     wp_pures. iExists #(). eauto with iFrame. *)
+  (* Qed. *)
 
   (* Lemma par_r_1 e1 e2 t (A : lrel Σ) E : *)
   (*   ↑ relocN ⊆ E → *)

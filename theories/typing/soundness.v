@@ -69,7 +69,7 @@ Proof.
   iModIntro. iIntros (?). iApply Hlog.
 Qed.
 
-Lemma refines_sound Σ `{relocPreG Σ} e e' τ :
+Lemma refines_sound Σ `{relocPreG Σ} (e e': expr) τ :
   (∀ `{relocG Σ} Δ, ⊢ REL e << e' : (interp τ Δ)) →
   ∅ ⊨ e ≤ctx≤ e' : τ.
 Proof.

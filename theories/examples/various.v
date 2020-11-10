@@ -14,7 +14,7 @@ Instance subG_oneshotΣ {Σ} : subG oneshotΣ Σ → oneshotG Σ.
 Proof. solve_inG. Qed.
 
 Section proofs.
-  Context `{relocG Σ}.
+  Context `{!relocG Σ}.
 
   Lemma refinement1 :
     ⊢ REL
@@ -366,7 +366,7 @@ Section proofs.
      (c1 ↦ #n ∗ c2 ↦ₛ #n ∗ pending γ)
    ∨ (c1 ↦ #(n+1) ∗ c2 ↦ₛ #n ∗ shot γ ∗ own γ' (Excl ())))%I.
 
-  Lemma profiled_g `{oneshotG Σ} `{inG Σ (exclR unitR)} γ γ' c1 c2 g1 g2 :
+  Lemma profiled_g `{oneshotG Σ} `{inG Σ (exclR unitR)} γ γ' c1 c2 (g1 g2 : expr) :
     inv shootN (i6 c1 c2 γ γ') -∗
     □ (REL g1 << g2 : () → ()) -∗
     REL
@@ -440,7 +440,8 @@ Section proofs.
           rel_values. }
   Qed.
 
-  Lemma profiled_g' `{oneshotG Σ} `{inG Σ (exclR unitR)} γ γ' c1 c2 g1 g2 :
+  Lemma profiled_g' `{!oneshotG Σ} `{!inG Σ (exclR unitR)}
+        γ γ' c1 c2 (g1 g2 : expr) :
     inv shootN (i6 c1 c2 γ γ') -∗
     □ (REL g1 << g2 : () → ()) -∗
     REL
@@ -469,7 +470,8 @@ Section proofs.
     iFrame.
   Qed.
 
-  Lemma refinement6_helper f'1 f'2 g1 g2 c1 c2 γ γ' m `{oneshotG Σ} `{inG Σ (exclR unitR)} :
+  Lemma refinement6_helper (f'1 f'2 g1 g2 : expr)
+        c1 c2 γ γ' m `{oneshotG Σ} `{inG Σ (exclR unitR)} :
     inv shootN (i6 c1 c2 γ γ') -∗
     □ (REL g1 << g2 : () → ()) -∗
     □ (REL f'1 << f'2 : (() → ()) → ()) -∗

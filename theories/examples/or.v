@@ -30,7 +30,8 @@ Notation "e1 ⊕ e2" := (or (λ: <>, e1)%V (λ: <>, e2)%V)
                         (at level 60) : val_scope.
 
 Section rules.
-  Context `{relocG Σ}.
+  Context `{!relocG Σ}.
+  Implicit Types e : expr.
 
   (** Symbolic execution rule for the LHS *)
   Definition or_inv x : iProp Σ :=

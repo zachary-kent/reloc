@@ -52,9 +52,8 @@ theories/examples/various.v
 theories/examples/lateearlychoice.v
 theories/examples/coinflip.v
 
-theories/examples/par.v
-
-theories/experimental/cka.v
+# theories/examples/par.v
+# theories/experimental/cka.v
 
 theories/experimental/helping/offers.v
 theories/experimental/helping/helping_stack.v
