@@ -108,38 +108,41 @@ Section rules.
       rel_values.
   Qed.
 
-  (* Lemma par_l_1' Q K e1 e2 t : *)
-  (*   (REL e1 << t : ()) -∗ *)
-  (*   (WP e2 {{ _, Q }}) -∗ *)
-  (*   (Q -∗ REL #() << fill K (#() : expr) : ()) -∗ *)
-  (*   REL (e1 ∥ e2) << fill K t : (). *)
-  (* Proof. *)
-  (*   iIntros "He1 He2 Ht". *)
-  (*   rel_pures_l. rel_rec_l. *)
-  (*   rel_pures_l. *)
-  (*   pose (N:=nroot.@"par"). *)
-  (*   rewrite {1 3}refines_eq /refines_def. iIntros (j K') "#Hspec Hj". *)
-  (*   iModIntro. wp_bind (spawn _). *)
-  (*   iApply (spawn_spec N (λ _, j ⤇ fill (K++K') #())%I with "[He1 Hj]"). *)
-  (*   - wp_pures. wp_bind e1. *)
-  (*     rewrite -fill_app. *)
-  (*     iMod ("He1" with "Hspec Hj") as "He1". *)
-  (*     iApply (wp_wand with "He1"). *)
-  (*     iIntros (?)  "P". wp_pures. *)
-  (*     by iDestruct "P" as (v') "[Hj [-> ->]]". *)
-  (*   - iNext. iIntros (l) "hndl". iSimpl. *)
-  (*     wp_pures. wp_bind e2. *)
-  (*     iApply (wp_wand with "He2"). iIntros (?) "HQ". *)
-  (*     wp_pures. *)
-  (*     wp_apply (join_spec with "hndl"). *)
-  (*     iIntros (?) "Hj". *)
-  (*     iSpecialize ("Ht" with "HQ"). *)
-  (*     rewrite refines_eq /refines_def. *)
-  (*     rewrite fill_app. *)
-  (*     iMod ("Ht" with "Hspec Hj") as "Ht". *)
-  (*     rewrite wp_value_inv. iMod "Ht" as (?) "[Ht [_ ->]]". *)
-  (*     wp_pures. iExists #(). eauto with iFrame. *)
-  (* Qed. *)
+  Lemma par_l_1' Q K e1 e2 t :
+    (REL e1 << t : ()) -∗
+    (WP e2 {{ _, Q }}) -∗
+    (Q -∗ REL #() << fill K (#() : expr) : ()) -∗
+    REL (e1 ∥ e2) << fill K t : ().
+  Proof.
+    iIntros "He1 He2 Ht".
+    rel_pures_l. rel_rec_l.
+    rel_pures_l.
+    pose (N:=nroot.@"par").
+    iApply refines_split. iIntros (k) "Hk".
+    rel_bind_l (spawn _). iApply refines_wp_l.
+    rewrite refines_right_bind.
+    iApply (spawn_spec N (λ _, refines_right k (fill K #()))%I with "[He1 Hk]").
+    - wp_pures. wp_bind e1.
+      rewrite refines_eq /refines_def.
+      iAssert (spec_ctx) with "[Hk]" as "#Hs".
+      { iDestruct "Hk" as "[$ _]". }
+      iMod ("He1" with "Hk") as "He1".
+      iApply (wp_wand with "He1").
+      iIntros (?)  "P". wp_pures.
+      rewrite /refines_right.
+      iDestruct "P" as (v') "[Hj [-> ->]]".
+      iFrame "Hs". by rewrite fill_app.
+    - iNext. iIntros (l) "Hl". simpl.
+      rel_pures_l. rel_bind_l e2.
+      iApply refines_wp_l.
+      iApply (wp_wand with "He2"). iIntros (?) "HQ".
+      simpl. rel_pures_l. rel_bind_l (spawn.join _).
+      iApply refines_wp_l.
+      wp_apply (join_spec with "Hl").
+      iIntros (?) "Hk".
+      iSpecialize ("Ht" with "HQ"). simpl.
+      rel_pures_l. iApply (refines_combine with "Ht Hk").
+  Qed.
 
   (* Lemma par_r_1 e1 e2 t (A : lrel Σ) E : *)
   (*   ↑ relocN ⊆ E → *)
@@ -209,14 +212,17 @@ Section rules.
     tp_pure i (App _ _). simpl.
     rel_pures_r.
     rel_bind_r e2.
-    iApply refines_spec_ctx. iIntros "#Hs".
-    iApply (par_l_1' (i ⤇ (#c2 <- InjR (#();; #())))%I
+    iApply (par_l_1' (refines_right i (#c2 <- InjR (#();; #())))%I
               with "He2 [He1 Hi]").
     { rewrite refines_eq /refines_def.
       tp_bind i e1.
-      iMod ("He1" with "Hs Hi") as "He1". simpl.
+      rewrite refines_right_bind.
+      iAssert (spec_ctx) with "[Hi]" as "#Hs".
+      { iDestruct "Hi" as "[$ _]". }
+      iMod ("He1" with "Hi") as "He1". simpl.
       iApply (wp_wand with "He1"). iIntros (?).
-      iDestruct 1 as (?) "[Hi [-> ->]]". done. }
+      iDestruct 1 as (?) "[Hi [-> ->]]".
+      rewrite /refines_right. by iFrame. }
     iIntros "Hi". simpl. rel_pures_r.
     tp_pures i. tp_store i.
     rel_rec_r. rel_load_r. rel_pures_r. rel_values.

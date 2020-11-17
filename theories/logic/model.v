@@ -53,16 +53,22 @@ End lrel_ofe.
 
 Arguments lrelC : clear implicits.
 
+Record ref_id := RefId {
+  tp_id : nat;
+  tp_ctx : list ectx_item }.
+
+Canonical Structure ectx_itemO := leibnizO ectx_item.
+Canonical Structure ref_idO := leibnizO ref_id.
+
+Global Instance ref_id_inhabited : Inhabited ref_id.
+Proof. split. apply (RefId 0 []). Qed.
+
 Section semtypes.
   Context `{relocG Σ}.
 
   Implicit Types e : expr.
   Implicit Types E : coPset.
   Implicit Types A B : lrel Σ.
-
-  Record ref_id := RefId {
-    tp_id : nat;
-    tp_ctx : list ectx_item }.
 
   Definition rhs_t := sum expr ref_id.
   Definition in_1 : expr -> rhs_t := inl.
@@ -187,7 +193,7 @@ Section semtypes_properties.
     iInv (relocN.@"ref".@(l, l1')) as (? ?) "[>Hl ?]" "Hcl".
     iInv (relocN.@"ref".@(l, l2')) as (? ?) "[>Hl' ?]" "Hcl'".
     simpl. iExFalso.
-    iDestruct (gen_heap.mapsto_valid_2 with "Hl Hl'") as %Hfoo.
+    iDestruct (gen_heap.mapsto_valid_2 with "Hl Hl'") as %[Hfoo _].
     compute in Hfoo. eauto.
   Qed.
 

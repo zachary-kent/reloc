@@ -1,6 +1,6 @@
 (** Autosubst helper lemmata *)
 From Autosubst Require Export Autosubst.
-From iris.algebra Require Export base.
+From iris.prelude Require Export prelude.
 
 Section Autosubst_Lemmas.
   Context {term : Type} {Ids_term : Ids term}

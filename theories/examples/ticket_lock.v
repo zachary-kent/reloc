@@ -47,7 +47,9 @@ Section refinement.
   Lemma ticket_nondup γ n : ticket γ n -∗ ticket γ n -∗ False.
   Proof.
     iIntros "Ht1 Ht2".
-    iDestruct (own_valid_2 with "Ht1 Ht2") as %?%gset_disj_valid_op.
+    iDestruct (own_valid_2 with "Ht1 Ht2") as %Hfoo.
+    revert Hfoo. rewrite -auth_frag_op auth_frag_valid.
+    intros ?%gset_disj_valid_op.
     set_solver.
   Qed.
 

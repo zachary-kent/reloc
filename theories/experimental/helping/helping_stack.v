@@ -83,12 +83,6 @@ Definition CG_mkstack : val := λ: <>,
 value that is being offered and a potential thread with the
 continuation that accepts the offer, if it is present. *)
 
-Canonical Structure ectx_itemO := leibnizO ectx_item.
-(* TODO: move !! *)
-Canonical Structure ref_idO := leibnizO ref_id.
-Global Instance ref_id_inhabited : Inhabited ref_id.
-Proof. split. apply (RefId 0 []). Qed.
-
 Definition offerReg := gmap loc (val * gname * ref_id).
 Definition offerRegR :=
   gmapUR loc (agreeR (prodO valO (prodO gnameO ref_idO))).

@@ -168,7 +168,8 @@ Section mapsto.
     rewrite heapS_mapsto_eq -own_op -auth_frag_op own_valid uPred.discrete_valid.
     f_equiv=> /=.
     rewrite -pair_op singleton_op right_id -pair_op.
-    move=> [_ Hv]. move:Hv => /=.
+    rewrite auth_frag_valid pair_valid.
+    intros [_ Hv]. move:Hv => /=.
     rewrite singleton_valid.
     by move=> [_] /to_agree_op_inv_L [->].
   Qed.
