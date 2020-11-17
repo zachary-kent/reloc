@@ -37,7 +37,7 @@ Section lockG_rules.
 
   Global Instance lock_inv_ne γ l : NonExpansive (lock_inv γ l).
   Proof. solve_proper. Qed.
-  Global Instance is_lock_ne l : NonExpansive (is_lock γ l).
+  Global Instance is_lock_ne γ l : NonExpansive (is_lock γ l).
   Proof. solve_proper. Qed.
 
   Global Instance is_lock_persistent γ l R : Persistent (is_lock γ l R).
