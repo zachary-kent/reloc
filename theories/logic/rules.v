@@ -13,6 +13,8 @@ Section rules.
   Implicit Types e t : expr.
   Implicit Types v w : val.
 
+  Local Existing Instance pure_exec_fill.
+
   (** * Primitive rules *)
 
   (** ([fupd_refines] is defined in [logrel_binary.v]) *)
