@@ -10,5 +10,5 @@ install: [make "install"]
 remove: ["rm" "-rf" "%{lib}%/coq/user-contrib/reloc"]
 depends: [
   "coq-iris-heap-lang" { (= "dev.2020-11-26.2.03b317f4") | (= "dev") }
-  "coq-autosubst" { = "dev.coq86" }
+  "coq-autosubst" { = "dev" }
 ]
