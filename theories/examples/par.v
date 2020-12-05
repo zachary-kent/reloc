@@ -130,7 +130,7 @@ Section rules.
       rewrite refines_eq /refines_def.
       rewrite fill_app.
       iMod ("Ht" with "Hspec Hj") as "Ht".
-      rewrite wp_value_inv. iMod "Ht" as (?) "[Ht [_ ->]]".
+      rewrite wp_value_fupd. iMod "Ht" as (?) "[Ht [_ ->]]".
       wp_pures. iExists #(). eauto with iFrame.
   Qed.
 
