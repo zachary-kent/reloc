@@ -273,20 +273,6 @@ Section refinement.
       rewrite refines_eq. by iApply "Hcont".
   Qed.
 
-  (** We will also use the following instances for splitting and
-  compining read-only pointsto permissions. *)
-  Local Instance ro_pointsto_fromand (l : loc) (w : val) :
-    FromSep (∃ q, l ↦{q} w) (∃ q, l ↦{q} w) (∃ q, l ↦{q} w).
-  Proof.
-    rewrite /FromSep. iIntros "[$ _]".
-  Qed.
-  Local Instance ro_pointsto_intoand (l : loc) (w : val) :
-    IntoSep (∃ q, l ↦{q} w) (∃ q, l ↦{q} w) (∃ q, l ↦{q} w).
-  Proof.
-    rewrite /IntoSep /=. iDestruct 1 as (q) "[H1 H2]".
-    iSplitL "H1"; eauto with iFrame.
-  Qed.
-
   (** Then we have definitions and lemmas that we use for actually
   liking the contents of the two stacks together *)
   Definition olocO := leibnizO (option loc).
@@ -304,23 +290,13 @@ Section refinement.
     match ol,ls with
     | None,[] => True
     | Some l,(h::t) =>
-      ∃ (ol : option loc),
-      ∃ q, l ↦{q} (h, oloc_to_val ol) ∗ stack_contents ol t
+      ∃ (ol : option loc), l ↦□ (h, oloc_to_val ol) ∗ stack_contents ol t
     | _,_ => False
     end%I.
 
-  Existing Instance istk_fromand.
-  Existing Instance istk_intoand.
-  Local Instance stack_contents_intoand (istk : option loc) (ls : list val) :
-    IntoSep (stack_contents istk ls) (stack_contents istk ls) (stack_contents istk ls).
-  Proof.
-    rewrite /IntoSep /=.
-    revert istk. induction ls as [|h ls]; intros istk; simpl.
-    - destruct istk; eauto.
-    - destruct istk; last by eauto. iDestruct 1 as (z1 q) "[Histk Hc]".
-      rewrite IHls. iDestruct "Hc" as "[Hc1 Hc2]". iDestruct "Histk" as "[Histk1 Histk2]".
-      iSplitL "Hc1 Histk1"; iExists _, (q/2)%Qp; by iFrame.
-  Qed.
+  Global Instance stack_contents_persistent ol ls :
+    Persistent (stack_contents ol ls).
+  Proof. revert ol. induction ls; apply _. Qed.
 
   Lemma stack_contents_agree istk ls ls' :
     stack_contents istk ls -∗ stack_contents istk ls' -∗ ⌜ls = ls'⌝.
@@ -329,10 +305,10 @@ Section refinement.
     - destruct istk; eauto.
       destruct ls' as [|h' ls']; simpl; eauto.
     - destruct istk; last eauto.
-      iDestruct 1 as (z q) "[Histk Hls]".
+      iDestruct 1 as (z) "[Histk Hls]".
       destruct ls' as [|h' ls']; simpl; eauto.
-      iDestruct 1 as (z' q') "[Histk' Hls']".
-      iDestruct (gen_heap.mapsto_agree with "Histk' Histk") as %Hfoo. simplify_eq/=.
+      iDestruct 1 as (z') "[Histk' Hls']".
+      iDestruct (mapsto_agree with "Histk' Histk") as %Hfoo. simplify_eq/=.
       iDestruct (IHls with "Hls Hls'") as %Hbar. simplify_eq/=.
       eauto.
   Qed.
@@ -366,7 +342,7 @@ Section refinement.
   Proof.
     iIntros "#Hinv IH". rel_rec_l. rel_pures_l.
     rel_load_l_atomic.
-    iInv stackN as (ol N ls1 ls2) "(Hol & Hst1 & Hst2 & HA & Hmb & Hown & HN)" "Hcl".
+    iInv stackN as (ol N ls1 ls2) "(Hol & #Hst1 & Hst2 & HA & Hmb & Hown & HN)" "Hcl".
     iModIntro. iExists _; iFrame. iNext. iIntros "Hol".
     destruct ls1 as [|h1 ls1].
     - iSimpl in "Hst1".
@@ -379,13 +355,13 @@ Section refinement.
       { iNext. iExists None,_,[],_. simpl; iFrame.
         by rewrite big_sepL2_nil. }
       rel_values. iExists _,_. eauto with iFrame.
-    - iDestruct "Hst1" as "[Hst1 Hst1']".
-      iSimpl in "Hst1". destruct ol as [l|]; last by eauto with iFrame.
-      iDestruct "Hst1" as (ol q) "[[Hl Hl'] [Hol' Hol2]]".
-      rel_pures_l. iMod ("Hcl" with "[-Hl IH Hst1' Hol2]") as "_".
+    - destruct ol as [l|]; last by eauto with iFrame.
+      iPoseProof "Hst1" as "Hst1'". iSimpl in "Hst1".
+      iDestruct "Hst1" as (ol) "[Hl Hol']".
+      rel_pures_l. iMod ("Hcl" with "[-IH]") as "_".
       { iNext. iExists (Some l),_,(h1::ls1),_. iFrame.
         simpl. eauto with iFrame. }
-      rel_load_l. rel_pures_l. iClear "Hl".
+      rel_load_l. rel_pures_l.
       rel_cmpxchg_l_atomic.
       iInv stackN as (ol2 N' ls1' ls2') "(Hol & Hst1 & Hst2 & HA & Hmb & Hown & HN)" "Hcl".
       iModIntro. iExists _. iFrame "Hol". iSplit.
@@ -561,6 +537,7 @@ Section refinement.
         iIntros "Hol".
         rel_apply_r (refines_CG_push_r with "Hst2").
         iIntros "Hst2".
+        iMod (mapsto_persist with "Hnew") as "#Hnew".
         iMod ("Hcl" with "[-]") as "_".
         { iNext. iExists (Some new),_,(h1::ls1'),_; iFrame.
           simpl. by eauto with iFrame. }
