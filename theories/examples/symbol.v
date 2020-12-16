@@ -104,13 +104,13 @@ Section rules.
 
   Definition table_inv (size1 size2 tbl1 tbl2 : loc) : iProp Σ :=
     (∃ (n : nat) (ls : val), own γ (● (MaxNat n))
-                           ∗ size1 ↦{1/2} #n ∗ size2 ↦ₛ{1/2} #n
-                           ∗ tbl1 ↦{1/2} ls ∗ tbl2 ↦ₛ{1/2} ls
+                           ∗ size1 ↦{#1/2} #n ∗ size2 ↦ₛ{1/2} #n
+                           ∗ tbl1 ↦{#1/2} ls ∗ tbl2 ↦ₛ{1/2} ls
                            ∗ lrel_list lrel_int ls ls)%I.
 
   Definition lok_inv (size1 size2 tbl1 tbl2 : loc) (l : val) : iProp Σ :=
-    (∃ (n : nat) (ls : val), size1 ↦{1/2} #n ∗ size2 ↦ₛ{1/2} #n
-                           ∗ tbl1 ↦{1/2} ls ∗ tbl2 ↦ₛ{1/2} ls
+    (∃ (n : nat) (ls : val), size1 ↦{#1/2} #n ∗ size2 ↦ₛ{1/2} #n
+                           ∗ tbl1 ↦{#1/2} ls ∗ tbl2 ↦ₛ{1/2} ls
                            ∗ is_locked_r l false)%I.
 End rules.
 

@@ -212,38 +212,37 @@ Ltac rel_pures_r :=
 
 (** Load *)
 
-Lemma tac_rel_load_l_simp `{!relocG Σ} K ℶ1 ℶ2 i1 (l : loc) q v e t eres A :
+Lemma tac_rel_load_l_simp `{!relocG Σ} K ℶ1 ℶ2 i1 p (l : loc) q v e t eres A :
   e = fill K (Load (# l)) →
   MaybeIntoLaterNEnvs 1 ℶ1 ℶ2 →
-  envs_lookup i1 ℶ2 = Some (false, l ↦{q} v)%I →
+  envs_lookup i1 ℶ2 = Some (p, l ↦{q} v)%I →
   eres = fill K (of_val v) →
   envs_entails ℶ2 (refines ⊤ eres t A) →
   envs_entails ℶ1 (refines ⊤ e t A).
 Proof.
-  rewrite envs_entails_eq. intros ???? Hℶ2; subst.
-  rewrite into_laterN_env_sound envs_lookup_split // /=.
-  rewrite bi.later_sep. rewrite Hℶ2.
-  apply: bi.wand_elim_l' =>/=.
-  rewrite -(refines_load_l K ⊤ l q).
-  rewrite -fupd_intro.
-  rewrite -(bi.exist_intro v).
-  by apply bi.wand_intro_r.
+  rewrite envs_entails_eq. iIntros (-> ?? -> Hℶ2) "Henvs".
+  iDestruct (into_laterN_env_sound with "Henvs") as "Henvs".
+  iDestruct (envs_lookup_split with "Henvs") as "[Hl Henvs]"; first done.
+  rewrite Hℶ2. iApply (refines_load_l K ⊤ l q). iModIntro. iExists v.
+  destruct p; simpl; [|by iFrame].
+  iDestruct "Hl" as "#Hl". iSplitR; [by auto|].
+  iIntros "!> _". by iApply "Henvs".
 Qed.
 
-Lemma tac_rel_load_r `{!relocG Σ} K ℶ1 E i1 (l : loc) q e t tres A v :
+Lemma tac_rel_load_r `{!relocG Σ} K ℶ1 E i1 p (l : loc) q e t tres A v :
   t = fill K (Load (# l)) →
   nclose specN ⊆ E →
-  envs_lookup i1 ℶ1 = Some (false, l ↦ₛ{q} v)%I →
+  envs_lookup i1 ℶ1 = Some (p, l ↦ₛ{q} v)%I →
   tres = fill K (of_val v) →
   envs_entails ℶ1 (refines E e tres A) →
   envs_entails ℶ1 (refines E e t A).
 Proof.
-  rewrite envs_entails_eq. intros ???? Hg.
-  subst t tres.
-  rewrite (envs_lookup_split ℶ1) //; simpl.
-  rewrite {1}(refines_load_r E); [ | eassumption ].
-  rewrite Hg.
-  apply bi.wand_elim_l.
+  rewrite envs_entails_eq. iIntros (-> ?? -> Hg) "Henvs".
+  iDestruct (envs_lookup_split with "Henvs") as "[Hl Henvs]"; first done.
+  rewrite Hg. destruct p; simpl.
+  - iDestruct "Hl" as "#Hl". iApply (refines_load_r with "Hl"); first done.
+    iIntros "_". by iApply "Henvs".
+  - by iApply (refines_load_r with "Hl").
 Qed.
 
 Tactic Notation "rel_load_l" :=
