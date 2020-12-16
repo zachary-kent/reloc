@@ -158,8 +158,8 @@ Section proofs.
 
   (** A "callback with lock" example *)
   Definition i3 (x x' b b' : loc) : iProp Σ :=
-    (∃ (n:nat), x ↦{#1/2} #n ∗ x' ↦ₛ{1/2} #n ∗
-    ((b ↦ #true ∗ b' ↦ₛ #true ∗ x ↦{#1/2} #n ∗ x' ↦ₛ{1/2} #n)
+    (∃ (n:nat), x ↦{1/2} #n ∗ x' ↦ₛ{1/2} #n ∗
+    ((b ↦ #true ∗ b' ↦ₛ #true ∗ x ↦{1/2} #n ∗ x' ↦ₛ{1/2} #n)
     ∨ (b ↦ #false ∗ b' ↦ₛ #false)))%I.
   Definition i3n := nroot .@ "i3".
 
