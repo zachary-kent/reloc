@@ -2,7 +2,9 @@
 (** Notion of contextual refinement & proof that it is a precongruence wrt the logical relation *)
 From Autosubst Require Import Autosubst.
 From iris.heap_lang Require Export lang.
+From iris.heap_lang Require Import tactics.
 From iris.proofmode Require Import tactics.
+From reloc.prelude Require Import lang_facts.
 From reloc.typing Require Export types interp fundamental.
 
 Inductive ctx_item :=
@@ -138,12 +140,14 @@ Inductive typed_ctx_item :
      typed Γ e1 TBool →
      binop_bool_res_type op = Some τ →
      typed_ctx_item (CTX_BinOpR op e1) Γ TBool Γ τ
-  | TP_CTX_BinOpL_PtrEq e2 Γ τ :
-     typed Γ e2 (ref τ) →
-     typed_ctx_item (CTX_BinOpL EqOp e2) Γ (ref τ) Γ TBool
-  | TP_CTX_BinOpR_PtrEq e1 Γ τ :
-     typed Γ e1 (ref τ) →
-     typed_ctx_item (CTX_BinOpR EqOp e1) Γ (ref τ) Γ TBool
+  | TP_CTX_BinOpL_UnboxedEq e2 Γ τ :
+     UnboxedType τ →
+     typed Γ e2 τ →
+     typed_ctx_item (CTX_BinOpL EqOp e2) Γ τ Γ TBool
+  | TP_CTX_BinOpR_UnboxedEq e1 Γ τ :
+     UnboxedType τ →
+     typed Γ e1 τ →
+     typed_ctx_item (CTX_BinOpR EqOp e1) Γ τ Γ TBool
   | TP_CTX_IfL Γ e1 e2 τ :
      typed Γ e1 τ → typed Γ e2 τ →
      typed_ctx_item (CTX_IfL e1 e2) Γ (TBool) Γ τ
@@ -198,15 +202,15 @@ Inductive typed_ctx_item :
      Γ ⊢ₜ e1 : TRef TNat →
      typed_ctx_item (CTX_FAAR e1) Γ TNat Γ TNat
   | TP_CTX_CasL Γ e1 e2 τ :
-     EqType τ → UnboxedType τ →
+     UnboxedType τ →
      typed Γ e1 τ → typed Γ e2 τ →
      typed_ctx_item (CTX_CmpXchgL e1 e2) Γ (TRef τ) Γ (TProd τ TBool)
   | TP_CTX_CasM Γ e0 e2 τ :
-     EqType τ → UnboxedType τ →
+     UnboxedType τ →
      typed Γ e0 (TRef τ) → typed Γ e2 τ →
      typed_ctx_item (CTX_CmpXchgM e0 e2) Γ τ Γ (TProd τ TBool)
   | TP_CTX_CasR Γ e0 e1 τ :
-     EqType τ → UnboxedType τ →
+     UnboxedType τ →
      typed Γ e0 (TRef τ) → typed Γ e1 τ →
      typed_ctx_item (CTX_CmpXchgR e0 e1) Γ τ Γ (TProd τ TBool)
   (* Polymorphic & recursive types *)
@@ -238,15 +242,14 @@ Inductive typed_ctx: ctx → stringmap type → type → stringmap type → type
      typed_ctx K Γ1 τ1 Γ2 τ2 →
      typed_ctx (k :: K) Γ1 τ1 Γ3 τ3.
 
-(* Observable types are, at the moment, exactly the types which support equality. *)
-Definition ObsType : type → Prop := EqType.
-
+(** The main definition of contextual refinement that we use. An
+    alternative (equivalent) formulation which observes only
+    termination can be found in [contextual_refinement_alt.v] *)
 Definition ctx_refines (Γ : stringmap type)
-    (e e' : expr) (τ : type) : Prop := ∀ K thp σ₀ σ₁ v τ',
-  ObsType τ' →
-  typed_ctx K Γ τ ∅ τ' →
-  rtc erased_step ([fill_ctx K e], σ₀) (of_val v :: thp, σ₁) →
-  ∃ thp' σ₁', rtc erased_step ([fill_ctx K e'], σ₀) (of_val v :: thp', σ₁').
+    (e e' : expr) (τ : type) : Prop := ∀ K thp σ₀ σ₁ (b : bool),
+  typed_ctx K Γ τ ∅ TBool →
+  rtc erased_step ([fill_ctx K e], σ₀) (of_val #b :: thp, σ₁) →
+  ∃ thp' σ₁', rtc erased_step ([fill_ctx K e'], σ₀) (of_val #b :: thp', σ₁').
 Notation "Γ ⊨ e '≤ctx≤' e' : τ" :=
   (ctx_refines Γ e e' τ) (at level 100, e, e' at next level, τ at level 200).
 
@@ -262,16 +265,16 @@ Proof. induction 2; simpl; eauto using typed_ctx_item_typed. Qed.
 Instance ctx_refines_reflexive Γ τ :
   Reflexive (fun e1 e2 => ctx_refines Γ e1 e2 τ).
 Proof.
-  intros e K thp ? σ v τ' Hτ' Hty Hst.
+  intros e K thp ? σ b Hty Hst.
   eexists _,_. apply Hst.
 Qed.
 
 Instance ctx_refines_transitive Γ τ :
   Transitive (fun e1 e2 => ctx_refines Γ e1 e2 τ).
 Proof.
-  intros e1 e2 e3 Hctx1 Hctx2 K thp σ₀ σ₁ v τ' Hτ' Hty Hst.
-  destruct (Hctx1 K thp σ₀ σ₁ v τ' Hτ' Hty Hst) as [thp' [σ' Hst']].
-  by apply (Hctx2 K thp' _ σ' v τ' Hτ').
+  intros e1 e2 e3 Hctx1 Hctx2 K thp σ₀ σ₁ b Hty Hst.
+  destruct (Hctx1 K thp σ₀ σ₁ b Hty Hst) as [thp' [σ' Hst']].
+  by apply (Hctx2 K thp' _ σ' b).
 Qed.
 
 Lemma fill_ctx_app (K K' : ctx) (e : expr) :
@@ -297,12 +300,11 @@ Lemma ctx_refines_congruence Γ e1 e2 τ Γ' τ' K :
   (Γ ⊨ e1 ≤ctx≤ e2 : τ) →
   Γ' ⊨ fill_ctx K e1 ≤ctx≤ fill_ctx K e2 : τ'.
 Proof.
-  intros HK Hctx K' thp σ₀ σ₁ v τ'' Hτ'' Hty.
+  intros HK Hctx K' thp σ₀ σ₁ v Hty.
   rewrite !fill_ctx_app => Hst.
-  apply (Hctx (K' ++ K) thp σ₀ σ₁ v τ'' Hτ''); auto.
+  apply (Hctx (K' ++ K) thp σ₀ σ₁ v); auto.
   eapply typed_ctx_compose; eauto.
 Qed.
-
 
 Definition ctx_equiv Γ e1 e2 τ :=
   (Γ ⊨ e1 ≤ctx≤ e2 : τ) ∧ (Γ ⊨ e2 ≤ctx≤ e1 : τ).
@@ -310,9 +312,8 @@ Definition ctx_equiv Γ e1 e2 τ :=
 Notation "Γ ⊨ e '=ctx=' e' : τ" :=
   (ctx_equiv Γ e e' τ) (at level 100, e, e' at next level, τ at level 200).
 
-
 Section bin_log_related_under_typed_ctx.
-  Context `{relocG Σ}.
+  Context `{!relocG Σ}.
 
   (* Precongruence *)
   Lemma bin_log_related_under_typed_ctx Γ e e' τ Γ' τ' K :
@@ -352,9 +353,9 @@ Section bin_log_related_under_typed_ctx.
       + iApply bin_log_related_bool_binop;
           try (by iApply fundamental); eauto.
         by iApply (IHK with "Hrel").
-      + iApply bin_log_related_ref_binop; try (by iApply fundamental).
+      + iApply bin_log_related_unboxed_eq; try (eassumption || by iApply fundamental).
         by iApply (IHK with "Hrel").
-      + iApply bin_log_related_ref_binop; try (by iApply fundamental).
+      + iApply bin_log_related_unboxed_eq; try (eassumption || by iApply fundamental).
         by iApply (IHK with "Hrel").
       + iApply (bin_log_related_if with "[] []");
           try by iApply fundamental.

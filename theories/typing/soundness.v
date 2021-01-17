@@ -4,11 +4,15 @@ From iris.proofmode Require Import tactics.
 From reloc.logic Require Export adequacy.
 From reloc.typing Require Export contextual_refinement.
 
+(* Observable types are, at the moment, exactly the unboxed types
+which support direct equality tests. *)
+Definition ObsType : type → Prop := λ τ, EqType τ ∧ UnboxedType τ.
+
 Lemma logrel_adequate Σ `{relocPreG Σ}
    e e' τ (σ : state) :
   (∀ `{relocG Σ} Δ, ⊢ {⊤;Δ;∅} ⊨ e ≤log≤ e' : τ) →
   adequate NotStuck e σ (λ v _, ∃ thp' h v', rtc erased_step ([e'], σ) (of_val v' :: thp', h)
-    ∧ (ObsType τ → v = v')).
+    ∧ (EqType τ → v = v')).
 Proof.
   intros Hlog.
   set (A := λ (HΣ : relocG Σ), interp τ []).
@@ -20,7 +24,6 @@ Proof.
     { iApply env_ltyped2_empty. }
     by rewrite !fmap_empty !subst_map_empty.
   - intros HΣ v v'. unfold A. iIntros "Hvv".
-    unfold ObsType. cbn.
     iIntros (Hτ). by iApply (eq_type_sound with "Hvv").
 Qed.
 
@@ -30,7 +33,7 @@ Theorem logrel_typesafety Σ `{relocPreG Σ} e e' τ thp σ σ' :
   not_stuck e' σ'.
 Proof.
   intros Hlog ??.
-  cut (adequate NotStuck e σ (λ v _, ∃ thp' h v', rtc erased_step ([e], σ) (of_val v' :: thp', h) ∧ (ObsType τ → v = v'))); first (intros [_ ?]; eauto).
+  cut (adequate NotStuck e σ (λ v _, ∃ thp' h v', rtc erased_step ([e], σ) (of_val v' :: thp', h) ∧ (EqType τ → v = v'))); first (intros [_ ?]; eauto).
   eapply logrel_adequate; eauto.
 Qed.
 
@@ -51,8 +54,8 @@ Lemma logrel_simul Σ `{relocPreG Σ}
   (∃ thp' hp' v', rtc erased_step ([e'], σ) (of_val v' :: thp', hp') ∧ (ObsType τ → v = v')).
 Proof.
   intros Hlog Hsteps.
-  cut (adequate NotStuck e σ (λ v _, ∃ thp' h v', rtc erased_step ([e'], σ) (of_val v' :: thp', h) ∧ (ObsType τ → v = v'))).
-  { destruct 1; naive_solver. }
+  cut (adequate NotStuck e σ (λ v _, ∃ thp' h v', rtc erased_step ([e'], σ) (of_val v' :: thp', h) ∧ (EqType τ → v = v'))).
+  { unfold ObsType. destruct 1; naive_solver. }
   eapply logrel_adequate; eauto.
 Qed.
 
@@ -60,8 +63,10 @@ Lemma refines_sound_open Σ `{relocPreG Σ} Γ e e' τ :
   (∀ `{relocG Σ} Δ, ⊢ {⊤;Δ;Γ} ⊨ e ≤log≤ e' : τ) →
   Γ ⊨ e ≤ctx≤ e' : τ.
 Proof.
-  intros Hlog K thp σ₀ σ₁ v τ' ? Htyped Hstep.
-  cut (∃ thp' hp' v', rtc erased_step ([fill_ctx K e'], σ₀) (of_val v' :: thp', hp') ∧ (ObsType τ'  → v = v')).
+  intros Hlog K thp σ₀ σ₁ b Htyped Hstep.
+  assert (ObsType TBool).
+  { repeat econstructor; eauto. }
+  cut (∃ thp' hp' v', rtc erased_step ([fill_ctx K e'], σ₀) (of_val v' :: thp', hp') ∧ (ObsType TBool  → #b = v')).
   { naive_solver. }
   eapply (logrel_simul Σ); last by apply Hstep.
   iIntros (? ?).

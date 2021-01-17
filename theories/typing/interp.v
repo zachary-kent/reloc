@@ -74,6 +74,35 @@ Section semtypes.
       + iDestruct "H1" as "[% [% H1]]"; simplify_eq/=.
         rewrite IHHτ2. by iDestruct "H1" as "%"; subst.
   Qed.
+
+  Lemma unboxed_type_eq τ Δ v1 v2 w1 w2 :
+    UnboxedType τ →
+    interp τ Δ v1 v2 -∗
+    interp τ Δ w1 w2 -∗
+    |={⊤}=> ⌜v1 = w1 ↔ v2 = w2⌝.
+  Proof.
+    intros Hunboxed.
+    cut (EqType τ ∨ ∃ τ', τ = TRef τ').
+    { intros [Hτ | [τ' ->]].
+      - rewrite !eq_type_sound //.
+        iIntros "% %". iModIntro.
+        iPureIntro. naive_solver.
+      - rewrite /lrel_car /=.
+        iDestruct 1 as (l1 l2 -> ->) "Hl".
+        iDestruct 1 as (r1 r2 -> ->) "Hr".
+        destruct (decide (l1 = r1)); subst.
+        + destruct (decide (l2 = r2)); subst; first by eauto.
+          iInv (relocN.@"ref".@(r1, l2)) as (v1 v2) "(>Hr1 & >Hr2 & Hinv1)".
+          iInv (relocN.@"ref".@(r1, r2)) as (w1 w2) "(>Hr1' & >Hr2' & Hinv2)".
+          iExFalso. by iDestruct (mapsto_valid_2 with "Hr1 Hr1'") as %[].
+        + destruct (decide (l2 = r2)); subst; last first.
+          { iModIntro. iPureIntro. naive_solver. }
+          iInv (relocN.@"ref".@(r1, r2)) as (v1 v2) "(>Hr1 & >Hr2 & Hinv1)".
+          iInv (relocN.@"ref".@(l1, r2)) as (w1 w2) "(>Hr1' & >Hr2' & Hinv2)".
+          iExFalso. by iDestruct (mapstoS_valid_2 with "Hr2 Hr2'") as %[]. }
+    by apply unboxed_type_ref_or_eqtype.
+  Qed.
+
 End semtypes.
 
 (** ** Properties of the type inrpretation w.r.t. the substitutions *)

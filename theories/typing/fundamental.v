@@ -288,7 +288,7 @@ Section fundamental.
     rel_values.
   Qed.
 
-  Lemma bin_log_related_CmpXchg Δ Γ e1 e2 e3 e1' e2' e3' τ
+  Lemma bin_log_related_CmpXchg_EqType Δ Γ e1 e2 e3 e1' e2' e3' τ
     (HEqτ : EqType τ)
     (HUbτ : UnboxedType τ) :
     ({Δ;Γ} ⊨ e1 ≤log≤ e1' : TRef τ) -∗
@@ -327,6 +327,24 @@ Section fundamental.
       iFrame "Hv". iExists _. done.
   Qed.
 
+  Lemma bin_log_related_CmpXchg Δ Γ e1 e2 e3 e1' e2' e3' τ
+    (HUbτ : UnboxedType τ) :
+    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : TRef τ) -∗
+    ({Δ;Γ} ⊨ e2 ≤log≤ e2' : τ) -∗
+    ({Δ;Γ} ⊨ e3 ≤log≤ e3' : τ) -∗
+    {Δ;Γ} ⊨ CmpXchg e1 e2 e3 ≤log≤ CmpXchg e1' e2' e3' : TProd τ TBool.
+  Proof.
+    cut (EqType τ ∨ ∃ τ', τ = TRef τ').
+    { intros [Hτ | [τ' ->]].
+      - by iApply bin_log_related_CmpXchg_EqType.
+      - iIntros "H1 H2 H3". intro_clause.
+        iSpecialize ("H1" with "Hvs").
+        iSpecialize ("H2" with "Hvs").
+        iSpecialize ("H3" with "Hvs").
+        iApply (refines_cmpxchg_ref with "H1 H2 H3"). }
+    by apply unboxed_type_ref_or_eqtype.
+  Qed.
+
   Lemma bin_log_related_alloc Δ Γ e e' τ :
     ({Δ;Γ} ⊨ e ≤log≤ e' : τ) -∗
     {Δ;Γ} ⊨ Alloc e ≤log≤ Alloc e' : TRef τ.
@@ -342,31 +360,25 @@ Section fundamental.
     rel_values. iExists l, k. eauto.
   Qed.
 
-  Lemma bin_log_related_ref_binop Δ Γ e1 e2 e1' e2' τ :
-    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : TRef τ) -∗
-    ({Δ;Γ} ⊨ e2 ≤log≤ e2' : TRef τ) -∗
+  Lemma bin_log_related_unboxed_eq Δ Γ e1 e2 e1' e2' τ :
+    UnboxedType τ →
+    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : τ) -∗
+    ({Δ;Γ} ⊨ e2 ≤log≤ e2' : τ) -∗
     {Δ;Γ} ⊨ BinOp EqOp e1 e2 ≤log≤ BinOp EqOp e1' e2' : TBool.
   Proof.
-    iIntros "IH1 IH2".
+    iIntros (Hτ) "IH1 IH2".
     intro_clause.
     rel_bind_ap e2 e2' "IH2" v2 v2' "#IH2".
     rel_bind_ap e1 e1' "IH1" v1 v1' "#IH1".
-    iDestruct "IH1" as (l1 l2) "[% [% #Hl]]"; simplify_eq/=.
-    iDestruct "IH2" as (l1' l2') "[% [% #Hl']]"; simplify_eq/=.
+    iAssert (⌜val_is_unboxed v1⌝)%I as "%".
+    { rewrite !unboxed_type_sound //.
+      iDestruct "IH1" as "[$ _]". }
+    iAssert (⌜val_is_unboxed v2'⌝)%I as "%".
+    { rewrite !unboxed_type_sound //.
+      iDestruct "IH2" as "[_ $]". }
+    iMod (unboxed_type_eq with "IH1 IH2") as "%"; first done.
     rel_op_l. rel_op_r.
-    destruct (decide (l1 = l1')) as [->|?].
-    - iMod (interp_ref_funct _ _ l1' l2 l2' with "[Hl Hl']") as %->.
-      { solve_ndisj. }
-      { iSplit; iExists _,_; eauto. }
-      rewrite !bool_decide_true //.
-      value_case.
-    - destruct (decide (l2 = l2')) as [->|?].
-      + iMod (interp_ref_inj _ _ l2' l1 l1' with "[Hl Hl']") as %->.
-        { solve_ndisj. }
-        { iSplit; iExists _,_; eauto. }
-        congruence.
-      + rewrite !bool_decide_false //; try congruence.
-        value_case.
+    do 2 case_bool_decide; first [by rel_values | naive_solver].
   Qed.
 
   Lemma bin_log_related_nat_binop Δ Γ op e1 e2 e1' e2' τ :
@@ -531,7 +543,7 @@ Section fundamental.
         by iApply fundamental.
       + iApply bin_log_related_bool_unop; first done.
         by iApply fundamental.
-      + iApply bin_log_related_ref_binop;
+      + iApply bin_log_related_unboxed_eq; try done;
           by iApply fundamental.
       + iApply bin_log_related_pair;
           by iApply fundamental.
