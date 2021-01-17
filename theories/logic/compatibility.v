@@ -124,5 +124,70 @@ Section compatibility.
     value_case.
   Qed.
 
+  Lemma refines_cmpxchg_ref A e1 e2 e3 e1' e2' e3' :
+    (REL e1 << e1' : lrel_ref (lrel_ref A)) -∗
+    (REL e2 << e2' : lrel_ref A) -∗
+    (REL e3 << e3' : lrel_ref A) -∗
+    REL (CmpXchg e1 e2 e3) << (CmpXchg e1' e2' e3') : lrel_prod (lrel_ref A) lrel_bool.
+  Proof.
+    iIntros "IH1 IH2 IH3".
+    rel_bind_l e3; rel_bind_r e3'.
+    iApply (refines_bind with "IH3").
+    iIntros (v3 v3') "#IH3".
+    rel_bind_l e2; rel_bind_r e2'.
+    iApply (refines_bind with "IH2").
+    iIntros (v2 v2') "#IH2".
+    rel_bind_l e1; rel_bind_r e1'.
+    iApply (refines_bind with "IH1").
+    iIntros (v1 v1') "#IH1 /=".
+    iPoseProof "IH1" as "IH1'".
+    iDestruct "IH1" as (l1 l2) "(% & % & Hinv)"; simplify_eq/=.
+    rewrite {2}/lrel_car /=.
+    iDestruct "IH2" as (r1 r2 -> ->) "Hr".
+    (* iDestruct "IH3" as (n1 n2 -> ->) "Hn". *)
+    rel_cmpxchg_l_atomic.
+    iInv (relocN .@ "ref" .@ (l1,l2)) as (v1 v2) "[Hl1 [>Hl2 #Hv]]" "Hclose".
+    iModIntro. iExists _; iFrame. simpl.
+    destruct (decide ((v1, v2) = (#r1, #r2))); simplify_eq/=.
+    - iSplitR; first by (iIntros (?); contradiction).
+      iIntros (?). iNext. iIntros "Hv1".
+      rel_cmpxchg_suc_r.
+      iMod ("Hclose" with "[-]").
+      { iNext. iExists _, _. by iFrame. }
+      rel_values. iExists _, _, _, _. do 2 (iSplitL; first done).
+      iFrame "Hv". iExists _. done.
+    - iSplit; iIntros (?); simplify_eq/=; iNext; iIntros "Hl1".
+      + destruct (decide (v2 = #r2)); simplify_eq/=.
+        * rewrite {5}/lrel_car. simpl.
+          iDestruct "Hv" as (r1' r2' ? ?) "#Hv". simplify_eq/=.
+          destruct (decide ((l1, l2) = (r1, r2'))); simplify_eq/=.
+          { iInv (relocN.@"ref".@(r1', r2')) as (? ?) "(Hr1 & >Hr2 & Hrr)" "Hcl".
+            iExFalso. by iDestruct (mapstoS_valid_2 with "Hr2 Hl2") as %[]. }
+          destruct (decide ((l1, l2) = (r1', r2'))); simplify_eq/=.
+          ++ assert (r1' ≠ r1) by naive_solver.
+             iInv (relocN.@"ref".@(r1, r2')) as (? ?) "(Hr1 & >Hr2 & Hrr)" "Hcl".
+             iExFalso. by iDestruct (mapstoS_valid_2 with "Hr2 Hl2") as %[].
+          ++ iInv (relocN.@"ref".@(r1, r2')) as (? ?) "(Hr1 & >Hr2 & Hrr)" "Hcl".
+             iInv (relocN.@"ref".@(r1', r2')) as (? ?) "(Hr1' & >Hr2' & Hrr')" "Hcl'".
+             iExFalso. by iDestruct (mapstoS_valid_2 with "Hr2 Hr2'") as %[].
+        * rel_cmpxchg_fail_r.
+          iMod ("Hclose" with "[-]").
+          { iNext; iExists _, _; by iFrame. }
+          rel_values. iModIntro. iExists _,_,_,_.
+          repeat iSplit; eauto.
+      + assert (v2 ≠ #r2) by naive_solver.
+        rewrite {5}/lrel_car. simpl.
+        iDestruct "Hv" as (r1' r2' ? ?) "#Hv". simplify_eq/=.
+        destruct (decide ((l1, l2) = (r1', r2'))); simplify_eq/=.
+        { iInv (relocN.@"ref".@(r1', r2)) as (? ?) "(>Hr1 & >Hr2 & Hrr)" "Hcl".
+          iExFalso. by iDestruct (mapsto_valid_2 with "Hr1 Hl1") as %[]. }
+        destruct (decide ((l1, l2) = (r1', r2))); simplify_eq/=.
+        { iInv (relocN.@"ref".@(r1', r2')) as (? ?) "(>Hr1 & >Hr2 & Hrr)" "Hcl".
+          iExFalso. by iDestruct (mapsto_valid_2 with "Hr1 Hl1") as %[]. }
+        iInv (relocN.@"ref".@(r1', r2)) as (? ?) "(>Hr1 & >Hr2 & Hrr)" "Hcl".
+        iInv (relocN.@"ref".@(r1', r2')) as (? ?) "(>Hr1' & >Hr2' & Hrr')" "Hcl'".
+        iExFalso. by iDestruct (mapsto_valid_2 with "Hr1 Hr1'") as %[].
+  Qed.
+
 End compatibility.
 

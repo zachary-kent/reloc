@@ -18,7 +18,15 @@ Inductive type :=
   | TExists : {bind 1 of type} → type
   | TRef : type → type.
 
-(** Which types support equality testing *)
+(** Which types are unboxed -- we can only do CAS on locations which hold unboxed types *)
+Inductive UnboxedType : type → Prop :=
+  | UnboxedTUnit : UnboxedType TUnit
+  | UnboxedTNat : UnboxedType TNat
+  | UnboxedTBool : UnboxedType TBool
+  | UnboxedTRef τ : UnboxedType (TRef τ).
+
+(** Types which support direct equality test (which coincides with ctx equiv).
+    This is an auxiliary notion. *)
 Inductive EqType : type → Prop :=
   | EqTUnit : EqType TUnit
   | EqTNat : EqType TNat
@@ -26,12 +34,9 @@ Inductive EqType : type → Prop :=
   | EqTProd τ τ' : EqType τ → EqType τ' → EqType (TProd τ τ')
   | EqSum τ τ' : EqType τ → EqType τ' → EqType (TSum τ τ').
 
-(** Which types are unboxed -- we can only do CAS on locations which hold unboxed types *)
-Inductive UnboxedType : type → Prop :=
-  | UnboxedTUnit : UnboxedType TUnit
-  | UnboxedTNat : UnboxedType TNat
-  | UnboxedTBool : UnboxedType TBool
-  | UnboxedTRef τ : UnboxedType (TRef τ).
+Lemma unboxed_type_ref_or_eqtype τ :
+  UnboxedType τ → (EqType τ ∨ ∃ τ', τ = TRef τ').
+Proof. inversion 1; first [ left; by econstructor | right; naive_solver ]. Qed.
 
 (** Autosubst instances *)
 Instance Ids_type : Ids type. derive. Defined.
@@ -135,8 +140,9 @@ Inductive typed : stringmap type → expr → type → Prop :=
      Γ ⊢ₜ e : TBool →
      unop_bool_res_type op = Some τ →
      Γ ⊢ₜ UnOp op e : τ
-  | RefEq_typed Γ e1 e2 τ :
-     Γ ⊢ₜ e1 : ref τ → Γ ⊢ₜ e2 : ref τ →
+  | UnboxedEq_typed Γ e1 e2 τ :
+     UnboxedType τ →
+     Γ ⊢ₜ e1 : τ → Γ ⊢ₜ e2 : τ →
      Γ ⊢ₜ BinOp EqOp e1 e2 : TBool
   | Pair_typed Γ e1 e2 τ1 τ2 :
      Γ ⊢ₜ e1 : τ1 → Γ ⊢ₜ e2 : τ2 →
@@ -198,7 +204,7 @@ Inductive typed : stringmap type → expr → type → Prop :=
      Γ ⊢ₜ e2 : TNat →
      Γ ⊢ₜ FAA e1 e2 : TNat
   | TCmpXchg Γ e1 e2 e3 τ :
-     EqType τ → UnboxedType τ →
+     UnboxedType τ →
      Γ ⊢ₜ e1 : ref τ → Γ ⊢ₜ e2 : τ → Γ ⊢ₜ e3 : τ →
      Γ ⊢ₜ CmpXchg e1 e2 e3 : τ * TBool
 with val_typed : val → type → Prop :=
