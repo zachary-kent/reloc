@@ -11,9 +11,9 @@ Definition relocN := nroot .@ "reloc".
 Definition specN := relocN .@ "spec".
 
 (** The CMRA for the heap of the specification. *)
-Definition heapUR (L V : Type) `{Countable L} : ucmraT :=
+Definition heapUR (L V : Type) `{Countable L} : ucmra :=
   gmapUR L (prodR fracR (agreeR (leibnizO V))).
-Definition tpoolUR : ucmraT := gmapUR nat (exclR exprO).
+Definition tpoolUR : ucmra := gmapUR nat (exclR exprO).
 Definition cfgUR := prodUR tpoolUR (heapUR loc (option val)).
 
 (** The CMRA for the thread pool. *)
