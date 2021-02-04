@@ -3,7 +3,7 @@
 Originally from: "A Logical Relation for Monadic Encapsulation of State: Proving contextual equivalences in the presence of runST"
 by Amin Timany, Léo Stefanesco, Morten Krogh-Jespersen, Lars Birkedal *)
 From iris.algebra Require Import auth gset.
-From iris.base_logic Require Export auth invariants.
+From iris.base_logic Require Export invariants.
 From iris.proofmode Require Import tactics.
 Import uPred.
 
@@ -44,11 +44,11 @@ Qed.
 
 Definition bijUR := gsetUR (A * B).
 Class pBijPreG Σ := PBijPreG
-{ pBijPreG_inG :> authG Σ bijUR }.
+{ pBijPreG_inG :> inG Σ (authR bijUR) }.
 Class pBijG Σ := PBijG
-{ pBijG_inG :> authG Σ bijUR
+{ pBijG_inG :> inG Σ (authR bijUR)
 ; pBijG_name : gname }.
-Definition pBijΣ : gFunctors := #[ authΣ bijUR ].
+Definition pBijΣ : gFunctors := #[ GFunctor (authR bijUR) ].
 Global Instance subG_pBijΣ {Σ} : subG pBijΣ Σ → pBijPreG Σ.
 Proof. solve_inG. Qed.
 
