@@ -94,7 +94,7 @@ Section logic.
     - apply auth_update_alloc.
       apply (gset_local_update _ _ (({[(a, b)]} : gset (A * B)) ∪ L)).
       apply union_subseteq_r.
-    - rewrite -gset_op_union auth_frag_op !own_op.
+    - rewrite -gset_op auth_frag_op !own_op.
       iDestruct "HL" as "[$ [$ _]]".
       iModIntro. iPureIntro.
       by apply bijective_extend.
