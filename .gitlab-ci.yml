@@ -18,8 +18,8 @@ variables:
     paths:
     - _opam/
   only:
-  - master
-  - /^ci/
+  - master@iris/reloc
+  - /^ci/@iris/reloc
   except:
   - triggers
   - schedules
