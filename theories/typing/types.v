@@ -272,7 +272,7 @@ Local Fixpoint is_closed_expr_set (X : stringset) (e : expr) : bool :=
   | Rec f x e => is_closed_expr_set (maybe_insert_binder f (maybe_insert_binder x X)) e
   | UnOp _ e | Fst e | Snd e | InjL e | InjR e | Fork e | Free e | Load e =>
      is_closed_expr_set X e
-  | App e1 e2 | BinOp _ e1 e2 | Pair e1 e2 | AllocN e1 e2 | Store e1 e2 | FAA e1 e2 =>
+  | App e1 e2 | BinOp _ e1 e2 | Pair e1 e2 | AllocN e1 e2 | Store e1 e2 | FAA e1 e2 | Xchg e1 e2 =>
      is_closed_expr_set X e1 && is_closed_expr_set X e2
   | If e0 e1 e2 | Case e0 e1 e2 | CmpXchg e0 e1 e2 | Resolve e0 e1 e2 =>
      is_closed_expr_set X e0 && is_closed_expr_set X e1 && is_closed_expr_set X e2
