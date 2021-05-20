@@ -2,7 +2,6 @@
 (** Ticket lock refines a simple spin lock *)
 From stdpp Require Import sets.
 From iris.algebra Require Export auth gset excl.
-From iris.base_logic Require Import auth.
 From reloc Require Import reloc lib.lock lib.counter.
 From iris.heap_lang.lib Require Export ticket_lock.
 
@@ -19,9 +18,9 @@ Definition lrel_lock `{relocG Σ} : lrel Σ :=
   ∃ A, (() → A) * (A → ()) * (A → ()).
 
 Class tlockG Σ :=
-  tlock_G :> authG Σ (gset_disjUR nat).
+  tlock_G :> inG Σ (authR (gset_disjUR nat)).
 Definition tlockΣ : gFunctors :=
-  #[ authΣ (gset_disjUR nat) ].
+  #[ GFunctor (authR $ gset_disjUR nat) ].
 Instance subG_tlockΣ {Σ} : subG tlockΣ Σ → tlockG Σ.
 Proof. solve_inG. Qed.
 
@@ -29,8 +28,8 @@ Definition lockPool := gset ((loc * loc * gname) * loc).
 Definition lockPoolR := gsetUR ((loc * loc * gname) * loc).
 
 Class lockPoolG Σ :=
-  lockPool_inG :> authG Σ lockPoolR.
-Definition lockPoolΣ := #[ authΣ lockPoolR ].
+  lockPool_inG :> inG Σ (authR lockPoolR).
+Definition lockPoolΣ := #[ GFunctor (authR $ lockPoolR) ].
 Instance subG_lockPoolΣ {Σ} : subG lockPoolΣ Σ → lockPoolG Σ.
 Proof. solve_inG. Qed.
 

@@ -4,13 +4,12 @@ From reloc Require Export reloc.
 From reloc.lib Require Export counter lock.
 From iris.algebra Require Export auth frac excl.
 From iris.bi.lib Require Export fractional.
-From iris.base_logic.lib Require Export auth.
 
 Class cnt_hocapG Σ := CntG {
-    cnt_hocapG_inG :> authG Σ (optionUR (prodR fracR (agreeR natO)));
+    cnt_hocapG_inG :> inG Σ (authR $ optionUR (prodR fracR (agreeR natO)));
 }.
 
-Definition cnt_hocapΣ := authΣ (optionUR (prodR fracR (agreeR natO))).
+Definition cnt_hocapΣ := GFunctor (authR (optionUR (prodR fracR (agreeR natO)))).
 
 Instance sub_cnt {Σ} : subG cnt_hocapΣ Σ → cnt_hocapG Σ.
 Proof. solve_inG. Qed.

@@ -1,7 +1,6 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Adequacy statements for the refinement proposition *)
 From iris.algebra Require Import auth frac agree.
-From iris.base_logic.lib Require Import auth.
 From iris.proofmode Require Import tactics.
 From iris.heap_lang Require Export adequacy.
 From reloc.logic Require Export spec_ra model.
@@ -11,7 +10,7 @@ Class relocPreG Σ := RelocPreG {
   reloc_preG_cfg  :> inG Σ (authR cfgUR)
 }.
 
-Definition relocΣ : gFunctors := #[heapΣ; authΣ cfgUR].
+Definition relocΣ : gFunctors := #[heapΣ; GFunctor (authR cfgUR)].
 Instance subG_relocPreG {Σ} : subG relocΣ Σ → relocPreG Σ.
 Proof. solve_inG. Qed.
 

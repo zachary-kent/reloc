@@ -21,7 +21,6 @@ are:
      ReLoC specification.
 *)
 From iris.algebra Require Import auth gmap agree list excl.
-From iris.base_logic.lib Require Import auth.
 From reloc Require Export reloc experimental.helping.offers.
 From reloc Require Import lib.list.
 From reloc.examples.stack Require Import CG_stack refinement.
@@ -89,7 +88,7 @@ Definition offerRegR :=
   gmapUR loc (agreeR (prodO valO (prodO gnameO (prodO natO (listO ectx_itemO))))).
 
 Class offerRegPreG Σ := OfferRegPreG {
-  offerReg_inG :> authG Σ offerRegR
+  offerReg_inG :> inG Σ (authR offerRegR)
 }.
 
 Definition offerize (x : (val * gname * nat * (list ectx_item))) :

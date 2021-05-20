@@ -51,9 +51,9 @@ Section semtypes.
     interp τ Δ v v' -∗ ⌜val_is_unboxed v ∧ val_is_unboxed v'⌝.
   Proof.
     induction 1; simpl;
-    first [iIntros "[% %]"
+    first [iDestruct 1 as (? ?) "[% [% ?]]"
           |iDestruct 1 as (?) "[% %]"
-          |iDestruct 1 as (? ?) "[% [% ?]]"];
+          |iIntros "[% %]"];
     simplify_eq/=; eauto with iFrame.
   Qed.
 
