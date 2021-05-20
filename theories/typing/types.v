@@ -250,14 +250,14 @@ Proof. destruct op; naive_solver. Qed.
 (***********************************)
 (** Closedness of typed programs   *)
 
-(* DF: It is not trivial to prove the closedness lemma for
-[is_closed_expr], because it requires a lemma like this:
+(* DF: It is not trivial to prove the closedness theorem by using the
+definition of [is_closed_expr] as it is, because it would require (for
+one of the cases) a lemma like this:
 
-    Lemma elements_insert Γ x τ :
-        elements (dom stringset (<[x:=τ]> Γ)) = x :: elements (dom stringset Γ).
+  elements (dom (<[x:=τ]> Γ)) = x :: elements (dom Γ).
 
-But this does not hold (it holds only up to multiset equality).
-So we use an auxiliary definition with sets *)
+But this does not hold (it holds only up to multiset equality). So we
+use an auxiliary definition with sets *)
 
 Definition maybe_insert_binder (x : binder) (X : stringset) : stringset :=
   match x with
