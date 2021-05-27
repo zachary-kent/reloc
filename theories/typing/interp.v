@@ -226,7 +226,7 @@ Section env_typed.
     Γ !! x = Some A →
     ⟦ Γ ⟧* vs -∗ ∃ v1 v2, ⌜ vs !! x = Some (v1,v2) ⌝ ∧ A v1 v2.
   Proof.
-    intros ?. rewrite /env_ltyped2 big_sepM2_lookup_1 //.
+    intros ?. rewrite /env_ltyped2 big_sepM2_lookup_l //.
     iDestruct 1 as ([v1 v2] ?) "H". eauto with iFrame.
   Qed.
 
