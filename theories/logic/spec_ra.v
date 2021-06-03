@@ -19,7 +19,7 @@ Definition cfgUR := prodUR tpoolUR (heapUR loc (option val)).
 (** The CMRA for the thread pool. *)
 Class cfgSG Σ := CFGSG { cfg_inG :> inG Σ (authR cfgUR); cfg_name : gname }.
 Class relocG Σ := RelocG {
-  relocG_heapG :> heapG Σ;
+  relocG_heapG :> heapGS Σ;
   relocG_cfgG :> cfgSG Σ;
 }.
 
@@ -28,7 +28,7 @@ Definition to_heap {L V} `{Countable L} : gmap L V → heapUR L V :=
 Definition to_tpool (tp : list expr) : tpoolUR := Excl <$> (map_seq 0 tp).
 
 Section definitionsS.
-  Context `{cfgSG Σ, invG Σ}.
+  Context `{cfgSG Σ, invGS Σ}.
 
   Definition heapS_mapsto_def (l : loc) (q : Qp) (v: val) : iProp Σ :=
     own cfg_name (◯ (∅, {[ l := (q, to_agree (Some v)) ]})).

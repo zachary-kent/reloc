@@ -6,7 +6,7 @@ From iris.heap_lang Require Export adequacy.
 From reloc.logic Require Export spec_ra model.
 
 Class relocPreG Σ := RelocPreG {
-  reloc_preG_heap :> heapPreG Σ;
+  reloc_preG_heap :> heapGpreS Σ;
   reloc_preG_cfg  :> inG Σ (authR cfgUR)
 }.
 
