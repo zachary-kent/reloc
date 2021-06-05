@@ -35,7 +35,7 @@ build-coq.8.13.0:
   tags:
   - fp-timing
 
-build-iris.dev:
+trigger-iris.dev:
   <<: *template
   variables:
     STDPP_REPO: "iris/stdpp"
