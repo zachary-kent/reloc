@@ -188,7 +188,7 @@ Section offerReg_rules.
         symmetry. apply agree_included.
         by apply to_agree_included.
       + rewrite lookup_singleton_ne; eauto.
-        by rewrite left_id. }
+        simpl. by case_match. }
     by rewrite Hfoo.
   Qed.
 
