@@ -72,8 +72,8 @@ Section rules.
     iFrame "Hj". iApply "Hclose". iNext. iExists (<[j:=fill K e']> tp), σ.
     rewrite to_tpool_insert'; last eauto.
     iFrame. iPureIntro.
-    apply rtc_nsteps in Hrtc; destruct Hrtc as [m Hrtc].
-    specialize (Hex HP). apply (nsteps_rtc (m + n)).
+    apply rtc_nsteps_1 in Hrtc; destruct Hrtc as [m Hrtc].
+    specialize (Hex HP). apply (rtc_nsteps_2 (m + n)).
     eapply nsteps_trans; eauto.
     revert e e' Htpj Hex.
     induction n => e e' Htpj Hex.

@@ -78,7 +78,7 @@ Lemma rtc_erased_step_bot v tp1 tp2 σ1 σ2:
   rtc erased_step (bot #() :: tp1, σ1) (of_val v :: tp2, σ2) →
   False.
 Proof.
-  intros [n Hsteps]%rtc_nsteps. revert tp1 σ1 Hsteps.
+  intros [n Hsteps]%rtc_nsteps_1. revert tp1 σ1 Hsteps.
   induction (lt_wf n) as [n IH1 IH]=>tp1 σ1 Hsteps. destruct n as [|m].
   - inversion Hsteps.
   - inversion Hsteps; simplify_eq/=.
