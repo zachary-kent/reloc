@@ -6,7 +6,7 @@ From iris.proofmode Require Import
      reduction.
 From reloc.logic Require Import proofmode.spec_tactics.
 From reloc.logic Require Export model rules derived.
-From iris.proofmode Require Export tactics.
+From iris.proofmode Require Export proofmode.
 (* Set Default Proof Using "Type". *)
 
 (** * General-purpose tactics *)

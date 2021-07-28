@@ -1,7 +1,7 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Adequacy statements for the refinement proposition *)
 From iris.algebra Require Import auth frac agree.
-From iris.proofmode Require Import tactics.
+From iris.proofmode Require Import proofmode.
 From iris.heap_lang Require Export adequacy.
 From reloc.logic Require Export spec_ra model.
 

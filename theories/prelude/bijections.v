@@ -4,7 +4,7 @@ Originally from: "A Logical Relation for Monadic Encapsulation of State: Proving
 by Amin Timany, Léo Stefanesco, Morten Krogh-Jespersen, Lars Birkedal *)
 From iris.algebra Require Import auth gset.
 From iris.base_logic Require Export invariants.
-From iris.proofmode Require Import tactics.
+From iris.proofmode Require Import proofmode.
 Import uPred.
 
 Section PBij.

@@ -2,7 +2,7 @@
 (** Interpretations for System F_mu_ref types *)
 From Autosubst Require Import Autosubst.
 From iris.algebra Require Export list.
-From iris.proofmode Require Import tactics.
+From iris.proofmode Require Import proofmode.
 From reloc.typing Require Export types.
 From reloc.logic Require Import model.
 From reloc.prelude Require Import properness asubst.

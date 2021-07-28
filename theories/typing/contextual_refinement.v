@@ -3,7 +3,7 @@
 From Autosubst Require Import Autosubst.
 From iris.heap_lang Require Export lang.
 From iris.heap_lang Require Import tactics.
-From iris.proofmode Require Import tactics.
+From iris.proofmode Require Import proofmode.
 From reloc.prelude Require Import lang_facts.
 From reloc.typing Require Export types interp fundamental.
 

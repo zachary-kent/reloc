@@ -1,4 +1,4 @@
-From iris.proofmode Require Import tactics.
+From iris.proofmode Require Import proofmode.
 From reloc.logic.proofmode Require Export spec_tactics tactics.
 From iris.heap_lang Require Import lang notation.
 

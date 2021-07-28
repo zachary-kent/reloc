@@ -5,7 +5,7 @@ From iris.heap_lang Require Import proofmode.
 From reloc.logic Require Import model.
 From reloc.logic Require Export rules derived compatibility proofmode.tactics.
 From reloc.typing Require Export interp.
-From iris.proofmode Require Export tactics.
+From iris.proofmode Require Export proofmode.
 
 Section fundamental.
   Context `{relocG Σ}.

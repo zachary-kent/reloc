@@ -1,4 +1,4 @@
-From iris.proofmode Require Import tactics.
+From iris.proofmode Require Import proofmode.
 From reloc.logic Require Export spec_rules proofmode.spec_tactics.
 Set Default Proof Using "Type".
 Import lang.

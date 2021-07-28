@@ -1,6 +1,6 @@
 (* ReLoC -- Relational logic for fine-grained concurrency *)
 (** Core ReLoC rules *)
-From iris.proofmode Require Import tactics.
+From iris.proofmode Require Import proofmode.
 From iris.algebra Require Import list.
 From iris.program_logic Require Import ectx_lifting.
 From iris.heap_lang Require Import proofmode.
