@@ -10,6 +10,7 @@ theories/prelude/properness.v
 theories/prelude/asubst.v
 theories/prelude/bijections.v
 theories/prelude/lang_facts.v
+theories/prelude/arith.v
 
 theories/logic/spec_ra.v
 theories/logic/spec_rules.v
@@ -53,6 +54,15 @@ theories/examples/stack/refinement.v
 theories/examples/various.v
 theories/examples/lateearlychoice.v
 theories/examples/coinflip.v
+theories/examples/red_blue_flag.v
+
+theories/examples/folly_queue/set.v
+theories/examples/folly_queue/CG_queue.v
+theories/examples/folly_queue/turnSequencer.v
+theories/examples/folly_queue/singleElementQueue.v
+theories/examples/folly_queue/mpmcqueue.v
+theories/examples/folly_queue/refinement.v
+theories/examples/folly_queue/ticketLock.v
 
 theories/examples/par.v
 theories/experimental/cka.v
