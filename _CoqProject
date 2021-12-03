@@ -64,12 +64,13 @@ theories/examples/folly_queue/mpmcqueue.v
 theories/examples/folly_queue/refinement.v
 theories/examples/folly_queue/ticketLock.v
 
+theories/examples/stack_helping/offers.v
+theories/examples/stack_helping/stack.v
+theories/examples/stack_helping/helping_wrapper.v
+
+
 theories/examples/par.v
 theories/experimental/cka.v
-
-theories/experimental/helping/offers.v
-theories/experimental/helping/helping_stack.v
-theories/experimental/helping/helping_wrapper.v
 
 theories/experimental/hocap/counter.v
 theories/experimental/hocap/ticket_lock.v

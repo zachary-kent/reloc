@@ -9,7 +9,7 @@
     TODO: support recursion/callbacks into the wrapped functions.
  *)
 From iris.algebra Require Import auth gmap agree list excl.
-From reloc Require Export reloc experimental.helping.offers.
+From reloc Require Export reloc examples.stack_helping.offers.
 From reloc Require Import lib.list.
 
 (* wrapper for pop *)

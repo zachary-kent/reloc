@@ -43,13 +43,14 @@ they can illustrate the usage of the logic.
   + `bit.v` - "representation independence example" for a simple bit interface
   + `or.v` - expressing non-determinism with concurrency
   + `symbol.v` and `namegen.v` - generative ADTs for symbol and name generation
-  + `stack/refinement.v` - Treiber stack refines sequential stack
+  + `stack` - Treiber stack refines sequential stack
   + `cell.v` - higher-order cell objects
   + `ticket_lock.v` - ticket lock refines spin lock
   + `various.v` - lots of examples with higher-order functions with local state, in the style of "The effects of higher-order state and control on local relational reasoning" paper
   + `coinflip.v` and `lateearlychoice.v` - examples with prophecy variable
+  + `stack_helping` - linearizability of stack with helping, see [this technical appendix](https://cs.ru.nl/~dfrumin/reloc/tech-appendix.pdf) for a detailed description
+  + `folly_queue` - linearizability of the MPMC queue from the Folly library
 - `experimental` more "experimental" stuff
-  + `helping/helping_stack.v` - linearizability of stack with helping, see [this technical appendix](https://cs.ru.nl/~dfrumin/reloc/tech-appendix.pdf) for a detailed description
   + `hocap/` - hocap style specifications for a concurrent counter and a refinement proof for a ticket lock
   + `cka.v` - some axioms from the CKA equational theory
 
