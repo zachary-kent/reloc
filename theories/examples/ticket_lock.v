@@ -21,7 +21,7 @@ Class tlockG Σ :=
   tlock_G :> inG Σ (authR (gset_disjUR nat)).
 Definition tlockΣ : gFunctors :=
   #[ GFunctor (authR $ gset_disjUR nat) ].
-Instance subG_tlockΣ {Σ} : subG tlockΣ Σ → tlockG Σ.
+Global Instance subG_tlockΣ {Σ} : subG tlockΣ Σ → tlockG Σ.
 Proof. solve_inG. Qed.
 
 Definition lockPool := gset ((loc * loc * gname) * loc).
@@ -30,7 +30,7 @@ Definition lockPoolR := gsetUR ((loc * loc * gname) * loc).
 Class lockPoolG Σ :=
   lockPool_inG :> inG Σ (authR lockPoolR).
 Definition lockPoolΣ := #[ GFunctor (authR $ lockPoolR) ].
-Instance subG_lockPoolΣ {Σ} : subG lockPoolΣ Σ → lockPoolG Σ.
+Global Instance subG_lockPoolΣ {Σ} : subG lockPoolΣ Σ → lockPoolG Σ.
 Proof. solve_inG. Qed.
 
 Section refinement.
@@ -69,9 +69,9 @@ Section refinement.
     by iFrame.
   Qed.
 
-  Instance ticket_timeless γ n : Timeless (ticket γ n).
+  Global Instance ticket_timeless γ n : Timeless (ticket γ n).
   Proof. apply _. Qed.
-  Instance issuedTickets_timeless γ n : Timeless (issuedTickets γ n).
+  Global Instance issuedTickets_timeless γ n : Timeless (issuedTickets γ n).
   Proof. apply _. Qed.
 
   Opaque ticket issuedTickets.
@@ -82,7 +82,7 @@ Section refinement.
    ∗ issuedTickets γ n ∗ is_locked_r l' b
    ∗ if b then ticket γ o else True)%I.
 
-  Instance ifticket_timeless (b : bool) γ o :
+  Local Instance ifticket_timeless (b : bool) γ o :
     Timeless (if b then ticket γ o else True)%I.
   Proof. destruct b; apply _. Qed.
   Instance lockInv_timeless lo ln γ l' : Timeless (lockInv lo ln γ l').

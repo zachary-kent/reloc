@@ -147,10 +147,10 @@ Section to_heap.
   Lemma to_heap_valid σ : ✓ to_heap σ.
   Proof. intros l. rewrite lookup_fmap. by case (σ !! l). Qed.
 
-End to_heap.  
+End to_heap.
 
 Section mapsto.
-  Context `{cfgSG Σ}.
+  Context `{!cfgSG Σ}.
 
   Global Instance mapstoS_fractional l v : Fractional (λ q, l ↦ₛ{q} v)%I.
   Proof.
@@ -164,10 +164,13 @@ Section mapsto.
   Lemma mapstoS_agree l q1 q2 v1 v2 : l ↦ₛ{q1} v1 -∗ l ↦ₛ{q2} v2 -∗ ⌜v1 = v2⌝.
   Proof.
     apply bi.wand_intro_r.
-    rewrite heapS_mapsto_eq -own_op own_valid uPred.discrete_valid. f_equiv.
-    rewrite auth_frag_op_valid -pair_op singleton_op -pair_op.
-    rewrite pair_valid singleton_valid pair_valid to_agree_op_valid_L.
-    by intros [_ [_ [=]]].
+    rewrite heapS_mapsto_eq -own_op -auth_frag_op own_valid uPred.discrete_valid.
+    f_equiv=> /=.
+    rewrite -pair_op singleton_op right_id -pair_op.
+    rewrite auth_frag_valid pair_valid.
+    intros [_ Hv]. move:Hv => /=.
+    rewrite singleton_valid.
+    by move=> [_] /to_agree_op_inv_L [->].
   Qed.
 
   Lemma mapstoS_valid l q v : l ↦ₛ{q} v -∗ ✓ q.

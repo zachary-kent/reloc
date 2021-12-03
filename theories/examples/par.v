@@ -24,6 +24,7 @@ Notation "e1 ∥ e2" := (((e1;; #()) ||| (e2;; #()));; #())%E
 
 Section rules.
   Context `{!relocG Σ, !spawnG Σ}.
+  Implicit Type e t : expr.
 
   Lemma par_l_2 e1 e2 t :
     (WP e1 {{ _, True }}) -∗
@@ -85,20 +86,26 @@ Section rules.
     rel_pures_l. rel_rec_l.
     rel_pures_l.
     pose (N:=nroot.@"par").
-    rewrite refines_eq /refines_def. iIntros (j K) "#Hspec Hj".
-    iModIntro. wp_bind (spawn _).
-    iApply (spawn_spec N (λ _, j ⤇ fill K #())%I with "[He1 Hj]").
+    iApply refines_split. iIntros (k) "Hk".
+    rel_bind_l (spawn _). iApply refines_wp_l.
+    iApply (spawn_spec N (λ _, refines_right k #())%I with "[He1 Hk]").
     - wp_pures. wp_bind e1.
-      iMod ("He1" with "Hspec Hj") as "He1".
+      rewrite refines_eq /refines_def.
+      iDestruct "Hk" as "[#Hs Hj]".
+      iMod ("He1" with "[$Hs $Hj]") as "He1".
       iApply (wp_wand with "He1").
       iIntros (?)  "P". wp_pures.
-      by iDestruct "P" as (v') "[Hj [-> ->]]".
+      iFrame "Hs".
+      by iDestruct "P" as (v') "[? [-> ->]]".
     - iNext. iIntros (l) "hndl". iSimpl.
-      wp_pures. wp_bind e2.
+      rel_pures_l. rel_bind_l e2.
+      iApply refines_wp_l.
       iApply (wp_wand with "He2"). iIntros (?) "_".
-      wp_pures.
-      wp_apply (join_spec with "hndl").
-      iIntros (?) "Hj". wp_pures. iExists #(). eauto with iFrame.
+      simpl. rel_pures_l. rel_bind_l (spawn.join _).
+      iApply refines_wp_l.
+      iApply (join_spec with "hndl"). iNext.
+      iIntros (?) "Hk". simpl. rel_pures_l. iApply (refines_combine with "[] Hk").
+      rel_values.
   Qed.
 
   Lemma par_l_1' Q K e1 e2 t :
@@ -111,27 +118,30 @@ Section rules.
     rel_pures_l. rel_rec_l.
     rel_pures_l.
     pose (N:=nroot.@"par").
-    rewrite {1 3}refines_eq /refines_def. iIntros (j K') "#Hspec Hj".
-    iModIntro. wp_bind (spawn _).
-    iApply (spawn_spec N (λ _, j ⤇ fill (K++K') #())%I with "[He1 Hj]").
+    iApply refines_split. iIntros (k) "Hk".
+    rel_bind_l (spawn _). iApply refines_wp_l.
+    rewrite refines_right_bind.
+    iApply (spawn_spec N (λ _, refines_right k (fill K #()))%I with "[He1 Hk]").
     - wp_pures. wp_bind e1.
-      rewrite -fill_app.
-      iMod ("He1" with "Hspec Hj") as "He1".
+      rewrite refines_eq /refines_def.
+      iAssert (spec_ctx) with "[Hk]" as "#Hs".
+      { iDestruct "Hk" as "[$ _]". }
+      iMod ("He1" with "Hk") as "He1".
       iApply (wp_wand with "He1").
       iIntros (?)  "P". wp_pures.
-      by iDestruct "P" as (v') "[Hj [-> ->]]".
-    - iNext. iIntros (l) "hndl". iSimpl.
-      wp_pures. wp_bind e2.
+      rewrite /refines_right.
+      iDestruct "P" as (v') "[Hj [-> ->]]".
+      iFrame "Hs". by rewrite fill_app.
+    - iNext. iIntros (l) "Hl". simpl.
+      rel_pures_l. rel_bind_l e2.
+      iApply refines_wp_l.
       iApply (wp_wand with "He2"). iIntros (?) "HQ".
-      wp_pures.
-      wp_apply (join_spec with "hndl").
-      iIntros (?) "Hj".
-      iSpecialize ("Ht" with "HQ").
-      rewrite refines_eq /refines_def.
-      rewrite fill_app.
-      iMod ("Ht" with "Hspec Hj") as "Ht".
-      rewrite wp_value_fupd. iMod "Ht" as (?) "[Ht [_ ->]]".
-      wp_pures. iExists #(). eauto with iFrame.
+      simpl. rel_pures_l. rel_bind_l (spawn.join _).
+      iApply refines_wp_l.
+      wp_apply (join_spec with "Hl").
+      iIntros (?) "Hk".
+      iSpecialize ("Ht" with "HQ"). simpl.
+      rel_pures_l. iApply (refines_combine with "Ht Hk").
   Qed.
 
   (* Lemma par_r_1 e1 e2 t (A : lrel Σ) E : *)
@@ -202,14 +212,17 @@ Section rules.
     tp_pure i (App _ _). simpl.
     rel_pures_r.
     rel_bind_r e2.
-    iApply refines_spec_ctx. iIntros "#Hs".
-    iApply (par_l_1' (i ⤇ (#c2 <- InjR (#();; #())))%I
+    iApply (par_l_1' (refines_right i (#c2 <- InjR (#();; #())))%I
               with "He2 [He1 Hi]").
     { rewrite refines_eq /refines_def.
       tp_bind i e1.
-      iMod ("He1" with "Hs Hi") as "He1". simpl.
+      rewrite refines_right_bind.
+      iAssert (spec_ctx) with "[Hi]" as "#Hs".
+      { iDestruct "Hi" as "[$ _]". }
+      iMod ("He1" with "Hi") as "He1". simpl.
       iApply (wp_wand with "He1"). iIntros (?).
-      iDestruct 1 as (?) "[Hi [-> ->]]". done. }
+      iDestruct 1 as (?) "[Hi [-> ->]]".
+      rewrite /refines_right. by iFrame. }
     iIntros "Hi". simpl. rel_pures_r.
     tp_pures i. tp_store i.
     rel_rec_r. rel_load_r. rel_pures_r. rel_values.
@@ -242,28 +255,39 @@ Section rules.
     { simpl. eauto. }
     repeat rel_pure_r.
     tp_rec i. simpl.
-    rewrite {3}refines_eq /refines_def.
-    iIntros (j K) "#Hs Hj". iModIntro.
+    rewrite {3}refines_eq /refines_def /=.
+    iIntros (j' K).
+    set (j := {| tp_id := j'; tp_ctx := K |}).
+    iIntros "Hj". iModIntro.
     tp_bind j e2. tp_bind i e1.
     (* execute e1 *)
     wp_bind e1. tp_bind i e1.
     rewrite {1}refines_eq /refines_def.
-    iMod ("He1" with "Hs Hi") as "He1".
+    iDestruct "Hi" as "[#Hs Hi]".
+    iMod ("He1" $! (tp_id i)  with "[Hi]") as "He1".
+    { rewrite /refines_right -fill_app //. by iFrame. }
     iApply (wp_wand with "He1"). iIntros (v1).
     iDestruct 1 as (v2) "[Hi Hv]". wp_pures.
     (* execute e2 *)
     rewrite refines_eq /refines_def.
-    iMod ("He2" with "Hs Hj") as "He2".
+    iMod ("He2" $! (tp_id j) with "[Hj]") as "He2".
+    { rewrite /refines_right -fill_app //.
+      cbn-[fill]. iFrame "Hj". }
     iApply wp_fupd.
     iApply (wp_wand with "He2"). iIntros (w1).
     iDestruct 1 as (w2) "[Hj Hw]".
     iSimpl in "Hi". iSimpl in "Hj".
+    iAssert (refines_right i (#c2 <- InjR v2)) with "[$Hi]" as "Hi".
+    { by iFrame. }
+    iAssert (refines_right j (let: "v2" := w2 in let: "v1" := spawn.join #c2 in ("v1", "v2"))) with "[Hj]" as "Hj".
+    { by iFrame. }
     tp_pure i _.
     tp_store i.
     tp_pures j. tp_rec j.
     tp_load j.
     tp_pures j.
-    iModIntro. iExists _. iFrame.
+    iModIntro. iExists _.
+    iDestruct "Hj" as "[_ $]".
   Qed.
 
   Lemma interchange a b c d (A B C D : lrel Σ) :
@@ -286,45 +310,68 @@ Section rules.
     tp_rec i. simpl.
     rel_rec_l. repeat rel_pure_l.
     rewrite {5}refines_eq /refines_def.
-    iIntros (j K) "#Hs Hj". iModIntro.
+    iIntros (j' K). simpl.
+    set (j := {| tp_id := j'; tp_ctx := K |}).
     pose (N:=nroot.@"par").
+    iIntros "Hj". iModIntro.
     wp_bind (spawn _).
     iApply (spawn_spec N with "[Ha Hj]").
     - wp_lam. rewrite refines_eq /refines_def.
       tp_bind j a.
-      iMod ("Ha" with "Hs Hj") as "Ha".
+      iMod ("Ha" with "[Hj]") as "Ha".
+      { rewrite /refines_right -fill_app //.
+        cbn-[fill]. iFrame "Hj". }
       iExact "Ha".
     - iNext. iIntros (h) "Hdl". wp_pures.
       wp_bind b.
       rewrite {1}refines_eq /refines_def.
       tp_bind i b.
-      iMod ("Hb" with "Hs Hi") as "Hb".
+      iDestruct "Hi" as "[#Hs Hi]".
+      iMod ("Hb" with "[Hi]") as "Hb".
+      { rewrite /refines_right -fill_app //; by iFrame. }
       iApply (wp_wand with "Hb").
       iIntros (bv). iDestruct 1 as (bv') "[Hi HB]". simpl.
       wp_pures. wp_bind (spawn.join _).
       iApply (join_spec with "Hdl").
       iNext. iIntros (av). iDestruct 1 as (av') "[Hj HA]".
-      wp_pures. tp_pures j. tp_pures i.
+      wp_pures.
+      iAssert (refines_right i (#c2 <- InjR (bv';; c))) with "[Hi]" as "Hi".
+      { by iFrame. }
+      iAssert (refines_right j (let: "v2" := av';; d in
+              let: "v1" := spawn.join #c2 in ("v1", "v2")))
+        with "[Hj]" as "Hj".
+      { by iFrame. }
+      tp_pures j. tp_pures i.
       wp_rec. wp_pures.
       wp_apply (spawn_spec N with "[Hc Hi]").
       { wp_pures.
-        rewrite refines_eq /refines_def.
+        rewrite refines_eq /refines_def /=.
         tp_bind i c.
-        iMod ("Hc" with "Hs Hi") as "Hc". iExact "Hc". }
+        iMod ("Hc" with "[Hi]") as "Hc".
+        { rewrite /refines_right -fill_app //. }
+        iExact "Hc". }
       clear h. iIntros (h) "Hdl". wp_pures.
       wp_bind d.
       rewrite refines_eq /refines_def.
       tp_bind j d.
-      iMod ("Hd" with "Hs Hj") as "Hd".
+      iMod ("Hd" $! (tp_id j) with "[Hj]") as "Hd".
+      { rewrite /refines_right -fill_app //.
+        iSimpl. by iFrame. }
       iApply (wp_wand with "Hd"). iIntros (dv).
       iDestruct 1 as (dv') "[Hj HD]".
       wp_pures. wp_apply (join_spec with "Hdl").
       iIntros (cv). iDestruct 1 as (cv') "[Hi HC]".
       iApply wp_fupd.
       wp_pures. iExists (cv', dv')%V. simpl.
+      iAssert (refines_right i (#c2 <- InjR cv')) with "[Hi]" as "Hi".
+      { by iFrame. }
+      iAssert (refines_right j (let: "v2" := dv' in let: "v1" := spawn.join #c2 in ("v1", "v2"))) with "[Hj]" as "Hj".
+      { by iFrame. }
       tp_pures i. tp_store i.
       tp_pures j.
       rewrite /spawn.join. tp_pures j.
-      tp_load j. tp_pures j. eauto with iFrame.
+      tp_load j. tp_pures j.
+      iModIntro; iSplit; eauto with iFrame.
+      iDestruct "Hj" as "[_ $]".
   Qed.
 End rules.

@@ -53,6 +53,16 @@ End lrel_ofe.
 
 Arguments lrelC : clear implicits.
 
+Record ref_id := RefId {
+  tp_id : nat;
+  tp_ctx : list ectx_item }.
+
+Canonical Structure ectx_itemO := leibnizO ectx_item.
+Canonical Structure ref_idO := leibnizO ref_id.
+
+Global Instance ref_id_inhabited : Inhabited ref_id.
+Proof. split. apply (RefId 0 []). Qed.
+
 Section semtypes.
   Context `{relocG Σ}.
 
@@ -60,10 +70,23 @@ Section semtypes.
   Implicit Types E : coPset.
   Implicit Types A B : lrel Σ.
 
+  Definition rhs_t := sum expr ref_id.
+  Definition in_1 : expr -> rhs_t := inl.
+  Definition in_2 : ref_id -> rhs_t := inr.
+  Coercion in_1 : expr >-> rhs_t.
+
+
+  Definition refines_right (k : ref_id) (e : expr) :=
+    (spec_ctx ∗ (tp_id k) ⤇ fill (tp_ctx k) e)%I.
+
   Definition refines_def (E : coPset)
-           (e e' : expr) (A : lrel Σ) : iProp Σ :=
-    (∀ j K, spec_ctx -∗ j ⤇ fill K e'
-        ={E,⊤}=∗ WP e {{ v, ∃ v', j ⤇ fill K (of_val v') ∗ A v v' }})%I.
+           (e : expr) (e'k : rhs_t) (A : lrel Σ) : iProp Σ :=
+    (∀ j K,
+        match e'k with
+        | inl e' => refines_right (RefId j K) e'
+        | inr k  => ⌜j = tp_id k⌝ ∗ ⌜K = tp_ctx k⌝
+        end -∗
+        |={E,⊤}=> WP e {{ v, ∃ v', j ⤇ fill K (of_val v') ∗ A v v' }})%I.
 
   Definition refines_aux : seal refines_def. Proof. by eexists. Qed.
   Definition refines := unseal refines_aux.
@@ -83,7 +106,7 @@ Section semtypes.
   Definition lrel_int : lrel Σ := LRel (λ w1 w2, ∃ n : Z, ⌜ w1 = #n ∧ w2 = #n ⌝)%I.
 
   Definition lrel_arr (A1 A2 : lrel Σ) : lrel Σ := LRel (λ w1 w2,
-    □ ∀ v1 v2, A1 v1 v2 -∗ refines ⊤ (App w1 v1) (App w2 v2) A2)%I.
+    □ ∀ v1 v2, A1 v1 v2 -∗ refines ⊤ (App w1 v1) (in_1 (App w2 v2)) A2)%I.
 
   Definition lrel_ref (A : lrel Σ) : lrel Σ := LRel (λ w1 w2,
     ∃ l1 l2: loc, ⌜w1 = #l1⌝ ∧ ⌜w2 = #l2⌝ ∧
@@ -192,34 +215,89 @@ Section semtypes_properties.
 
 End semtypes_properties.
 
+(* Notation "'REL' e1 '<<' e2 '@' E ':' A" := *)
+(*   (refines E e1%E (inl e2%E) (A)%lrel) *)
+(*   (at level 100, E at next level, e1, e2 at next level, *)
+(*    A at level 200, *)
+(*    format "'[hv' 'REL'  e1  '/' '<<'  '/  ' e2  '@'  E  :  A ']'"). *)
+(* Notation "'REL' e1 '<<' e2 ':' A" := *)
+(*   (refines ⊤ e1%E (inl e2%E) (A)%lrel) *)
+(*   (at level 100, e1, e2 at next level, *)
+(*    A at level 200, *)
+(*    format "'[hv' 'REL'  e1  '/' '<<'  '/  ' e2  :  A ']'"). *)
+Notation "'REL' e1 '<<{' id '}' '_' ':' A" :=
+  (refines ⊤ e1%E (in_2 id) (A)%lrel)
+  (at level 100, e1 at next level,
+  A at level 200,
+  format "'[hv' 'REL'  e1  '/' '<<{' id '}' '/  '  '_'  :  A ']'").
+Notation "'REL' e1 '<<{' id '}' '_' '@' E ':' A" :=
+  (refines E e1%E (in_2 id) (A)%lrel)
+  (at level 100, E at next level, e1 at next level,
+  A at level 200,
+  format "'[hv' 'REL'  e1  '/' '<<{' id '}' '/  '  '_'  '@'  E  ':'  A ']'").
+(* (￣～￣;)  OOF *)
 Notation "'REL' e1 '<<' e2 '@' E ':' A" :=
   (refines E e1%E e2%E (A)%lrel)
   (at level 100, E at next level, e1, e2 at next level,
    A at level 200,
    format "'[hv' 'REL'  e1  '/' '<<'  '/  ' e2  '@'  E  :  A ']'").
-Notation "'REL' e1 '<<' e2 ':' A" :=
-  (refines ⊤ e1%E e2%E (A)%lrel)
-  (at level 100, e1, e2 at next level,
+Notation "'REL' e1 '<<' t ':' A" :=
+  (refines ⊤ e1%E t%E (A)%lrel)
+  (at level 100, e1, t at next level,
    A at level 200,
-   format "'[hv' 'REL'  e1  '/' '<<'  '/  ' e2  :  A ']'").
+   format "'[hv' 'REL'  e1  '/' '<<'  '/  ' t  :  A ']'").
 
 (** Properties of the relational interpretation *)
 Section related_facts.
-  Context `{relocG Σ}.
+  Context `{!relocG Σ}.
+  Implicit Types e : expr.
 
-  (* We need this to be able to open and closed invariants in front of logrels *)
-  Lemma fupd_refines E1 E2 e e' A :
-    (|={E1,E2}=> REL e << e' @ E2 : A) -∗ REL e << e' @ E1 : A.
+
+  Lemma refines_split E e e' A :
+    (∀ k, refines_right k e' -∗ REL e <<{k} _ @ E : A) -∗
+    REL e << e' @ E : A.
   Proof.
+    iIntros "H".
     rewrite refines_eq /refines_def.
-    iIntros "H". iIntros (j K) "#Hs Hj /=".
-    iMod "H" as "H". iApply ("H" with "Hs Hj").
+    iIntros (j K) "He'". pose (k := RefId j K).
+    iSpecialize ("H" $! k with "He'").
+    by iApply "H".
   Qed.
 
-  Global Instance elim_fupd_refines p E1 E2 e e' P A :
+  Lemma refines_combine E e e' A k :
+    (REL e << e' @ E : A) -∗
+    refines_right k e' -∗
+    REL e <<{k} _ @ E : A.
+  Proof.
+    iIntros "H1 H2".
+    rewrite refines_eq /refines_def.
+    iIntros (j K) "[% %]".
+    iApply "H1". by destruct k; simplify_eq/=.
+  Qed.
+
+  (* We need this to be able to open and closed invariants in front of logrels *)
+  Lemma fupd_refines E1 E2 e t A :
+    (|={E1, E2}=> refines E2 e t A) -∗ refines E1 e t A.
+  Proof.
+    rewrite refines_eq /refines_def.
+    iIntros "H". iIntros (j K) "Hr /=".
+    iMod "H" as "H". iApply ("H" with "Hr").
+  Qed.
+
+  Lemma refines_left_fupd E e k A :
+    (REL e <<{k} _ @ E : A) ={E,⊤}=∗ REL e <<{k} _ @ ⊤ : A.
+  Proof.
+    rewrite refines_eq /refines_def.
+    iIntros "H". simpl.
+    iSpecialize ("H" $! (tp_id k) (tp_ctx k) with "[%//]").
+    iMod "H" as "H". iModIntro.
+    iIntros (j K) "[-> ->]". done.
+  Qed.
+
+  Global Instance elim_fupd_refines p E1 E2 e t P A :
    (* TODO: DF: look at the booleans here *)
    ElimModal True p false (|={E1,E2}=> P) P
-     (REL e << e' @ E1 : A) (REL e << e' @ E2: A).
+     (refines E1 e t A) (refines E2 e t A).
   Proof.
     rewrite /ElimModal. intros _.
     iIntros "[HP HI]". iApply fupd_refines.
@@ -227,51 +305,43 @@ Section related_facts.
     iMod "HP"; iModIntro; by iApply "HI".
   Qed.
 
-  Global Instance elim_bupd_logrel p E e e' P A :
+  Global Instance elim_bupd_logrel p E e t P A :
    ElimModal True p false (|==> P) P
-     (REL e << e' @ E : A) (REL e << e' @ E : A).
+     (refines E e t A) (refines E e t A).
   Proof.
     rewrite /ElimModal (bupd_fupd E).
     apply: elim_fupd_refines.
   Qed.
 
   (* This + elim_modal_timless_bupd' is useful for stripping off laters of timeless propositions. *)
-  Global Instance is_except_0_logrel E e e' A :
-    IsExcept0 (REL e << e' @ E : A).
+  Global Instance is_except_0_logrel E e t A :
+    IsExcept0 (refines E e t A).
   Proof.
     rewrite /IsExcept0. iIntros "HL".
     iApply fupd_refines. by iMod "HL".
   Qed.
-
-  Lemma refines_spec_ctx E e e' A :
-    (spec_ctx -∗ REL e << e' @ E : A) -∗
-    (REL e << e' @ E : A).
-  Proof.
-    rewrite refines_eq /refines_def.
-    iIntros "Hctx". iIntros (j K) "#Hspec".
-    by iApply "Hctx".
-  Qed.
 End related_facts.
 
 Section monadic.
-  Context `{relocG Σ}.
+  Context `{!relocG Σ}.
+  Implicit Types e : expr.
 
   Lemma refines_bind K K' E A A' e e' :
     (REL e << e' @ E : A) -∗
     (∀ v v', A v v' -∗
-      REL fill K (of_val v) << fill K' (of_val v') : A') -∗
+      REL fill K (of_val v) << (fill K' (of_val v')) : A') -∗
     REL fill K e << fill K' e' @ E : A'.
   Proof.
     iIntros "Hm Hf".
-    rewrite refines_eq /refines_def.
-    iIntros (j K₁) "#Hs Hj /=".
-    iSpecialize ("Hm" with "Hs").
-    rewrite -fill_app. iMod ("Hm" with "Hj") as "Hm".
+    rewrite refines_eq /refines_def /refines_right.
+    iIntros (j K₁) "[#Hs Hj] /=".
+    rewrite -fill_app.
+    iMod ("Hm" with "[$Hs $Hj]") as "Hm".
     iModIntro. iApply wp_bind.
     iApply (wp_wand with "Hm").
     iIntros (v). iDestruct 1 as (v') "[Hj HA]".
     rewrite fill_app.
-    by iMod ("Hf" with "HA Hs Hj") as "Hf/=".
+    by iMod ("Hf" with "HA [$Hs $Hj]") as "Hf/=".
   Qed.
 
   Lemma refines_ret E e1 e2 v1 v2 (A : lrel Σ) :
@@ -279,9 +349,10 @@ Section monadic.
     IntoVal e2 v2 →
     (|={E,⊤}=> A v1 v2) -∗ REL e1 << e2 @ E : A.
   Proof.
+    rewrite /IntoVal.
     iIntros (<-<-) "HA".
     rewrite refines_eq /refines_def.
-    iIntros (j K) "#Hs Hj /=".
+    iIntros (j K) "[#Hs Hj] /=".
     iMod "HA" as "HA". iModIntro.
     iApply wp_value. iExists _. by iFrame.
   Qed.

@@ -10,7 +10,7 @@ From reloc.prelude Require Import ctx_subst.
 Section rules.
   Context `{relocG Σ}.
   Implicit Types A : lrel Σ.
-  Implicit Types e t : expr.
+  Implicit Types e : expr.
   Implicit Types v w : val.
 
   Local Existing Instance pure_exec_fill.
@@ -30,9 +30,9 @@ Section rules.
   Proof.
     intros Hpure Hϕ.
     rewrite refines_eq /refines_def.
-    iIntros "IH" ; iIntros (j K) "#Hs Hj /=".
+    iIntros "IH" ; iIntros (j K) "Hs /=".
     iModIntro. wp_pures.
-    iApply fupd_wp. iApply ("IH" with "Hs Hj").
+    iApply fupd_wp. iApply ("IH" with "Hs").
   Qed.
 
   Lemma refines_masked_l E n
@@ -44,39 +44,39 @@ Section rules.
   Proof.
     intros Hpure Hϕ.
     rewrite refines_eq /refines_def.
-    iIntros "IH" ; iIntros (j K) "#Hs Hj /=".
-    iMod ("IH" with "Hs Hj") as "IH".
+    iIntros "IH" ; iIntros (j K) "Hs /=".
+    iMod ("IH" with "Hs") as "IH".
     iModIntro. by wp_pures.
   Qed.
 
-  Lemma refines_wp_l K e1 e2 A :
+  Lemma refines_wp_l K e1 t A :
     (WP e1 {{ v,
-        REL fill K (of_val v) << e2 : A }})%I -∗
-    REL fill K e1 << e2 : A.
+        REL fill K (of_val v) << t : A }})%I -∗
+    REL fill K e1 << t : A.
   Proof.
     rewrite refines_eq /refines_def.
     iIntros "He".
-    iIntros (j K') "#Hs Hj /=".
+    iIntros (j K') "Hs /=".
     iModIntro. iApply wp_bind.
     iApply (wp_wand with "He").
     iIntros (v) "Hv".
-    by iMod ("Hv" with "Hs Hj").
+    by iMod ("Hv" with "Hs").
   Qed.
 
-  Lemma refines_atomic_l (E : coPset) K e1 e2 A
+  Lemma refines_atomic_l (E : coPset) K e1 t A
         (Hatomic : Atomic WeaklyAtomic e1) :
    (|={⊤,E}=> WP e1 @ E {{ v,
-     REL fill K (of_val v) << e2 @ E : A }})%I -∗
-   REL fill K e1 << e2 : A.
+     REL fill K (of_val v) << t @ E : A }})%I -∗
+   REL fill K e1 << t : A.
   Proof.
     rewrite refines_eq /refines_def.
     iIntros "Hlog".
-    iIntros (j K') "#Hs Hj /=". iModIntro.
+    iIntros (j K') "Hs /=". iModIntro.
     iApply wp_bind. iApply wp_atomic; auto.
     iMod "Hlog" as "He". iModIntro.
     iApply (wp_wand with "He").
     iIntros (v) "Hlog".
-    by iApply ("Hlog" with "Hs Hj").
+    by iApply ("Hlog" with "Hs").
   Qed.
 
   (** ** Forward reductions on the RHS *)
@@ -89,26 +89,33 @@ Section rules.
     ⊢ REL t << fill K' e @ E : A.
   Proof.
     rewrite refines_eq /refines_def => Hpure Hϕ.
-    iIntros "Hlog". iIntros (j K) "#Hs Hj /=".
-    tp_pure j _; auto.
-    iApply ("Hlog" with "Hs Hj").
+    iIntros "Hlog". iIntros (j K) "Hs /=".
+    tp_pures ({| tp_id := j; tp_ctx := K |}) ; auto.
+    iApply ("Hlog" with "Hs").
   Qed.
 
+  Lemma refines_right_bind k K e :
+    refines_right k (fill K e) ≡ refines_right (RefId (tp_id k) (K ++ tp_ctx k)) e.
+  Proof. rewrite /refines_right /=. by rewrite fill_app. Qed.
+
+  Lemma refines_right_bind' j K K' e :
+    refines_right (RefId j K) (fill K' e) ≡ refines_right (RefId j (K' ++ K)) e.
+  Proof. rewrite /refines_right /=. by rewrite fill_app. Qed.
+
   (* A helper lemma for proving the stateful reductions for the RHS below *)
-  Lemma refines_step_r Φ E K' e1 e2 A :
-    (∀ j K, spec_ctx -∗ (j ⤇ fill K e2 ={E}=∗ ∃ v, j ⤇ fill K (of_val v)
-                  ∗ Φ v)) -∗
-    (∀ v, Φ v -∗ REL e1 << fill K' (of_val v) @ E : A) -∗
+  Lemma refines_step_r E K' e1 e2 A :
+    (∀ k, refines_right k e2 ={E}=∗
+         ∃ v, refines_right k (of_val v) ∗ REL e1 << fill K' (of_val v) @ E : A) -∗
     REL e1 << fill K' e2 @ E : A.
   Proof.
     rewrite refines_eq /refines_def.
-    iIntros "He Hlog".
-    iIntros (j K) "#Hs Hj /=".
-    rewrite -fill_app.
-    iMod ("He" $! j with "Hs Hj") as (v) "[Hj Hv]".
-    iSpecialize ("Hlog" $! v with "Hv Hs").
-    rewrite fill_app.
-    by iApply "Hlog".
+    iIntros "He".
+    iIntros (j K) "Hs /=".
+    rewrite refines_right_bind /=.
+    iMod ("He" with "Hs") as (v) "[Hs He]".
+    rewrite -refines_right_bind'.
+    iSpecialize ("He" with "Hs").
+    by iApply "He".
   Qed.
 
   Lemma refines_newproph_r E K t A
@@ -117,14 +124,10 @@ Section rules.
     -∗ REL t << fill K NewProph @ E : A.
   Proof.
     iIntros "Hlog".
-    pose (Φ := (fun w => ∃ (p : proph_id), ⌜w = (# p)⌝ : iProp Σ)%I).
-    iApply (refines_step_r Φ); simpl; auto.
-    { cbv[Φ].
-      iIntros (j K') "#Hs Hj /=".
-      iMod (step_newproph with "[$Hs $Hj]") as (p) "Hj". done.
-      iModIntro. iExists _. iFrame. iExists _. iFrame. eauto. }
-    iIntros (v') "He'". iDestruct "He'" as (p) "%". subst.
-    by iApply "Hlog".
+    iApply refines_step_r.
+    iIntros (k) "[Hs Hj]".
+    iMod (step_newproph with "[$Hs $Hj]") as (p) "Hj". done.
+    iModIntro. iExists _. iFrame "Hj". by iApply "Hlog".
   Qed.
 
   Lemma refines_resolveproph_r E K t (p : proph_id) w A
@@ -133,49 +136,10 @@ Section rules.
     -∗ REL t << fill K (ResolveProph #p (of_val w)) @ E : A.
   Proof.
     iIntros "Hlog".
-    pose (Φ := (fun w => ⌜w = #()⌝ : iProp Σ)%I).
-    iApply (refines_step_r Φ); simpl; auto.
-    { cbv[Φ].
-      iIntros (j K') "#Hs Hj /=".
-      iMod (step_resolveproph with "[$Hs $Hj]") as "Hj". done.
-      iModIntro. iExists _. iFrame. eauto. }
-    iIntros (v') "He'". iDestruct "He'" as %->.
-    by iApply "Hlog".
-  Qed.
-
-  Lemma refines_alloc_r E K e v t A
-    (Hmasked : nclose specN ⊆ E) :
-    IntoVal e v →
-    (∀ l : loc, l ↦ₛ v -∗ REL t << fill K (of_val #l) @ E : A)%I
-    -∗ REL t << fill K (ref e) @ E : A.
-  Proof.
-    intros <-.
-    iIntros "Hlog".
-    pose (Φ := (fun w => ∃ l : loc, ⌜w = (# l)⌝ ∗ l ↦ₛ v)%I).
-    iApply (refines_step_r Φ); simpl; auto.
-    { cbv[Φ].
-      iIntros (j K') "#Hs Hj /=".
-      tp_alloc j as l "Hl". iExists (# l).
-      iFrame. iExists l. eauto. }
-    iIntros (v') "He'". iDestruct "He'" as (l) "[% Hl]". subst.
-    by iApply "Hlog".
-  Qed.
-
-  Lemma refines_load_r E K l q v t A
-    (Hmasked : nclose specN ⊆ E) :
-    l ↦ₛ{q} v -∗
-    (l ↦ₛ{q} v -∗ REL t << fill K (of_val v) @ E : A)
-    -∗ REL t << (fill K !#l) @ E : A.
-  Proof.
-    iIntros "Hl Hlog".
-    pose (Φ := (fun w => ⌜w = v⌝ ∗ l ↦ₛ{q} v)%I).
-    iApply (refines_step_r Φ with "[Hl]"); eauto.
-    { cbv[Φ].
-      iIntros (j K') "#Hs Hj /=". iExists v.
-      tp_load j.
-      iFrame. eauto. }
-    iIntros (?) "[% Hl]"; subst.
-    by iApply "Hlog".
+    iApply refines_step_r.
+    iIntros (k) "[Hs Hj]".
+    iMod (step_resolveproph with "[$Hs $Hj]") as "Hj". done.
+    iModIntro. iExists _. iFrame "Hj". by iApply "Hlog".
   Qed.
 
   Lemma refines_store_r E K l e e' v v' A
@@ -185,15 +149,38 @@ Section rules.
     (l ↦ₛ v' -∗ REL e << fill K (of_val #()) @ E : A) -∗
     REL e << fill K (#l <- e') @ E : A.
   Proof.
-    iIntros (<-) "Hl Hlog".
-    pose (Φ := (fun w => ⌜w = #()⌝ ∗ l ↦ₛ v')%I).
-    iApply (refines_step_r Φ with "[Hl]"); eauto.
-    { cbv[Φ].
-      iIntros (j K') "#Hs Hj /=". iExists #().
-      tp_store j.
-      iFrame. eauto. }
-    iIntros (w) "[% Hl]"; subst.
+    rewrite /IntoVal. iIntros (<-) "Hl Hlog".
+    iApply refines_step_r.
+    iIntros (k) "Hk". simpl.
+    tp_store k. iModIntro. iExists _. iFrame.
     by iApply "Hlog".
+  Qed.
+
+  Lemma refines_alloc_r E K e v t A
+    (Hmasked : nclose specN ⊆ E) :
+    IntoVal e v →
+    (∀ l : loc, l ↦ₛ v -∗ REL t << fill K (of_val #l) @ E : A)%I
+    -∗ REL t << fill K (ref e) @ E : A.
+  Proof.
+    rewrite /IntoVal. intros <-.
+    iIntros "Hlog".
+    iApply refines_step_r.
+    iIntros (k) "Hk".
+    tp_alloc k as l "Hl".
+    iModIntro. iExists _. iFrame. by iApply "Hlog".
+  Qed.
+
+  Lemma refines_load_r E K l q v t A
+    (Hmasked : nclose specN ⊆ E) :
+    l ↦ₛ{q} v -∗
+    (l ↦ₛ{q} v -∗ REL t << fill K (of_val v) @ E : A)
+    -∗ REL t << (fill K !#l) @ E : A.
+  Proof.
+    iIntros "Hl Hlog".
+    iApply refines_step_r.
+    iIntros (k) "Hk".
+    tp_load k.
+    iModIntro. iExists _. iFrame. by iApply "Hlog".
   Qed.
 
   Lemma refines_cmpxchg_fail_r E K l e1 e2 v1 v2 v t A :
@@ -206,16 +193,11 @@ Section rules.
     (l ↦ₛ v -∗ REL t << fill K (of_val (v, #false)) @ E : A)
     -∗ REL t << fill K (CmpXchg #l e1 e2) @ E : A.
   Proof.
-    iIntros (?<-<-??) "Hl Hlog".
-    pose (Φ := (fun (w : val) => ⌜w = (v, #false)%V⌝ ∗ l ↦ₛ v)%I).
-    iApply (refines_step_r Φ with "[Hl]"); eauto.
-    { cbv[Φ].
-      iIntros (j K') "#Hs Hj /=".
-      tp_cmpxchg_fail j; auto.
-      iExists _. simpl.
-      iFrame. eauto. }
-    iIntros (w) "[% Hl]"; subst.
-    by iApply "Hlog".
+    rewrite /IntoVal. iIntros (?<-<-??) "Hl Hlog".
+    iApply refines_step_r.
+    iIntros (k) "Hk".
+    tp_cmpxchg_fail k.
+    iModIntro. iExists _. iFrame. by iApply "Hlog".
   Qed.
 
   Lemma refines_cmpxchg_suc_r E K l e1 e2 v1 v2 v t A :
@@ -228,16 +210,11 @@ Section rules.
     (l ↦ₛ v2 -∗ REL t << fill K (of_val (v, #true)) @ E : A)
     -∗ REL t << fill K (CmpXchg #l e1 e2) @ E : A.
   Proof.
-    iIntros (?<-<-??) "Hl Hlog".
-    pose (Φ := (fun w => ⌜w = (v, #true)%V⌝ ∗ l ↦ₛ v2)%I).
-    iApply (refines_step_r Φ with "[Hl]"); eauto.
-    { cbv[Φ].
-      iIntros (j K') "#Hs Hj /=".
-      tp_cmpxchg_suc j; auto.
-      iExists _. simpl.
-      iFrame. eauto. }
-    iIntros (w) "[% Hl]"; subst.
-    by iApply "Hlog".
+    rewrite /IntoVal. iIntros (?<-<-??) "Hl Hlog".
+    iApply refines_step_r.
+    iIntros (k) "Hk".
+    tp_cmpxchg_suc k.
+    iModIntro. iExists _. iFrame. by iApply "Hlog".
   Qed.
 
   Lemma refines_faa_r E K l e2 (i1 i2 : Z) t A :
@@ -247,33 +224,24 @@ Section rules.
     (l ↦ₛ #(i1+i2) -∗ REL t << fill K (of_val #i1) @ E : A)
     -∗ REL t << fill K (FAA #l e2) @ E : A.
   Proof.
-    iIntros (?<-) "Hl Hlog".
-    pose (Φ := (fun w => ⌜w = #i1⌝ ∗ l ↦ₛ #(i1+i2))%I).
-    iApply (refines_step_r Φ with "[Hl]"); eauto.
-    { cbv[Φ].
-      iIntros (j K') "#Hs Hj /=".
-      tp_faa j; auto.
-      iExists #i1. simpl.
-      iFrame. eauto. }
-    iIntros (w) "[% Hl]"; subst.
-    by iApply "Hlog".
+    rewrite /IntoVal. iIntros (?<-) "Hl Hlog".
+    iApply refines_step_r.
+    iIntros (k) "Hk".
+    tp_faa k.
+    iModIntro. iExists _. iFrame. by iApply "Hlog".
   Qed.
 
   Lemma refines_fork_r E K (e t : expr) A
    (Hmasked : nclose specN ⊆ E) :
-   (∀ i, i ⤇ e -∗
+   (∀ k, refines_right k e -∗
      REL t << fill K (of_val #()) @ E : A) -∗
    REL t << fill K (Fork e) @ E : A.
   Proof.
     iIntros "Hlog".
-    pose (Φ := (fun (v : val) => ∃ i, i ⤇ e ∗ ⌜v = #()⌝%V)%I).
-    iApply (refines_step_r Φ with "[]"); cbv[Φ].
-    { iIntros (j K') "#Hspec Hj".
-      tp_fork j as i "Hi".
-      iModIntro. iExists #(). iFrame. eauto.
-    }
-    iIntros (v). iDestruct 1 as (i) "[Hi %]"; subst.
-    by iApply "Hlog".
+    iApply refines_step_r.
+    iIntros (k) "Hk".
+    tp_fork k as k' "Hk'".
+    iModIntro. iExists _. iFrame. by iApply "Hlog".
   Qed.
 
   (** ** Primitive structural rules *)
@@ -283,26 +251,26 @@ Section rules.
   Proof.
     rewrite refines_eq /refines_def.
     iIntros "H".
-    iIntros (j K) "#Hs Hj /=".
-    tp_fork j as i "Hi". iModIntro.
-    iSpecialize ("H" $! i [] with "Hs Hi").
+    iIntros (j K) "Hs /=".
+    tp_fork ({| tp_id := j; tp_ctx := K |}) as k' "Hk'". iModIntro.
+    simpl.
+    iSpecialize ("H" with "Hk'").
     iApply (wp_fork with "[H]").
     - iNext. iMod "H". iApply (wp_wand with "H"). eauto.
-    - iNext. iExists _. by iFrame.
+    - iNext. iExists _. rewrite /refines_right.
+      iDestruct "Hs" as "[_ $]". done.
   Qed.
 
   (** This rule is useful for proving that functions refine each other *)
-  Lemma refines_arrow_val v v' A A' :
+  Lemma refines_arrow_val (v v' : val) A A' :
     □(∀ v1 v2, A v1 v2 -∗
       REL App v (of_val v1) << App v' (of_val v2) : A') -∗
-    REL v << v' : (A → A')%lrel.
+    REL (of_val v) << (of_val v') : (A → A')%lrel.
   Proof.
-    rewrite /AsRecV. iIntros "#H".
-    iApply refines_spec_ctx. iIntros "Hs".
+    iIntros "#H".
     iApply refines_ret. iModIntro.
     iModIntro. iIntros (v1 v2) "HA".
     iSpecialize ("H" with "HA").
-    rewrite refines_eq /refines_def.
     by iApply "H".
   Qed.
 

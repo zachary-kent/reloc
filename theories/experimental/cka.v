@@ -174,7 +174,9 @@ Definition star : val := rec: "star" "f" :=
 Notation "e **" := (star (λ: <>, e)%V) (at level 80).
 
 Section rules.
-  Context `{relocG Σ}.
+  Context `{!relocG Σ}.
+
+  Implicit Types e : expr.
 
   Lemma star_compatible e e' :
     □ (REL e << e' : ()) -∗
@@ -187,15 +189,6 @@ Section rules.
     - rel_pure_l. rel_pure_r. iAssumption.
     - iApply "IH".
   Qed.
-
-  (* Lemma star_refines_l e t : *)
-  (*   REL e ** << t : (). *)
-  (* Proof. *)
-  (*   iIntros "H". rel_rec_l. repeat rel_pure_l. *)
-  (*   iApply or_compatible; first by rel_values. *)
-  (*   iApply refines_seq. *)
-  (*   - rel_pure_l. rel_pure_r. iAssumption. *)
-  (*   - iApply "IH". *)
 
   Lemma star_id_1 e e' :
     □(REL e << e' : ()) -∗

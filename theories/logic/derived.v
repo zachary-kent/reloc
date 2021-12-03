@@ -9,6 +9,7 @@ From reloc.logic Require Export model rules.
 Section rules.
   Context `{relocG Σ}.
   Implicit Types A : lrel Σ.
+  Implicit Types e : expr.
 
   Lemma refines_wand E e1 e2 A A' :
     (REL e1 << e2 @ E : A) -∗
@@ -24,7 +25,7 @@ Section rules.
   Lemma refines_arrow (v v' : val) A A' :
     □ (∀ v1 v2 : val, □(REL of_val v1 << of_val v2 : A) -∗
       REL App v (of_val v1) << App v' (of_val v2) : A') -∗
-    REL v << v' : (A → A')%lrel.
+    REL (of_val v) << (of_val v') : (A → A')%lrel.
   Proof.
     iIntros "#H".
     iApply refines_arrow_val; eauto.
