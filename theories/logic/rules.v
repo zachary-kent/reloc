@@ -30,7 +30,7 @@ Section rules.
   Proof.
     intros Hpure Hϕ.
     rewrite refines_eq /refines_def.
-    iIntros "IH" ; iIntros (j K) "Hs /=".
+    iIntros "IH" ; iIntros (j) "Hs".
     iModIntro. wp_pures.
     iApply fupd_wp. iApply ("IH" with "Hs").
   Qed.
@@ -44,7 +44,7 @@ Section rules.
   Proof.
     intros Hpure Hϕ.
     rewrite refines_eq /refines_def.
-    iIntros "IH" ; iIntros (j K) "Hs /=".
+    iIntros "IH" ; iIntros (j) "Hs /=".
     iMod ("IH" with "Hs") as "IH".
     iModIntro. by wp_pures.
   Qed.
@@ -56,7 +56,7 @@ Section rules.
   Proof.
     rewrite refines_eq /refines_def.
     iIntros "He".
-    iIntros (j K') "Hs /=".
+    iIntros (j) "Hs /=".
     iModIntro. iApply wp_bind.
     iApply (wp_wand with "He").
     iIntros (v) "Hv".
@@ -71,7 +71,7 @@ Section rules.
   Proof.
     rewrite refines_eq /refines_def.
     iIntros "Hlog".
-    iIntros (j K') "Hs /=". iModIntro.
+    iIntros (j) "Hs /=". iModIntro.
     iApply wp_bind. iApply wp_atomic; auto.
     iMod "Hlog" as "He". iModIntro.
     iApply (wp_wand with "He").
@@ -89,9 +89,9 @@ Section rules.
     ⊢ REL t << fill K' e @ E : A.
   Proof.
     rewrite refines_eq /refines_def => Hpure Hϕ.
-    iIntros "Hlog". iIntros (j K) "Hs /=".
-    tp_pures ({| tp_id := j; tp_ctx := K |}) ; auto.
-    iApply ("Hlog" with "Hs").
+    iIntros "Hlog". iIntros (j) "Hj /=".
+    tp_pures j ; auto.
+    iApply ("Hlog" with "Hj").
   Qed.
 
   Lemma refines_right_bind k K e :
@@ -110,7 +110,7 @@ Section rules.
   Proof.
     rewrite refines_eq /refines_def.
     iIntros "He".
-    iIntros (j K) "Hs /=".
+    iIntros (j) "Hs /=".
     rewrite refines_right_bind /=.
     iMod ("He" with "Hs") as (v) "[Hs He]".
     rewrite -refines_right_bind'.
@@ -251,14 +251,14 @@ Section rules.
   Proof.
     rewrite refines_eq /refines_def.
     iIntros "H".
-    iIntros (j K) "Hs /=".
-    tp_fork ({| tp_id := j; tp_ctx := K |}) as k' "Hk'". iModIntro.
+    iIntros (j) "Hs /=".
+    tp_fork j as k' "Hk'". iModIntro.
     simpl.
     iSpecialize ("H" with "Hk'").
     iApply (wp_fork with "[H]").
     - iNext. iMod "H". iApply (wp_wand with "H"). eauto.
     - iNext. iExists _. rewrite /refines_right.
-      iDestruct "Hs" as "[_ $]". done.
+      eauto with iFrame.
   Qed.
 
   (** This rule is useful for proving that functions refine each other *)

@@ -90,12 +90,10 @@ Section rules.
     rel_bind_l (spawn _). iApply refines_wp_l.
     iApply (spawn_spec N (λ _, refines_right k #())%I with "[He1 Hk]").
     - wp_pures. wp_bind e1.
-      rewrite refines_eq /refines_def.
-      iDestruct "Hk" as "[#Hs Hj]".
-      iMod ("He1" with "[$Hs $Hj]") as "He1".
+      rewrite refines_eq /refines_def /=.
+      iMod ("He1" with "Hk") as "He1".
       iApply (wp_wand with "He1").
       iIntros (?)  "P". wp_pures.
-      iFrame "Hs".
       by iDestruct "P" as (v') "[? [-> ->]]".
     - iNext. iIntros (l) "hndl". iSimpl.
       rel_pures_l. rel_bind_l e2.
@@ -107,6 +105,15 @@ Section rules.
       iIntros (?) "Hk". simpl. rel_pures_l. iApply (refines_combine with "[] Hk").
       rel_values.
   Qed.
+
+  Lemma refines_right_cons k' Ki K e :
+    refines_right (RefId k' (Ki::K)) e =
+    refines_right (RefId k' K) (fill_item Ki e).
+  Proof. rewrite /refines_right /= //. Qed.
+  Lemma refines_right_fill k K e :
+    refines_right k (fill K e) =
+    refines_right (RefId (tp_id k) (K ++ tp_ctx k)) e.
+  Proof. rewrite /refines_right fill_app //. Qed.
 
   Lemma par_l_1' Q K e1 e2 t :
     (REL e1 << t : ()) -∗
@@ -124,14 +131,11 @@ Section rules.
     iApply (spawn_spec N (λ _, refines_right k (fill K #()))%I with "[He1 Hk]").
     - wp_pures. wp_bind e1.
       rewrite refines_eq /refines_def.
-      iAssert (spec_ctx) with "[Hk]" as "#Hs".
-      { iDestruct "Hk" as "[$ _]". }
       iMod ("He1" with "Hk") as "He1".
       iApply (wp_wand with "He1").
       iIntros (?)  "P". wp_pures.
-      rewrite /refines_right.
       iDestruct "P" as (v') "[Hj [-> ->]]".
-      iFrame "Hs". by rewrite fill_app.
+      by rewrite refines_right_fill.
     - iNext. iIntros (l) "Hl". simpl.
       rel_pures_l. rel_bind_l e2.
       iApply refines_wp_l.
@@ -256,38 +260,32 @@ Section rules.
     repeat rel_pure_r.
     tp_rec i. simpl.
     rewrite {3}refines_eq /refines_def /=.
-    iIntros (j' K).
-    set (j := {| tp_id := j'; tp_ctx := K |}).
-    iIntros "Hj". iModIntro.
+    iIntros (j) "Hj". iModIntro.
     tp_bind j e2. tp_bind i e1.
     (* execute e1 *)
     wp_bind e1. tp_bind i e1.
-    rewrite {1}refines_eq /refines_def.
-    iDestruct "Hi" as "[#Hs Hi]".
-    iMod ("He1" $! (tp_id i)  with "[Hi]") as "He1".
-    { rewrite /refines_right -fill_app //. by iFrame. }
+    rewrite !refines_right_fill.
+    rewrite {1}refines_eq /refines_def /=.
+    iMod ("He1" with "Hi") as "He1".
     iApply (wp_wand with "He1"). iIntros (v1).
     iDestruct 1 as (v2) "[Hi Hv]". wp_pures.
     (* execute e2 *)
     rewrite refines_eq /refines_def.
-    iMod ("He2" $! (tp_id j) with "[Hj]") as "He2".
-    { rewrite /refines_right -fill_app //.
-      cbn-[fill]. iFrame "Hj". }
+    iMod ("He2" with "Hj") as "He2".
     iApply wp_fupd.
     iApply (wp_wand with "He2"). iIntros (w1).
     iDestruct 1 as (w2) "[Hj Hw]".
     iSimpl in "Hi". iSimpl in "Hj".
-    iAssert (refines_right i (#c2 <- InjR v2)) with "[$Hi]" as "Hi".
-    { by iFrame. }
-    iAssert (refines_right j (let: "v2" := w2 in let: "v1" := spawn.join #c2 in ("v1", "v2"))) with "[Hj]" as "Hj".
-    { by iFrame. }
+    rewrite !refines_right_cons /=.
+    change (RefId (tp_id i) (tp_ctx i)) with i.
+    change (RefId (tp_id j) (tp_ctx j)) with j.
     tp_pure i _.
     tp_store i.
     tp_pures j. tp_rec j.
     tp_load j.
     tp_pures j.
     iModIntro. iExists _.
-    iDestruct "Hj" as "[_ $]".
+    by iFrame.
   Qed.
 
   Lemma interchange a b c d (A B C D : lrel Σ) :
@@ -310,68 +308,58 @@ Section rules.
     tp_rec i. simpl.
     rel_rec_l. repeat rel_pure_l.
     rewrite {5}refines_eq /refines_def.
-    iIntros (j' K). simpl.
-    set (j := {| tp_id := j'; tp_ctx := K |}).
+    iIntros (j) "Hj". iModIntro.
     pose (N:=nroot.@"par").
-    iIntros "Hj". iModIntro.
     wp_bind (spawn _).
     iApply (spawn_spec N with "[Ha Hj]").
     - wp_lam. rewrite refines_eq /refines_def.
       tp_bind j a.
-      iMod ("Ha" with "[Hj]") as "Ha".
-      { rewrite /refines_right -fill_app //.
-        cbn-[fill]. iFrame "Hj". }
+      rewrite refines_right_fill.
+      iMod ("Ha" with "Hj") as "Ha".
       iExact "Ha".
     - iNext. iIntros (h) "Hdl". wp_pures.
       wp_bind b.
       rewrite {1}refines_eq /refines_def.
       tp_bind i b.
-      iDestruct "Hi" as "[#Hs Hi]".
-      iMod ("Hb" with "[Hi]") as "Hb".
-      { rewrite /refines_right -fill_app //; by iFrame. }
+      rewrite refines_right_fill.
+      iMod ("Hb" with "Hi") as "Hb".
       iApply (wp_wand with "Hb").
       iIntros (bv). iDestruct 1 as (bv') "[Hi HB]". simpl.
       wp_pures. wp_bind (spawn.join _).
       iApply (join_spec with "Hdl").
       iNext. iIntros (av). iDestruct 1 as (av') "[Hj HA]".
       wp_pures.
-      iAssert (refines_right i (#c2 <- InjR (bv';; c))) with "[Hi]" as "Hi".
-      { by iFrame. }
-      iAssert (refines_right j (let: "v2" := av';; d in
-              let: "v1" := spawn.join #c2 in ("v1", "v2")))
-        with "[Hj]" as "Hj".
-      { by iFrame. }
+      rewrite !refines_right_cons /=.
+      change (RefId (tp_id i) (tp_ctx i)) with i.
+      change (RefId (tp_id j) (tp_ctx j)) with j.
       tp_pures j. tp_pures i.
       wp_rec. wp_pures.
       wp_apply (spawn_spec N with "[Hc Hi]").
       { wp_pures.
         rewrite refines_eq /refines_def /=.
         tp_bind i c.
-        iMod ("Hc" with "[Hi]") as "Hc".
-        { rewrite /refines_right -fill_app //. }
+        rewrite refines_right_fill.
+        iMod ("Hc" with "Hi") as "Hc".
         iExact "Hc". }
       clear h. iIntros (h) "Hdl". wp_pures.
       wp_bind d.
       rewrite refines_eq /refines_def.
       tp_bind j d.
-      iMod ("Hd" $! (tp_id j) with "[Hj]") as "Hd".
-      { rewrite /refines_right -fill_app //.
-        iSimpl. by iFrame. }
+      rewrite refines_right_fill.
+      iMod ("Hd" with "Hj") as "Hd".
       iApply (wp_wand with "Hd"). iIntros (dv).
       iDestruct 1 as (dv') "[Hj HD]".
       wp_pures. wp_apply (join_spec with "Hdl").
       iIntros (cv). iDestruct 1 as (cv') "[Hi HC]".
       iApply wp_fupd.
       wp_pures. iExists (cv', dv')%V. simpl.
-      iAssert (refines_right i (#c2 <- InjR cv')) with "[Hi]" as "Hi".
-      { by iFrame. }
-      iAssert (refines_right j (let: "v2" := dv' in let: "v1" := spawn.join #c2 in ("v1", "v2"))) with "[Hj]" as "Hj".
-      { by iFrame. }
+      rewrite !refines_right_cons /=.
+      change (RefId (tp_id i) (tp_ctx i)) with i.
+      change (RefId (tp_id j) (tp_ctx j)) with j.
       tp_pures i. tp_store i.
       tp_pures j.
       rewrite /spawn.join. tp_pures j.
       tp_load j. tp_pures j.
       iModIntro; iSplit; eauto with iFrame.
-      iDestruct "Hj" as "[_ $]".
   Qed.
 End rules.

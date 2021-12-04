@@ -26,8 +26,8 @@ Existing Instance lrel_persistent.
 Section lrel_ofe.
   Context `{Σ : gFunctors}.
 
-  Instance lrel_equiv : Equiv (lrel Σ) := λ A B, ∀ w1 w2, A w1 w2 ≡ B w1 w2.
-  Instance lrel_dist : Dist (lrel Σ) := λ n A B, ∀ w1 w2, A w1 w2 ≡{n}≡ B w1 w2.
+  Global Instance lrel_equiv : Equiv (lrel Σ) := λ A B, ∀ w1 w2, A w1 w2 ≡ B w1 w2.
+  Global Instance lrel_dist : Dist (lrel Σ) := λ n A B, ∀ w1 w2, A w1 w2 ≡{n}≡ B w1 w2.
   Lemma lrel_ofe_mixin : OfeMixin (lrel Σ).
   Proof. by apply (iso_ofe_mixin (lrel_car : lrel Σ → (val -d> val -d> iPropO Σ))). Qed.
   Canonical Structure lrelC := Ofe (lrel Σ) lrel_ofe_mixin.
@@ -53,9 +53,12 @@ End lrel_ofe.
 
 Arguments lrelC : clear implicits.
 
+Set Primitive Projections.
 Record ref_id := RefId {
   tp_id : nat;
   tp_ctx : list ectx_item }.
+Unset Primitive Projections.
+Add Printing Constructor ref_id.
 
 Canonical Structure ectx_itemO := leibnizO ectx_item.
 Canonical Structure ref_idO := leibnizO ref_id.
@@ -81,12 +84,12 @@ Section semtypes.
 
   Definition refines_def (E : coPset)
            (e : expr) (e'k : rhs_t) (A : lrel Σ) : iProp Σ :=
-    (∀ j K,
+    (∀ j : ref_id,
         match e'k with
-        | inl e' => refines_right (RefId j K) e'
-        | inr k  => ⌜j = tp_id k⌝ ∗ ⌜K = tp_ctx k⌝
+        | inl e' => refines_right j e'
+        | inr k  => ⌜j = k⌝
         end -∗
-        |={E,⊤}=> WP e {{ v, ∃ v', j ⤇ fill K (of_val v') ∗ A v v' }})%I.
+        |={E,⊤}=> WP e {{ v, ∃ v', refines_right j (of_val v') ∗ A v v' }})%I.
 
   Definition refines_aux : seal refines_def. Proof. by eexists. Qed.
   Definition refines := unseal refines_aux.
@@ -122,7 +125,7 @@ Section semtypes.
 
   Definition lrel_rec1 (C : lrelC Σ -n> lrelC Σ) (rec : lrel Σ) : lrel Σ :=
     LRel (λ w1 w2, ▷ C rec w1 w2)%I.
-  Instance lrel_rec1_contractive C : Contractive (lrel_rec1 C).
+  Global Instance lrel_rec1_contractive C : Contractive (lrel_rec1 C).
   Proof.
     intros n. intros P Q HPQ.
     unfold lrel_rec1. intros w1 w2. rewrite {1 4}/lrel_car /=.
@@ -259,7 +262,7 @@ Section related_facts.
   Proof.
     iIntros "H".
     rewrite refines_eq /refines_def.
-    iIntros (j K) "He'". pose (k := RefId j K).
+    iIntros (k) "He'".
     iSpecialize ("H" $! k with "He'").
     by iApply "H".
   Qed.
@@ -271,7 +274,7 @@ Section related_facts.
   Proof.
     iIntros "H1 H2".
     rewrite refines_eq /refines_def.
-    iIntros (j K) "[% %]".
+    iIntros (j) "%".
     iApply "H1". by destruct k; simplify_eq/=.
   Qed.
 
@@ -280,7 +283,7 @@ Section related_facts.
     (|={E1, E2}=> refines E2 e t A) -∗ refines E1 e t A.
   Proof.
     rewrite refines_eq /refines_def.
-    iIntros "H". iIntros (j K) "Hr /=".
+    iIntros "H". iIntros (j) "Hr /=".
     iMod "H" as "H". iApply ("H" with "Hr").
   Qed.
 
@@ -289,13 +292,13 @@ Section related_facts.
   Proof.
     rewrite refines_eq /refines_def.
     iIntros "H". simpl.
-    iSpecialize ("H" $! (tp_id k) (tp_ctx k) with "[%//]").
+    iSpecialize ("H" $! k with "[%//]").
     iMod "H" as "H". iModIntro.
-    iIntros (j K) "[-> ->]". done.
+    iIntros (j) "->". done.
   Qed.
 
   Global Instance elim_fupd_refines p E1 E2 e t P A :
-   (* TODO: DF: look at the booleans here *)
+   (* DF: look at the booleans here *)
    ElimModal True p false (|={E1,E2}=> P) P
      (refines E1 e t A) (refines E2 e t A).
   Proof.
@@ -334,14 +337,15 @@ Section monadic.
   Proof.
     iIntros "Hm Hf".
     rewrite refines_eq /refines_def /refines_right.
-    iIntros (j K₁) "[#Hs Hj] /=".
+    iIntros (j) "[#Hs Hj] /=".
     rewrite -fill_app.
-    iMod ("Hm" with "[$Hs $Hj]") as "Hm".
+    iMod ("Hm" $! (RefId (tp_id j) (K' ++ tp_ctx j)) with "[$Hs $Hj]") as "Hm".
     iModIntro. iApply wp_bind.
     iApply (wp_wand with "Hm").
     iIntros (v). iDestruct 1 as (v') "[Hj HA]".
     rewrite fill_app.
-    by iMod ("Hf" with "HA [$Hs $Hj]") as "Hf/=".
+    iSpecialize ("Hf" with "HA").
+    iMod ("Hf" $! j with "Hj") as "$".
   Qed.
 
   Lemma refines_ret E e1 e2 v1 v2 (A : lrel Σ) :
@@ -352,7 +356,7 @@ Section monadic.
     rewrite /IntoVal.
     iIntros (<-<-) "HA".
     rewrite refines_eq /refines_def.
-    iIntros (j K) "[#Hs Hj] /=".
+    iIntros (j) "Hj /=".
     iMod "HA" as "HA". iModIntro.
     iApply wp_value. iExists _. by iFrame.
   Qed.

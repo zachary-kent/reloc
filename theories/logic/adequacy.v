@@ -39,7 +39,7 @@ Proof.
   iSplitL.
   - iPoseProof (Hlog _) as "Hrel".
     rewrite refines_eq /refines_def /spec_ctx.
-    iApply fupd_wp. iApply ("Hrel" $! 0 []).
+    iApply fupd_wp. iApply ("Hrel" $! (RefId 0 [])).
     iSplitR.
     + iExists _. by iFrame.
     + rewrite tpool_mapsto_eq /tpool_mapsto_def.
@@ -49,6 +49,7 @@ Proof.
     rewrite HA.
     iDestruct "Hinterp" as %Hinterp.
     iInv specN as (tp σ') ">[Hown Hsteps]" "Hclose"; iDestruct "Hsteps" as %Hsteps'.
+    iDestruct "Hj" as "[#Hs Hj]".
     rewrite tpool_mapsto_eq /tpool_mapsto_def /=.
     iDestruct (own_valid_2 with "Hown Hj") as %Hvalid.
     move: Hvalid=> /auth_both_valid_discrete
