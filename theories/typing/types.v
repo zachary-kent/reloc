@@ -296,7 +296,7 @@ Proof.
     | [ H : ∀ xs ys, xs ≡ₚ ys → is_closed_expr xs _ = is_closed_expr ys _
       |- is_closed_expr _ _ = is_closed_expr _ _ ] => eapply H; eauto
     end; try done.
-  - apply bool_decide_iff. by rewrite Hxsys.
+  - apply bool_decide_ext. by rewrite Hxsys.
   - by rewrite Hxsys.
 Qed.
 
