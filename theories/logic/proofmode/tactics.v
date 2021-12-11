@@ -348,6 +348,86 @@ Tactic Notation "rel_store_r" :=
   |reflexivity
   |rel_finish  (** new goal *)].
 
+(** Xchg *)
+Lemma tac_rel_xchg_l_simpl `{!relocG Σ} K ℶ1 ℶ2 ℶ3 i1 (l : loc) v e' v' e t eres A :
+  e = fill K (Xchg (# l) e') →
+  IntoVal e' v' →
+  MaybeIntoLaterNEnvs 1 ℶ1 ℶ2 →
+  envs_lookup i1 ℶ2 = Some (false, l ↦ v)%I →
+  envs_simple_replace i1 false (Esnoc Enil i1 (l ↦ v')) ℶ2 = Some ℶ3 →
+  eres = fill K (of_val v) →
+  envs_entails ℶ3 (refines ⊤ eres t A) →
+  envs_entails ℶ1 (refines ⊤ e t A).
+Proof.
+  rewrite envs_entails_eq. intros ?????? Hg.
+  subst e eres.
+  rewrite into_laterN_env_sound envs_simple_replace_sound //; simpl.
+  rewrite bi.later_sep.
+  rewrite right_id.
+  rewrite -(refines_xchg_l K ⊤ l).
+  rewrite -fupd_intro.
+  rewrite -(bi.exist_intro v).
+  by rewrite Hg.
+Qed.
+
+Lemma tac_rel_xchg_r `{!relocG Σ} K ℶ1 ℶ2 i1 E (l : loc) v e' v' e t eres A :
+  e = fill K (Xchg (# l) e') →
+  IntoVal e' v' →
+  nclose specN ⊆ E →
+  envs_lookup i1 ℶ1 = Some (false, l ↦ₛ v)%I →
+  envs_simple_replace i1 false (Esnoc Enil i1 (l ↦ₛ v')) ℶ1 = Some ℶ2 →
+  eres = fill K (of_val v) →
+  envs_entails ℶ2 (refines E t eres A) →
+  envs_entails ℶ1 (refines E t e A).
+Proof.
+  rewrite envs_entails_eq. intros ?????? Hg.
+  subst e eres.
+  rewrite envs_simple_replace_sound //; simpl.
+  rewrite right_id.
+  rewrite (refines_xchg_r E K) //.
+  rewrite Hg.
+  apply bi.wand_elim_l.
+Qed.
+
+Tactic Notation "rel_xchg_l" :=
+  let solve_mapsto _ :=
+    let l := match goal with |- _ = Some (_, (?l ↦ _)%I) => l end in
+    iAssumptionCore || fail "rel_xchg_l: cannot find" l "↦ₛ ?" in
+  rel_pures_l;
+  first
+    [rel_reshape_cont_l ltac:(fun K e' =>
+       eapply (tac_rel_xchg_l_simpl K);
+       [reflexivity (** e = fill K (#l <- e') *)
+       |iSolveTC    (** e' is a value *)
+       |idtac..])
+    |fail 1 "rel_xchg_l: cannot find 'Xchg'"];
+  (* the remaining goals are from tac_rel_xchg_l (except for the first one, which has already been solved by this point) *)
+  [iSolveTC        (** IntoLaters *)
+  |solve_mapsto ()
+  |pm_reflexivity || fail "rel_xchg_l: this should not happen O-:"
+  |reflexivity
+  |rel_finish  (** new goal *)].
+
+Tactic Notation "rel_xchg_l_atomic" := rel_apply_l refines_xchg_l.
+
+Tactic Notation "rel_xchg_r" :=
+  let solve_mapsto _ :=
+    let l := match goal with |- _ = Some (_, (?l ↦ₛ _)%I) => l end in
+    iAssumptionCore || fail "rel_xchg_r: cannot find" l "↦ₛ ?" in
+  rel_pures_r;
+  first
+    [rel_reshape_cont_r ltac:(fun K e' =>
+       eapply (tac_rel_xchg_r K);
+       [reflexivity|iSolveTC|idtac..])
+    |fail 1 "rel_xchg_r: cannot find 'Xchg'"];
+  (* the remaining goals are from tac_rel_xchg_r (except for the first one, which has already been solved by this point) *)
+  [solve_ndisj || fail "rel_xchg_r: cannot prove 'nclose specN ⊆ ?'"
+  |solve_mapsto ()
+  |pm_reflexivity || fail "rel_xchg_r: this should not happen O-:"
+  |reflexivity
+  |rel_finish  (** new goal *)].
+
+
 (** Alloc *)
 Tactic Notation "rel_alloc_l_atomic" := rel_apply_l refines_alloc_l.
 

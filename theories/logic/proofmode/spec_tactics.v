@@ -190,6 +190,51 @@ Tactic Notation "tp_store" constr(j) :=
   |iAssumptionCore || fail "tp_store: cannot find '? ↦ₛ ?'"
   |pm_reduce (* new goal *)].
 
+
+Lemma tac_tp_xchg `{relocG Σ} k Δ1 Δ2 E1 i1 i2 K' e (l : loc) e' e2 v' v Q :
+  (∀ P, ElimModal True false false (|={E1}=> P) P Q Q) →
+  nclose specN ⊆ E1 →
+  envs_lookup_delete false i1 Δ1 = Some (false, refines_right k e, Δ2)%I →
+  e = fill K' (Xchg (# l) e') →
+  IntoVal e' v →
+  (* re-compose the expression and the evaluation context *)
+  envs_lookup i2 Δ2 = Some (false, l ↦ₛ v')%I →
+  e2 = fill K' (of_val v') →
+  match envs_simple_replace i2 false
+     (Esnoc (Esnoc Enil i1 (refines_right k e2)) i2 (l ↦ₛ v)) Δ2 with
+  | None => False
+  | Some Δ3 => envs_entails Δ3 Q
+  end →
+  envs_entails Δ1 Q.
+Proof.
+  rewrite /IntoVal.
+  rewrite envs_entails_eq. intros ??? -> <- ? -> HQ.
+  rewrite envs_lookup_delete_sound //; simpl.
+  destruct (envs_simple_replace _ _ _ _) as [Δ3|] eqn:HΔ3; last done.
+  rewrite envs_simple_replace_sound //; simpl.
+  rewrite right_id.
+  rewrite !assoc -(assoc _ spec_ctx).
+  rewrite -fill_app step_xchg // fill_app.
+  rewrite -[Q]elim_modal //.
+  apply bi.sep_mono_r.
+  apply bi.wand_intro_l.
+  rewrite (comm _ _ (l ↦ₛ v)%I). simpl.
+  rewrite assoc. rewrite (comm _ spec_ctx (l ↦ₛ _)%I).
+  by rewrite bi.wand_elim_r.
+Qed.
+
+Tactic Notation "tp_xchg" constr(j) :=
+  iStartProof;
+  eapply (tac_tp_store j);
+  [iSolveTC || fail "tp_store: cannot eliminate modality in the goal"
+  |solve_ndisj || fail "tp_store: cannot prove 'nclose specN ⊆ ?'"
+  |iAssumptionCore || fail "tp_store: cannot find '" j " ' RHS"
+  |tp_bind_helper
+  |iSolveTC || fail "tp_store: cannot convert the argument to a value"
+  |iAssumptionCore || fail "tp_store: cannot find '? ↦ₛ ?'"
+  |simpl; reflexivity || fail "tp_store: this should not happen"
+  |pm_reduce (* new goal *)].
+
 (* *)
 (* DF: *)
 (* If [envs_lookup i1 Δ1 = Some (p, spec_ctx ρ)] and *)

@@ -264,6 +264,18 @@ Section fundamental.
     - by iApply "IH2".
   Qed.
 
+  Lemma bin_log_related_xchg Δ Γ e1 e2 e1' e2' τ :
+    ({Δ;Γ} ⊨ e1 ≤log≤ e1' : TRef τ) -∗
+    ({Δ;Γ} ⊨ e2 ≤log≤ e2' : τ) -∗
+    {Δ;Γ} ⊨ Xchg e1 e2 ≤log≤ Xchg e1' e2' : τ.
+  Proof.
+    iIntros "IH1 IH2".
+    intro_clause.
+    iApply (refines_xchg with "[IH1] [IH2]").
+    - by iApply "IH1".
+    - by iApply "IH2".
+  Qed.
+
   Lemma bin_log_related_FAA Δ Γ e1 e2 e1' e2' :
     ({Δ;Γ} ⊨ e1 ≤log≤ e1' : TRef TNat) -∗
     ({Δ;Γ} ⊨ e2 ≤log≤ e2' : TNat) -∗
@@ -574,6 +586,7 @@ Section fundamental.
       + iApply bin_log_related_alloc; by iApply fundamental.
       + iApply bin_log_related_load; by iApply fundamental.
       + iApply bin_log_related_store; by iApply fundamental.
+      + iApply bin_log_related_xchg; by iApply fundamental.
       + iApply bin_log_related_FAA; eauto;
           by iApply fundamental.
       + iApply bin_log_related_CmpXchg; eauto;

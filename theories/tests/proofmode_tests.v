@@ -91,5 +91,29 @@ Proof.
   rel_values.
 Qed.
 
+
+Lemma test_xchg_1 l1 l2 (v1 v2 : val) (A : lrel Σ) :
+  l1 ↦ v1 -∗
+  l2 ↦ₛ v2 -∗
+  (l1 ↦ #3 -∗ l2 ↦ₛ #3 -∗ A v1 v2) -∗
+  REL Xchg #l1 #3 << Xchg #l2 #3 : A.
+Proof.
+  iIntros "Hl1 Hl2 H".
+  rel_xchg_l. rel_xchg_r. rel_values.
+  iModIntro. iApply ("H" with "Hl1 Hl2").
+Qed.
+
+Lemma test_xchg_2 l1 l2 (v1 v2 : val) (A : lrel Σ) :
+  l1 ↦ v1 -∗
+  l2 ↦ₛ v2 -∗
+  (l1 ↦ #3 -∗ l2 ↦ₛ #3 -∗ A v1 v2) -∗
+  REL Xchg #l1 #3 << (let: "x" := !#l2 in #l2 <- #3;; "x") : A.
+Proof.
+  iIntros "Hl1 Hl2 H".
+  rel_xchg_l. rel_load_r. rel_pures_r.
+  rel_store_r. rel_pures_r. rel_values.
+  iModIntro. iApply ("H" with "Hl1 Hl2").
+Qed.
+
 End test.
 

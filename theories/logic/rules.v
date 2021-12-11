@@ -183,6 +183,20 @@ Section rules.
     iModIntro. iExists _. iFrame. by iApply "Hlog".
   Qed.
 
+  Lemma refines_xchg_r E K l e1 v1 v t A :
+    nclose specN ⊆ E →
+    IntoVal e1 v1 →
+    l ↦ₛ v -∗
+    (l ↦ₛ v1 -∗ REL t << fill K (of_val v) @ E : A)
+    -∗ REL t << fill K (Xchg #l e1) @ E : A.
+  Proof.
+    rewrite /IntoVal. iIntros (?<-) "Hl Hlog".
+    iApply refines_step_r.
+    iIntros (k) "Hk".
+    admit.
+  Admitted.
+
+
   Lemma refines_cmpxchg_fail_r E K l e1 e2 v1 v2 v t A :
     nclose specN ⊆ E →
     IntoVal e1 v1 →
@@ -367,6 +381,18 @@ Section rules.
     iApply refines_atomic_l; auto.
     iMod "Hlog" as (v) "[Hl Hlog]". iModIntro.
     iApply (wp_store _ _ _ _ v' with "Hl"); auto.
+  Qed.
+
+  Lemma refines_xchg_l K E l e v' t A :
+    IntoVal e v' →
+    (|={⊤,E}=> ∃ v, ▷ l ↦ v ∗
+      ▷(l ↦ v' -∗ REL fill K (of_val v) << t @ E : A))
+    -∗ REL fill K (Xchg #l e) << t : A.
+  Proof.
+    iIntros (<-) "Hlog".
+    iApply refines_atomic_l; auto.
+    iMod "Hlog" as (v) "[Hl Hlog]". iModIntro.
+    iApply (wp_xchg _ _ _ _ v' with "Hl"); auto.
   Qed.
 
   Lemma refines_cmpxchg_l K E l e1 e2 v1 v2 t A :

@@ -199,6 +199,7 @@ Inductive typed : stringmap type → expr → type → Prop :=
   | TAlloc Γ e τ : Γ ⊢ₜ e : τ → Γ ⊢ₜ Alloc e : ref τ
   | TLoad Γ e τ : Γ ⊢ₜ e : ref τ → Γ ⊢ₜ Load e : τ
   | TStore Γ e e' τ : Γ ⊢ₜ e : ref τ → Γ ⊢ₜ e' : τ → Γ ⊢ₜ Store e e' : ()
+  | TXchg Γ e e' τ : Γ ⊢ₜ e : ref τ → Γ ⊢ₜ e' : τ → Γ ⊢ₜ Xchg e e' : τ
   | TFAA Γ e1 e2 :
      Γ ⊢ₜ e1 : ref TNat →
      Γ ⊢ₜ e2 : TNat →

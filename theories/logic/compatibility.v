@@ -93,6 +93,25 @@ Section compatibility.
     value_case.
   Qed.
 
+  Lemma refines_xchg e1 e2 e1' e2' A :
+    (REL e1 << e1' : ref A) -∗
+    (REL e2 << e2' : A) -∗
+    REL Xchg e1 e2 << Xchg e1' e2' : A.
+  Proof.
+    iIntros "IH1 IH2".
+    rel_bind_ap e2 e2' "IH2" w w' "IH2".
+    rel_bind_ap e1 e1' "IH1" v v' "IH1".
+    iDestruct "IH1" as (l l') "(% & % & Hinv)"; simplify_eq/=.
+    rel_xchg_l_atomic.
+    iInv (relocN .@ "ref" .@ (l,l')) as (v v') "[Hv1 [>Hv2 #Hv]]" "Hclose".
+    iModIntro. iExists _; iFrame "Hv1".
+    iNext. iIntros "Hw1".
+    rel_xchg_r.
+    iMod ("Hclose" with "[Hw1 Hv2 IH2]").
+    { iNext; iExists _, _; simpl; iFrame. }
+    value_case.
+  Qed.
+
   Lemma refines_load e e' A :
     (REL e << e' : ref A) -∗
     REL !e << !e' : A.

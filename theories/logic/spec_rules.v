@@ -211,6 +211,37 @@ Section rules.
     eapply rtc_r, step_insert_no_fork; eauto. econstructor; eauto.
   Qed.
 
+  Lemma step_xchg E j K l e (v v' : val) :
+    IntoVal e v →
+    nclose specN ⊆ E →
+    spec_ctx ∗ j ⤇ fill K (Xchg #l e) ∗ l ↦ₛ v'
+    ={E}=∗ spec_ctx ∗ j ⤇ fill K (of_val v') ∗ l ↦ₛ v.
+  Proof.
+    iIntros (<-?) "(#Hinv & Hj & Hl)". iFrame "Hinv".
+    rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def.
+    iDestruct "Hinv" as (ρ) "Hinv".
+    rewrite heapS_mapsto_eq /heapS_mapsto_def /=.
+    iInv specN as (tp σ) ">[Hown %]" "Hclose".
+    iDestruct (own_valid_2 with "Hown Hj")
+      as %[[?%tpool_singleton_included' _]%prod_included _]%auth_both_valid_discrete.
+    iDestruct (own_valid_2 with "Hown Hl")
+      as %[[_ Hl%heap_singleton_included]%prod_included _]%auth_both_valid_discrete.
+    iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".
+    { by eapply auth_update, prod_local_update_1, singleton_local_update,
+        (exclusive_local_update _ (Excl (fill K (of_val v')))). }
+    iMod (own_update_2 with "Hown Hl") as "[Hown Hl]".
+    { eapply auth_update, prod_local_update_2.
+      apply: singleton_local_update.
+      { by rewrite /to_heap lookup_fmap Hl. }
+      apply: (exclusive_local_update _
+        (1%Qp, to_agree (Some v : leibnizO (option val)))).
+      apply: pair_exclusive_l. done. }
+    iFrame "Hj Hl". iApply "Hclose". iNext.
+    iExists (<[j:=fill K (of_val v')]> tp), (state_upd_heap <[l:=Some v]> σ).
+    rewrite to_heap_insert to_tpool_insert'; last eauto. iFrame. iPureIntro.
+    eapply rtc_r, step_insert_no_fork; eauto. econstructor; eauto.
+  Qed.
+
   (** CmpXchg & FAA *)
   Lemma step_cmpxchg_fail E j K l q v' e1 v1 e2 v2 :
     IntoVal e1 v1 →
