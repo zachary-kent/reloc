@@ -6,7 +6,7 @@ bug-reports: "https://gitlab.mpi-sws.org/dfrumin/reloc/issues"
 dev-repo: "git+https://gitlab.mpi-sws.org/dfrumin/reloc.git"
 
 depends: [
-  "coq-iris-heap-lang" { (= "dev.2021-12-09.1.f52f9f6a") | (= "dev") }
+  "coq-iris-heap-lang" { (= "dev.2022-01-17.2.ec624937") | (= "dev") }
   "coq-autosubst" { = "dev" }
 ]
 

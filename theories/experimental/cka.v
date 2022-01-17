@@ -21,10 +21,10 @@ Tactic Notation "use_logrel/=" :=
 
 
 Lemma typed_is_closed_empty e τ :
-  ∅ ⊢ₜ e : τ → is_closed_expr [] e.
+  ∅ ⊢ₜ e : τ → is_closed_expr ∅ e.
 Proof.
   intros H%typed_is_closed. revert H.
-  by rewrite dom_empty_L elements_empty.
+  by rewrite dom_empty_L.
 Qed.
 
 Ltac fundamental := by iApply (refines_typed TUnit []).

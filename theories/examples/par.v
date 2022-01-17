@@ -202,8 +202,8 @@ Section rules.
 
   (* This proof is now simpler but it still requires unfolding the REL judgement *)
   Lemma par_comm e1 e2 :
-    is_closed_expr [] e1 →
-    is_closed_expr [] e2 →
+    is_closed_expr ∅ e1 →
+    is_closed_expr ∅ e2 →
     (REL e1 << e1 : ()) -∗
     (REL e2 << e2 : ()) -∗
     REL (e2 ∥ e1) << (e1 ∥ e2) : ().
@@ -246,8 +246,8 @@ Section rules.
   Qed.
 
   Lemma seq_par e1 e2 (A B : lrel Σ) :
-    is_closed_expr [] e1 →
-    is_closed_expr [] e2 →
+    is_closed_expr ∅ e1 →
+    is_closed_expr ∅ e2 →
     (REL e1 << e1 : A) -∗
     (REL e2 << e2 : B) -∗
     REL e1 ;; e2 << (e1 ||| e2)%V : lrel_true.
@@ -289,10 +289,10 @@ Section rules.
   Qed.
 
   Lemma interchange a b c d (A B C D : lrel Σ) :
-    is_closed_expr [] a →
-    is_closed_expr [] b →
-    is_closed_expr [] c →
-    is_closed_expr [] d →
+    is_closed_expr ∅ a →
+    is_closed_expr ∅ b →
+    is_closed_expr ∅ c →
+    is_closed_expr ∅ d →
     (REL a << a : A) -∗
     (REL b << b : B) -∗
     (REL c << c : C) -∗

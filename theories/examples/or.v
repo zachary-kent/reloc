@@ -261,9 +261,9 @@ Section rules.
     end.
 
   Lemma seq_or_2' (f g h f' g' h' : expr) A :
-    is_closed_expr [] f →
-    is_closed_expr [] g →
-    is_closed_expr [] h →
+    is_closed_expr ∅ f →
+    is_closed_expr ∅ g →
+    is_closed_expr ∅ h →
     (REL f << f' : A) -∗
     (REL g << g' : A) -∗
     (REL h << h' : A) -∗
@@ -275,7 +275,7 @@ Section rules.
   Proof.
     iIntros (???) "Hf Hg Hh". rel_pures_r.
     rel_newproph_l vs p as "Hp". repeat rel_pure_l.
-    (rewrite !(subst_is_closed []) //; try by set_solver); [].
+    (rewrite !(subst_is_closed ∅) //; try by set_solver); [].
     rel_apply_r or_refines_r.
     destruct (to_choice vs) as [|] eqn:Hchoice.
     - iLeft. iApply (refines_seq with "Hf").
@@ -298,9 +298,9 @@ Section rules.
 
   (** We then prove that the non-instrumented program refines the original one *)
   Lemma seq_or_2_instrument (f g h f' g' h' : expr) A :
-    is_closed_expr [] f' →
-    is_closed_expr [] g' →
-    is_closed_expr [] h' →
+    is_closed_expr ∅ f' →
+    is_closed_expr ∅ g' →
+    is_closed_expr ∅ h' →
     (REL f << f' : A) -∗
     (REL g << g' : A) -∗
     (REL h << h' : A) -∗
@@ -312,7 +312,7 @@ Section rules.
   Proof.
     iIntros (???) "Hf Hg Hh".
     rel_newproph_r p. repeat rel_pure_r.
-    (rewrite !(subst_is_closed []) //; try by set_solver); [].
+    (rewrite !(subst_is_closed ∅) //; try by set_solver); [].
     iApply (refines_seq with "Hf").
     rel_pures_l. rel_pures_r.
     iApply (or_compatible with "[Hg] [Hh]").

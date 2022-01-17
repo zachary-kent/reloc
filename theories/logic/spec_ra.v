@@ -160,6 +160,10 @@ Section mapsto.
   Global Instance mapstoS_as_fractional l q v :
     AsFractional (l ↦ₛ{q} v) (λ q, l ↦ₛ{q} v)%I q.
   Proof. split. done. apply _. Qed.
+  Global Instance frame_mapstoS p l v q1 q2 RES :
+    FrameFractionalHyps p (l ↦ₛ{q1} v) (λ q, l ↦ₛ{q} v)%I RES q1 q2 →
+    Frame p (l ↦ₛ{q1} v) (l ↦ₛ{q2} v) RES | 5.
+  Proof. apply: frame_fractional. Qed.
 
   Lemma mapstoS_agree l q1 q2 v1 v2 : l ↦ₛ{q1} v1 -∗ l ↦ₛ{q2} v2 -∗ ⌜v1 = v2⌝.
   Proof.

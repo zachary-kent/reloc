@@ -664,7 +664,7 @@ Tactic Notation "rel_resolveproph_r" :=
 (** Fork *)
 Lemma tac_rel_fork_l `{!relocG Σ} K ℶ E e' eres e t A :
   e = fill K (Fork e') →
-  is_closed_expr [] e' →
+  is_closed_expr ∅ e' →
   eres = fill K #() →
   envs_entails ℶ (|={⊤,E}=> ▷ (WP e' {{ _ , True%I }} ∗ refines E eres t A))%I →
   envs_entails ℶ (refines ⊤ e t A).
@@ -687,7 +687,7 @@ Tactic Notation "rel_fork_l" :=
 Lemma tac_rel_fork_r `{!relocG Σ} K ℶ E e' e t eres A :
   e = fill K (Fork e') →
   nclose specN ⊆ E →
-  is_closed_expr [] e' →
+  is_closed_expr ∅ e' →
   eres = fill K #() →
   envs_entails ℶ (∀ k, refines_right k e' -∗ refines E t eres A) →
   envs_entails ℶ (refines E t e A).

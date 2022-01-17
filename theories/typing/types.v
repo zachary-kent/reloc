@@ -266,6 +266,7 @@ Definition maybe_insert_binder (x : binder) (X : stringset) : stringset :=
   | BNamed f => {[f]} ∪ X
   end.
 
+(* FIXME: this can be removed now, since [is_closed_expr] already uses [stringset]. *)
 Local Fixpoint is_closed_expr_set (X : stringset) (e : expr) : bool :=
   match e with
   | Val v => is_closed_val_set v
@@ -287,54 +288,13 @@ with is_closed_val_set (v : val) : bool :=
   | InjLV v | InjRV v => is_closed_val_set v
   end.
 
-Lemma is_closed_expr_permute (e : expr) (xs ys : list string) :
-  xs ≡ₚ ys →
-  is_closed_expr xs e = is_closed_expr ys e.
-Proof.
-  revert xs ys. induction e=>xs ys Hxsys /=;
-    repeat match goal with
-    | [ |- _ && _ = _ && _ ] => f_equal
-    | [ H : ∀ xs ys, xs ≡ₚ ys → is_closed_expr xs _ = is_closed_expr ys _
-      |- is_closed_expr _ _ = is_closed_expr _ _ ] => eapply H; eauto
-    end; try done.
-  - apply bool_decide_ext. by rewrite Hxsys.
-  - by rewrite Hxsys.
-Qed.
-
-Global Instance is_closed_expr_proper : Proper (Permutation ==> eq ==> eq) is_closed_expr.
-Proof.
-  intros X1 X2 HX x y ->. by eapply is_closed_expr_permute.
-Qed.
-
 Lemma is_closed_expr_set_sound (X : stringset) (e : expr) :
-  is_closed_expr_set X e → is_closed_expr (elements X) e
+  is_closed_expr_set X e → is_closed_expr X e
 with is_closed_val_set_sound (v : val) :
   is_closed_val_set v → is_closed_val v.
 Proof.
   - induction e; simplify_eq/=; try by (intros; destruct_and?; split_and?; eauto).
-    + intros. case_bool_decide; last done.
-      by apply bool_decide_pack, elem_of_elements.
-    + destruct f as [|f], x as [|x]; simplify_eq/=.
-      * eapply IHe.
-      * intros H%is_closed_expr_set_sound.
-        eapply is_closed_weaken; eauto. by set_solver.
-      * intros H%is_closed_expr_set_sound.
-        eapply is_closed_weaken; eauto. by set_solver.
-      * intros H%is_closed_expr_set_sound.
-        eapply is_closed_weaken; eauto. by set_solver.
-  - induction v; simplify_eq/=; try naive_solver.
-    destruct f as [|f], x as [|x]; simplify_eq/=;
-      intros H%is_closed_expr_set_sound; revert H.
-    + set_solver.
-    + by rewrite ?right_id_L elements_singleton.
-    + by rewrite ?right_id_L elements_singleton.
-    + rewrite ?right_id_L.
-      intros. eapply is_closed_weaken; eauto.
-      destruct (decide (f = x)) as [->|?].
-      * rewrite union_idemp_L elements_singleton.
-        set_solver.
-      * rewrite elements_disj_union; last set_solver.
-        rewrite !elements_singleton. set_solver.
+  - induction v; simplify_eq/=; try by (intros; destruct_and?; split_and?; eauto).
 Qed.
 
 Local Lemma typed_is_closed_set Γ e τ :
@@ -386,6 +346,6 @@ Proof.
 Qed.
 
 Theorem typed_is_closed Γ e τ :
-  Γ ⊢ₜ e : τ → is_closed_expr (elements (dom stringset Γ)) e.
+  Γ ⊢ₜ e : τ → is_closed_expr (dom stringset Γ) e.
 Proof. intros. eapply is_closed_expr_set_sound, typed_is_closed_set; eauto. Qed.
 
