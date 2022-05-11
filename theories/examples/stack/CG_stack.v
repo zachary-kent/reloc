@@ -42,7 +42,7 @@ Fixpoint val_of_list (ls : list val) : val :=
   | v::vs => CONSV v (val_of_list vs)
   end.
 
-Instance val_to_list_inj : Inj (=@{list val}) (=@{val}) val_of_list.
+Global Instance val_to_list_inj : Inj (=@{list val}) (=@{val}) val_of_list.
 Proof.
   intros ls1. induction ls1 as [|h1 ls1]=>ls2; destruct ls2; naive_solver.
 Qed.

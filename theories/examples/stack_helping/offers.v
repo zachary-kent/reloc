@@ -15,7 +15,7 @@ Definition take_offer : val :=
 Definition offerR := exclR unitR.
 Class offerG Σ := { offer_inG :> inG Σ offerR }.
 Definition offerΣ : gFunctors := #[GFunctor offerR].
-Instance subG_offerΣ {Σ} : subG offerΣ Σ → offerG Σ.
+Global Instance subG_offerΣ {Σ} : subG offerΣ Σ → offerG Σ.
 Proof. solve_inG. Qed.
 
 Section rules.

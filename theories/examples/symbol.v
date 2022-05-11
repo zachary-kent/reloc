@@ -49,7 +49,7 @@ Definition symbol2 : val := λ: <>,
 Class msizeG Σ := MSizeG { msize_inG :> inG Σ (authR max_natUR) }.
 Definition msizeΣ : gFunctors := #[GFunctor (authR max_natUR)].
 
-Instance subG_msizeΣ {Σ} : subG msizeΣ Σ → msizeG Σ.
+Global Instance subG_msizeΣ {Σ} : subG msizeΣ Σ → msizeG Σ.
 Proof. solve_inG. Qed.
 
 Section rules.

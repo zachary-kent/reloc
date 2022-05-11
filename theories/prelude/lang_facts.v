@@ -170,7 +170,7 @@ Section facts.
       + specialize (IH h1 Hpure (t1 ++ e3 :: t2 ++ efs) eq_refl eq_refl).
         etrans; last by apply IH.
         eapply rtc_once. econstructor.
-        eapply step_atomic with (t3:=(e2::t1)) (efs0:=efs); eauto.
+        by eapply (step_atomic _ _ _ _ efs (e2::t1)).
   Qed.
 
   Lemma pure_exec_inversion_lemma tp1 tp2 e1 e2 σ1 σ2 v ϕ :

@@ -28,11 +28,11 @@ Ltac Zify.zify_post_hook ::= Z.to_euclidean_division_equations.
 (* Begin hooks to make `lia` work with Nat.modulo and Nat.div *)
 Require Import Arith ZArith ZifyClasses ZifyInst Lia.
 
-Program Instance Op_Nat_mod : BinOp Nat.modulo :=
+Global Program Instance Op_Nat_mod : BinOp Nat.modulo :=
   {| TBOp := Z.modulo ; TBOpInj := Nat2Z_inj_mod |}.
 Add Zify BinOp Op_Nat_mod.
 
-Program Instance Op_Nat_div : BinOp Nat.div :=
+Global Program Instance Op_Nat_div : BinOp Nat.div :=
   {| TBOp := Z.div ; TBOpInj := Nat2Z_inj_div |}.
 Add Zify BinOp Op_Nat_div.
 
@@ -250,7 +250,7 @@ Section queue_refinement.
   (* Given the total number of push or pop operations that has been carried out,
   ops, returns the number of operations that has affected the i'th SEQ/TS. *)
   Definition nr_of_affecting_ops (q i ops : nat) :=
-    (ops / q) + (if i <? ops `mod` q then 1 else 0).
+    (ops / q) + (if i <? ops `mod` q then 1 else 0)%nat.
 
   (* Helper lemmas *)
   Lemma mod_S_le a b :
@@ -293,7 +293,7 @@ Section queue_refinement.
   Proof.
     unfold nr_of_affecting_ops.
     rewrite div0 mod0.
-    assert (i <? 0 = false) as ->.
+    assert (i <? 0 = false)%nat as ->.
     { apply Nat.ltb_nlt. lia. }
     done.
   Qed.
@@ -319,7 +319,7 @@ Section queue_refinement.
         cut (ops `div` q = (ops + 1) `div` q)%Z; first lia.
         eapply (Zdiv_unique _ _ _ (ops `mod` q + 1)); first lia.
         rewrite {1}Hops2. lia.
-      + assert (i <? (ops + 1) `mod` q = false) as ->.
+      + assert (i <? (ops + 1) `mod` q = false)%nat as ->.
         { by apply Nat.ltb_nlt. }
         rewrite Nat.add_0_r.
         destruct (decide ((ops + 1) `mod` q ≤ ops `mod` q)) as [Hsucc|Hsucc]; last lia.
@@ -329,7 +329,7 @@ Section queue_refinement.
         { lia. }
         cut (ops `div` q + 1 = (ops + 1) `div` q)%Z ; first lia.
         eapply (Zdiv_unique _ _ _ 0); lia.
-    - assert (i <? ops `mod` q = false) as ->.
+    - assert (i <? ops `mod` q = false)%nat as ->.
       { by apply Nat.ltb_nlt. }
       rewrite Nat.add_0_r.
       destruct (decide (i < (ops + 1) `mod` q)) as [Hops3|Hops3].
@@ -338,7 +338,7 @@ Section queue_refinement.
         cut (ops `div` q = (ops + 1) `div` q)%Z; first lia.
         eapply (Zdiv_unique _ _ _ (ops `mod` q + 1)); first lia.
         rewrite {1}Hops2. lia.
-      + assert (i <? (ops+1) `mod` q = false) as ->.
+      + assert (i <? (ops+1) `mod` q = false)%nat as ->.
         { by apply Nat.ltb_nlt. }
         rewrite Nat.add_0_r.
         cut (ops `div` q = (ops + 1) `div` q)%Z; first lia.
@@ -358,7 +358,7 @@ Section queue_refinement.
   Proof.
     intros Hgt Heq. symmetry.
     rewrite /nr_of_affecting_ops.
-    assert (i <? ops `mod` q = false) as ->.
+    assert (i <? ops `mod` q = false)%nat as ->.
     { apply Nat.ltb_ge. lia. }
     rewrite Nat.add_0_r.
     assert (Z.of_nat ops = (q * (ops `div` q)%Z + i%Z)%Z)%Z as Hops2.
@@ -371,7 +371,7 @@ Section queue_refinement.
       eapply (Zdiv_unique _ _ _ (i+1)); first lia.
       rewrite {1}Hops2. lia.
     - assert ((ops + 1) `mod` q ≤ i) by lia.
-      assert (i <? (ops + 1) `mod` q = false) as ->.
+      assert (i <? (ops + 1) `mod` q = false)%nat as ->.
       { by apply Nat.ltb_ge. }
       rewrite Nat.add_0_r.
       cut (((ops `div` q) + 1) = (ops + 1) `div` q)%Z; first lia.
@@ -436,7 +436,7 @@ Section queue_refinement.
     rewrite /turn_ctx. iFrame "He".
     rewrite (nr_of_affecting_ops_incr_eq q _ popT); [|lia|lia].
     rewrite /nr_of_affecting_ops.
-    assert (_ <? _ = false) as ->.
+    assert (_ <? _ = false)%nat as ->.
     { apply Nat.ltb_ge. lia. }
     autorewrite with natb.
     by rewrite dequeue_turns_take.
@@ -452,7 +452,7 @@ Section queue_refinement.
     rewrite /turn_ctx. iFrame "Hd".
     rewrite (nr_of_affecting_ops_incr_eq q _ pushT); try lia.
     rewrite /nr_of_affecting_ops.
-    assert (_ <? _ = false) as ->.
+    assert (_ <? _ = false)%nat as ->.
     { apply Nat.ltb_ge. lia. }
     autorewrite with natb.
     by rewrite enqueue_turns_take.

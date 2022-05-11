@@ -20,7 +20,7 @@ Arguments lrel_car {_} _ _ _ : simpl never.
 Declare Scope lrel_scope.
 Bind Scope lrel_scope with lrel.
 Delimit Scope lrel_scope with lrel.
-Existing Instance lrel_persistent.
+Global Existing Instance lrel_persistent.
 
 (* The COFE structure on semantic types *)
 Section lrel_ofe.

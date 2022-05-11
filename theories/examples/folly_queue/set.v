@@ -83,25 +83,25 @@ Proof.
 Qed.
 
 (* Rewrite n <? m when true *)
-Hint Rewrite ltb_lt_1 using lia : natb.
-Hint Rewrite leb_correct_conv using lia : natb.
-Hint Rewrite leb_correct using lia : natb.
-Hint Rewrite set_above_lookup using lia : natb.
-Hint Rewrite @decide_False using lia : natb.
-Hint Rewrite @decide_True using lia : natb.
-Hint Rewrite set_above_lookup_none using lia : natb.
-Hint Rewrite set_upto_lookup_none using lia : natb.
-Hint Rewrite set_upto_lookup using lia : natb.
-Hint Rewrite set_singleton_lookup_none using lia : natb.
-Hint Rewrite set_singleton_lookup using lia : natb.
-Hint Rewrite div_mod' : natb.
-Hint Rewrite mod0 : natb.
-Hint Rewrite div0 : natb.
-Hint Rewrite Nat.add_0_r : natb.
-Hint Rewrite Nat.add_0_l : natb.
-Hint Rewrite Nat.ltb_irrefl : natb.
-Hint Rewrite Nat.max_0_r : natb.
-Hint Rewrite Nat.max_0_l : natb.
+Global Hint Rewrite ltb_lt_1 using lia : natb.
+Global Hint Rewrite leb_correct_conv using lia : natb.
+Global Hint Rewrite leb_correct using lia : natb.
+Global Hint Rewrite set_above_lookup using lia : natb.
+Global Hint Rewrite @decide_False using lia : natb.
+Global Hint Rewrite @decide_True using lia : natb.
+Global Hint Rewrite set_above_lookup_none using lia : natb.
+Global Hint Rewrite set_upto_lookup_none using lia : natb.
+Global Hint Rewrite set_upto_lookup using lia : natb.
+Global Hint Rewrite set_singleton_lookup_none using lia : natb.
+Global Hint Rewrite set_singleton_lookup using lia : natb.
+Global Hint Rewrite div_mod' : natb.
+Global Hint Rewrite mod0 : natb.
+Global Hint Rewrite div0 : natb.
+Global Hint Rewrite Nat.add_0_r : natb.
+Global Hint Rewrite Nat.add_0_l : natb.
+Global Hint Rewrite Nat.ltb_irrefl : natb.
+Global Hint Rewrite Nat.max_0_r : natb.
+Global Hint Rewrite Nat.max_0_l : natb.
 
 Lemma set_upto_singleton_valid n m : ✓ (set_upto n ⋅ set_singleton m) → n ≤ m.
 Proof.

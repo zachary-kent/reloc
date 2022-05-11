@@ -18,7 +18,7 @@ Definition with_lock : val := λ: "e" "l" "x",
 Class lockG Σ := LockG { lock_tokG :> inG Σ (exclR unitO) }.
 Definition lockΣ : gFunctors := #[GFunctor (exclR unitO)].
 
-Instance subG_lockΣ {Σ} : subG lockΣ Σ → lockG Σ.
+Global Instance subG_lockΣ {Σ} : subG lockΣ Σ → lockG Σ.
 Proof. solve_inG. Qed.
 
 Section lockG_rules.

@@ -11,7 +11,7 @@ Class relocPreG Σ := RelocPreG {
 }.
 
 Definition relocΣ : gFunctors := #[heapΣ; GFunctor (authR cfgUR)].
-Instance subG_relocPreG {Σ} : subG relocΣ Σ → relocPreG Σ.
+Global Instance subG_relocPreG {Σ} : subG relocΣ Σ → relocPreG Σ.
 Proof. solve_inG. Qed.
 
 Lemma refines_adequate Σ `{relocPreG Σ}

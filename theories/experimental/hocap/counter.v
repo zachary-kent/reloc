@@ -11,7 +11,7 @@ Class cnt_hocapG Σ := CntG {
 
 Definition cnt_hocapΣ := GFunctor (authR (optionUR (prodR fracR (agreeR natO)))).
 
-Instance sub_cnt {Σ} : subG cnt_hocapΣ Σ → cnt_hocapG Σ.
+Global Instance sub_cnt {Σ} : subG cnt_hocapΣ Σ → cnt_hocapG Σ.
 Proof. solve_inG. Qed.
 
 Section cnt_model.

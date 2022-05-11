@@ -39,10 +39,10 @@ Lemma unboxed_type_ref_or_eqtype τ :
 Proof. inversion 1; first [ left; by econstructor | right; naive_solver ]. Qed.
 
 (** Autosubst instances *)
-Instance Ids_type : Ids type. derive. Defined.
-Instance Rename_type : Rename type. derive. Defined.
-Instance Subst_type : Subst type. derive. Defined.
-Instance SubstLemmas_typer : SubstLemmas type. derive. Qed.
+Global Instance Ids_type : Ids type. derive. Defined.
+Global Instance Rename_type : Rename type. derive. Defined.
+Global Instance Subst_type : Subst type. derive. Defined.
+Global Instance SubstLemmas_typer : SubstLemmas type. derive. Qed.
 
 Definition binop_nat_res_type (op : bin_op) : option type :=
   match op with
@@ -113,7 +113,7 @@ Notation "'unpack:' x := e1 'in' e2" := (unpack e1%E (LamV x%binder e2%E))
   (at level 200, x at level 1, e1, e2 at level 200, only parsing) : val_scope.
 
 (** Operation lifts *)
-Instance insert_binder (A : Type): Insert binder A (stringmap A) :=
+Global Instance insert_binder (A : Type): Insert binder A (stringmap A) :=
   binder_insert.
 
 (** Typing itself *)
