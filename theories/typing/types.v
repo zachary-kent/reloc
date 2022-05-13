@@ -313,7 +313,7 @@ Proof.
         revert typed_is_closed_set. by rewrite dom_insert_L.
       * specialize (typed_is_closed_set _ e τ2 H).
         revert typed_is_closed_set.
-        rewrite (dom_insert_L (D:=stringset) (<[x:=τ1]> Γ) f (τ1→τ2)%ty).
+        rewrite (dom_insert_L (<[x:=τ1]> Γ) f (τ1→τ2)%ty).
         by rewrite dom_insert_L.
     + specialize (typed_is_closed_set (⤉Γ) e τ H).
       revert typed_is_closed_set. by rewrite dom_fmap_L.
@@ -324,7 +324,7 @@ Proof.
       ++ specialize (typed_is_closed_set _ _ _ H0).
          revert typed_is_closed_set. by rewrite dom_fmap_L.
       ++ specialize (typed_is_closed_set _ _ _ H0).
-         revert typed_is_closed_set. rewrite (dom_insert_L (D:=stringset) (⤉Γ) x).
+         revert typed_is_closed_set. rewrite (dom_insert_L (⤉Γ) x).
          by rewrite dom_fmap_L.
   - induction 1; simplify_eq/=; try done.
     + by split_and?.
@@ -335,11 +335,11 @@ Proof.
         revert typed_is_closed_set. by rewrite dom_insert_L dom_empty_L.
       * specialize (typed_is_closed_set _ _ _ H).
         revert typed_is_closed_set.
-        rewrite (dom_insert_L (D:=stringset) _ f (τ1→τ2)%ty).
+        rewrite (dom_insert_L _ f (τ1→τ2)%ty).
         by rewrite dom_empty_L.
       * specialize (typed_is_closed_set _ _ _ H).
         revert typed_is_closed_set.
-        rewrite (dom_insert_L (D:=stringset) (<[x:=τ1]> ∅) f (τ1→τ2)%ty).
+        rewrite (dom_insert_L (<[x:=τ1]> ∅) f (τ1→τ2)%ty).
         by rewrite dom_insert_L dom_empty_L.
     + specialize (typed_is_closed_set _ _ _ H).
       revert typed_is_closed_set. by rewrite dom_empty_L.
