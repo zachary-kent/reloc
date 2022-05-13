@@ -138,7 +138,7 @@ Section rules.
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def /=.
     iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
-    destruct (exist_fresh (dom (gset loc) (heap σ))) as [l Hl%not_elem_of_dom].
+    destruct (exist_fresh (dom (D:=gset _) (heap σ))) as [l Hl%not_elem_of_dom].
     iDestruct (own_valid_2 with "Hown Hj")
       as %[[?%tpool_singleton_included' _]%prod_included ?]%auth_both_valid_discrete.
     iMod (own_update_2 with "Hown Hj") as "[Hown Hj]".

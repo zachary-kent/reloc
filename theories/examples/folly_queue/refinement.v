@@ -84,7 +84,7 @@ Section queue_refinement.
   Definition make_map (m : gmap nat val) : gmapUR nat (agreeR valO) :=
     to_agree <$> m.
 
-  Lemma dom_make_map (m : gmap nat val) : dom (gset nat) (make_map m) = dom _ m.
+  Lemma dom_make_map (m : gmap nat val) : dom (make_map m) = dom m.
   Proof.
     rewrite /make_map. rewrite dom_fmap_L. done.
   Qed.
@@ -122,7 +122,7 @@ Section queue_refinement.
   Qed.
 
   Lemma dom_list_to_map {B : Type} (l : list (nat * B)) :
-    dom (gset nat) (list_to_map l : gmap nat B) = list_to_set l.*1.
+    dom (list_to_map l : gmap nat B) = list_to_set l.*1.
   Proof.
     induction l as [|?? IH].
     - rewrite dom_empty_L. done.
@@ -208,7 +208,7 @@ Section queue_refinement.
   Qed.
 
   Lemma map_list_elem_of γl m (pushTicket popTicket : nat) (v : val) :
-    dom (gset nat) m = set_seq 0 pushTicket →
+    dom m = set_seq 0 pushTicket →
     own γl (● make_map m) -∗
     own γl (◯ {[popTicket := to_agree v]}) -∗
     ⌜popTicket ∈ set_seq (C:=gset nat) 0 pushTicket⌝.
@@ -599,7 +599,7 @@ Section queue_refinement.
       tokens_from γt (popTicket `max` pushTicket) ∗ (* Keeps track of which tokens we own. *)
       (* Some pop operations has decided on a [j] and a [K]. *)
       own γm (● threads) ∗
-      ⌜dom (gset _) threads ⊆ set_seq 0 popTicket⌝ ∗
+      ⌜dom threads ⊆ set_seq 0 popTicket⌝ ∗
       (* Every push operation must show this for i. *)
       ([∗ set] i ∈ (set_seq 0 pushTicket), push_i A γl γt γm i) ∗
       (* When popTicket is greater than pushTicket the pop operation has left a
@@ -615,9 +615,9 @@ Section queue_refinement.
 
   (* Decide j and K. *)
   Lemma thread_alloc (γm : gname) mt popTicket (id : ref_id) :
-    dom (gset nat) mt ⊆ set_seq 0 popTicket →
+    dom mt ⊆ set_seq 0 popTicket →
     own γm (● mt) ==∗
-    ⌜dom (gset nat) (<[ popTicket := to_agree id ]>mt) ⊆ set_seq 0 (popTicket + 1)⌝ ∗
+    ⌜dom (<[ popTicket := to_agree id ]>mt) ⊆ set_seq 0 (popTicket + 1)⌝ ∗
     own γm (● (<[ popTicket := to_agree id ]>mt)) ∗
     own γm (◯ ({[ popTicket := to_agree id ]})).
   Proof.

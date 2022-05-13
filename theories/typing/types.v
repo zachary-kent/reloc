@@ -298,7 +298,7 @@ Proof.
 Qed.
 
 Local Lemma typed_is_closed_set Γ e τ :
-  Γ ⊢ₜ e : τ → is_closed_expr_set (dom stringset Γ) e
+  Γ ⊢ₜ e : τ → is_closed_expr_set (dom Γ) e
 with typed_is_closed_val_set v τ :
     ⊢ᵥ v : τ → is_closed_val_set v.
 Proof.
@@ -346,6 +346,6 @@ Proof.
 Qed.
 
 Theorem typed_is_closed Γ e τ :
-  Γ ⊢ₜ e : τ → is_closed_expr (dom stringset Γ) e.
+  Γ ⊢ₜ e : τ → is_closed_expr (dom Γ) e.
 Proof. intros. eapply is_closed_expr_set_sound, typed_is_closed_set; eauto. Qed.
 
