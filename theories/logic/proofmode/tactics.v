@@ -134,7 +134,7 @@ Lemma tac_rel_pure_l `{!relocG Σ} K e1 ℶ ℶ' E e e2 eres ϕ n m t A :
   envs_entails ℶ' (REL eres << t @ E : A) →
   envs_entails ℶ (REL e << t @ E : A).
 Proof.
-  rewrite envs_entails_eq.
+  rewrite envs_entails_unseal.
   intros Hfill Hpure Hϕ Hm ?? Hp. subst.
   destruct Hm as [[-> ->] | ->]; rewrite into_laterN_env_sound /= Hp.
   - rewrite -refines_pure_l //.
@@ -207,7 +207,7 @@ Lemma tac_rel_load_l_simp `{!relocG Σ} K ℶ1 ℶ2 i1 p (l : loc) q v e t eres 
   envs_entails ℶ2 (refines ⊤ eres t A) →
   envs_entails ℶ1 (refines ⊤ e t A).
 Proof.
-  rewrite envs_entails_eq. iIntros (-> ?? -> Hℶ2) "Henvs".
+  rewrite envs_entails_unseal. iIntros (-> ?? -> Hℶ2) "Henvs".
   iDestruct (into_laterN_env_sound with "Henvs") as "Henvs".
   iDestruct (envs_lookup_split with "Henvs") as "[Hl Henvs]"; first done.
   rewrite Hℶ2. iApply (refines_load_l K ⊤ l q). iModIntro. iExists v.
@@ -224,7 +224,7 @@ Lemma tac_rel_load_r `{!relocG Σ} K ℶ1 E i1 p (l : loc) q e t tres A v :
   envs_entails ℶ1 (refines E e tres A) →
   envs_entails ℶ1 (refines E e t A).
 Proof.
-  rewrite envs_entails_eq. iIntros (-> ?? -> Hg) "Henvs".
+  rewrite envs_entails_unseal. iIntros (-> ?? -> Hg) "Henvs".
   iDestruct (envs_lookup_split with "Henvs") as "[Hl Henvs]"; first done.
   rewrite Hg. destruct p; simpl.
   - iDestruct "Hl" as "#Hl". iApply (refines_load_r with "Hl"); first done.
@@ -280,7 +280,7 @@ Lemma tac_rel_store_l_simpl `{!relocG Σ} K ℶ1 ℶ2 ℶ3 i1 (l : loc) v e' v' 
   envs_entails ℶ3 (refines ⊤ eres t A) →
   envs_entails ℶ1 (refines ⊤ e t A).
 Proof.
-  rewrite envs_entails_eq. intros ?????? Hg.
+  rewrite envs_entails_unseal. intros ?????? Hg.
   subst e eres.
   rewrite into_laterN_env_sound envs_simple_replace_sound //; simpl.
   rewrite bi.later_sep.
@@ -301,7 +301,7 @@ Lemma tac_rel_store_r `{!relocG Σ} K ℶ1 ℶ2 i1 E (l : loc) v e' v' e t eres 
   envs_entails ℶ2 (refines E t eres A) →
   envs_entails ℶ1 (refines E t e A).
 Proof.
-  rewrite envs_entails_eq. intros ?????? Hg.
+  rewrite envs_entails_unseal. intros ?????? Hg.
   subst e eres.
   rewrite envs_simple_replace_sound //; simpl.
   rewrite right_id.
@@ -359,7 +359,7 @@ Lemma tac_rel_xchg_l_simpl `{!relocG Σ} K ℶ1 ℶ2 ℶ3 i1 (l : loc) v e' v' e
   envs_entails ℶ3 (refines ⊤ eres t A) →
   envs_entails ℶ1 (refines ⊤ e t A).
 Proof.
-  rewrite envs_entails_eq. intros ?????? Hg.
+  rewrite envs_entails_unseal. intros ?????? Hg.
   subst e eres.
   rewrite into_laterN_env_sound envs_simple_replace_sound //; simpl.
   rewrite bi.later_sep.
@@ -380,7 +380,7 @@ Lemma tac_rel_xchg_r `{!relocG Σ} K ℶ1 ℶ2 i1 E (l : loc) v e' v' e t eres A
   envs_entails ℶ2 (refines E t eres A) →
   envs_entails ℶ1 (refines E t e A).
 Proof.
-  rewrite envs_entails_eq. intros ?????? Hg.
+  rewrite envs_entails_unseal. intros ?????? Hg.
   subst e eres.
   rewrite envs_simple_replace_sound //; simpl.
   rewrite right_id.
@@ -439,7 +439,7 @@ Lemma tac_rel_alloc_l_simpl `{!relocG Σ} K ℶ1 ℶ2 e t e' v' A :
      (l ↦ v' -∗ refines ⊤ (fill K (of_val #l)) t A))) →
   envs_entails ℶ1 (refines ⊤ e t A).
 Proof.
-  rewrite envs_entails_eq. intros ???; subst.
+  rewrite envs_entails_unseal. intros ???; subst.
   rewrite into_laterN_env_sound /=.
   rewrite -(refines_alloc_l _ ⊤); eauto.
   rewrite -fupd_intro.
@@ -507,7 +507,7 @@ Lemma tac_rel_cmpxchg_fail_r `{!relocG Σ} K ℶ1 i1 E (l : loc) e1 e2 v1 v2 v e
   envs_entails ℶ1 (refines E t eres A) →
   envs_entails ℶ1 (refines E t e A).
 Proof.
-  rewrite envs_entails_eq. intros ???????? Hg.
+  rewrite envs_entails_unseal. intros ???????? Hg.
   subst e eres.
   rewrite envs_lookup_split // /= Hg; simpl.
   apply bi.wand_elim_l'.
@@ -527,7 +527,7 @@ Lemma tac_rel_cmpxchg_suc_r `{!relocG Σ} K ℶ1 ℶ2 i1 E (l : loc) e1 e2 v1 v2
   envs_entails ℶ2 (refines E t eres A) →
   envs_entails ℶ1 (refines E t e A).
 Proof.
-  rewrite envs_entails_eq. intros ????????? Hg.
+  rewrite envs_entails_unseal. intros ????????? Hg.
   subst e eres.
   rewrite envs_simple_replace_sound //; simpl.
   rewrite right_id Hg.
@@ -588,7 +588,7 @@ Lemma tac_rel_newproph_l_simpl `{!relocG Σ} K ℶ1 ℶ2 e t A :
      (proph p vs -∗ refines ⊤ (fill K (of_val #p)) t A))) →
   envs_entails ℶ1 (refines ⊤ e t A).
 Proof.
-  rewrite envs_entails_eq. intros ???; subst.
+  rewrite envs_entails_unseal. intros ???; subst.
   rewrite into_laterN_env_sound /=.
   rewrite -(refines_newproph_l _ ⊤); eauto.
   rewrite -fupd_intro.

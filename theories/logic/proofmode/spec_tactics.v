@@ -17,7 +17,7 @@ Lemma tac_tp_bind_gen `{relocG Σ} k Δ Δ' i p e e' Q :
   (envs_entails Δ' Q) →
   (envs_entails Δ Q).
 Proof.
-  rewrite envs_entails_eq. intros; subst. simpl.
+  rewrite envs_entails_unseal. intros; subst. simpl.
   rewrite envs_simple_replace_sound // /=.
   destruct p; rewrite /= ?right_id; by rewrite bi.wand_elim_r.
 Qed.
@@ -84,7 +84,7 @@ Lemma tac_tp_pure `{relocG Σ} e K' e1 k e2 Δ1 E1 i1 e' ϕ ψ Q n :
   end →
   envs_entails Δ1 Q.
 Proof.
-  rewrite envs_entails_eq. intros -> Hpure ?? HΔ1 Hψ Hϕ -> ?.
+  rewrite envs_entails_unseal. intros -> Hpure ?? HΔ1 Hψ Hϕ -> ?.
   destruct (envs_simple_replace _ _ _ _) as [Δ2|] eqn:HΔ2; try done.
   rewrite (envs_simple_replace_sound Δ1 Δ2 i1) //; simpl.
   rewrite right_id.
@@ -163,7 +163,7 @@ Lemma tac_tp_store `{relocG Σ} k Δ1 Δ2 E1 i1 i2 K' e (l : loc) e' e2 v' v Q :
   envs_entails Δ1 Q.
 Proof.
   rewrite /IntoVal.
-  rewrite envs_entails_eq. intros ??? -> <- -> ? HQ.
+  rewrite envs_entails_unseal. intros ??? -> <- -> ? HQ.
   rewrite envs_lookup_delete_sound //; simpl.
   destruct (envs_simple_replace _ _ _ _) as [Δ3|] eqn:HΔ3; last done.
   rewrite envs_simple_replace_sound //; simpl.
@@ -208,7 +208,7 @@ Lemma tac_tp_xchg `{relocG Σ} k Δ1 Δ2 E1 i1 i2 K' e (l : loc) e' e2 v' v Q :
   envs_entails Δ1 Q.
 Proof.
   rewrite /IntoVal.
-  rewrite envs_entails_eq. intros ??? -> <- ? -> HQ.
+  rewrite envs_entails_unseal. intros ??? -> <- ? -> HQ.
   rewrite envs_lookup_delete_sound //; simpl.
   destruct (envs_simple_replace _ _ _ _) as [Δ3|] eqn:HΔ3; last done.
   rewrite envs_simple_replace_sound //; simpl.
@@ -257,7 +257,7 @@ Lemma tac_tp_load `{relocG Σ} k Δ1 Δ2 E1 i1 i2 K' e e2 (l : loc) v Q q :
   end →
   envs_entails Δ1 Q.
 Proof.
-  rewrite envs_entails_eq. intros ??? -> ? -> HQ.
+  rewrite envs_entails_unseal. intros ??? -> ? -> HQ.
   rewrite envs_lookup_delete_sound //; simpl.
   destruct (envs_simple_replace _ _ _ _) as [Δ3|] eqn:HΔ3; last done.
   rewrite (envs_simple_replace_sound Δ2 Δ3 i2) //; simpl.
@@ -304,7 +304,7 @@ Lemma tac_tp_cmpxchg_fail `{relocG Σ} k Δ1 Δ2 E1 i1 i2 K' e enew (l : loc) e1
   end →
   envs_entails Δ1 Q.
 Proof.
-  rewrite envs_entails_eq. intros ??? -> Hv1 Hv2 ??? -> HQ.
+  rewrite envs_entails_unseal. intros ??? -> Hv1 Hv2 ??? -> HQ.
   rewrite envs_lookup_delete_sound //; simpl.
   destruct (envs_simple_replace _ _ _ _) as [Δ3|] eqn:HΔ3; last done.
   rewrite (envs_simple_replace_sound Δ2 Δ3 i2) //; simpl.
@@ -355,7 +355,7 @@ Lemma tac_tp_cmpxchg_suc `{relocG Σ} k Δ1 Δ2 E1 i1 i2 K' e enew (l : loc) e1 
   end →
   envs_entails Δ1 Q.
 Proof.
-  rewrite envs_entails_eq. intros ??? -> Hv1 Hv2 ??? -> HQ.
+  rewrite envs_entails_unseal. intros ??? -> Hv1 Hv2 ??? -> HQ.
   rewrite envs_lookup_delete_sound //; simpl.
   destruct (envs_simple_replace _ _ _ _) as [Δ3|] eqn:HΔ3; last done.
   rewrite (envs_simple_replace_sound Δ2 Δ3 i2) //; simpl.
@@ -401,7 +401,7 @@ Lemma tac_tp_faa `{relocG Σ} k Δ1 Δ2 E1 i1 i2 K' e enew (l : loc)  e2 (z1 z2 
   end →
   envs_entails Δ1 Q.
 Proof.
-  rewrite envs_entails_eq. intros ??? -> ?? -> HQ.
+  rewrite envs_entails_unseal. intros ??? -> ?? -> HQ.
   rewrite envs_lookup_delete_sound //; simpl.
   destruct (envs_simple_replace _ _ _ _) as [Δ3|] eqn:HΔ3; last done.
   rewrite (envs_simple_replace_sound Δ2 Δ3 i2) //; simpl.
@@ -443,7 +443,7 @@ Lemma tac_tp_fork `{relocG Σ} k Δ1 E1 i1 K' e enew e' Q :
   end →
   envs_entails Δ1 Q.
 Proof.
-  rewrite envs_entails_eq. intros ???->-> HQ.
+  rewrite envs_entails_unseal. intros ???->-> HQ.
   destruct (envs_simple_replace _ _ _ _) as [Δ2|] eqn:HΔ2; last done.
   rewrite (envs_simple_replace_sound Δ1 Δ2 i1) //; simpl.
   rewrite right_id.
@@ -502,7 +502,7 @@ Lemma tac_tp_alloc `{relocG Σ} k Δ1 E1 i1 K' e e' v Q :
     (envs_entails Δ2 ((l ↦ₛ v) -∗ Q)%I)) →
   envs_entails Δ1 Q.
 Proof.
-  rewrite envs_entails_eq. intros ??? Hfill <- HQ.
+  rewrite envs_entails_unseal. intros ??? Hfill <- HQ.
   rewrite (envs_lookup_sound' Δ1 false i1); last by eassumption.
   rewrite /refines_right.
   rewrite Hfill -fill_app /=.
