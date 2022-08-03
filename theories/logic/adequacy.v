@@ -24,7 +24,7 @@ Lemma refines_adequate Σ `{relocPreG Σ}
             ∧ P v v').
 Proof.
   intros HA Hlog.
-  eapply (heap_adequacy Σ _); iIntros (Hinv ?) "_".
+  eapply (heap_adequacy Σ _); iIntros (Hinv) "_".
   iMod (own_alloc (● (to_tpool [e'], to_heap (heap σ))
     ⋅ ◯ ((to_tpool [e'] : tpoolUR, ∅) : cfgUR)))
     as (γc) "[Hcfg1 Hcfg2]".
