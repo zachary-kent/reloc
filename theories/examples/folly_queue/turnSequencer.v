@@ -122,7 +122,7 @@ Section spec.
       iDestruct "Hc'" as (ℓ1' ?) "Hc'".
       simplify_eq/=.
       iCombine "ℓPts Hc'" as "ℓPts".
-      iDestruct (mapsto_valid_2 with "ℓPts Hc") as %[?%Qp_not_add_le_l _].
+      iDestruct (mapsto_valid_2 with "ℓPts Hc") as %[?%Qp.not_add_le_l _].
       done. }
     wp_load.
     iDestruct (mapsto_agree with "ℓPts Hc") as %[= Heq].
@@ -136,11 +136,11 @@ Section spec.
       iDestruct "Hc'" as (ℓ1' ?) "Hc'".
       simplify_eq/=.
       iCombine "ℓPts Hc'" as "ℓPts".
-      iDestruct (mapsto_valid_2 with "ℓPts Hc") as %[?%Qp_not_add_le_l _].
+      iDestruct (mapsto_valid_2 with "ℓPts Hc") as %[?%Qp.not_add_le_l _].
       done. }
     iDestruct (mapsto_combine with "ℓPts Hc") as "[ℓPts %Heq]".
     simplify_eq/=.
-    rewrite dfrac_op_own Qp_half_half.
+    rewrite dfrac_op_own Qp.half_half.
     wp_store.
     assert ((n + 1)%Z = (n + 1)%nat) as ->. { lia. }
     iDestruct "ℓPts" as "[ℓPts ℓPts']".

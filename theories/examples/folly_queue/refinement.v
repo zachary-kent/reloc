@@ -29,11 +29,11 @@ Ltac Zify.zify_post_hook ::= Z.to_euclidean_division_equations.
 Require Import Arith ZArith ZifyClasses ZifyInst Lia.
 
 Global Program Instance Op_Nat_mod : BinOp Nat.modulo :=
-  {| TBOp := Z.modulo ; TBOpInj := Nat2Z_inj_mod |}.
+  {| TBOp := Z.modulo ; TBOpInj := Nat2Z.inj_mod |}.
 Add Zify BinOp Op_Nat_mod.
 
 Global Program Instance Op_Nat_div : BinOp Nat.div :=
-  {| TBOp := Z.div ; TBOpInj := Nat2Z_inj_div |}.
+  {| TBOp := Z.div ; TBOpInj := Nat2Z.inj_div |}.
 Add Zify BinOp Op_Nat_div.
 
 (* lia now works with Nat.modulo nad Nat.div. *)
@@ -737,12 +737,12 @@ Section queue_refinement.
       rel_bind_l (! _)%E.
       rel_apply_l refines_wp_l.
       assert ((Z.of_nat pushTicket `rem` Z.of_nat q)%Z = Z.of_nat (pushTicket `mod` q)) as ->.
-      { rewrite Nat2Z_inj_mod. apply Z.rem_mod_nonneg; lia. }
+      { rewrite Nat2Z.inj_mod. apply Z.rem_mod_nonneg; lia. }
       wp_apply (wp_load_offset with "arrPts").
       { rewrite list_lookup_fmap. rewrite Hattss. reflexivity. }
       iIntros "arrPts".
       rewrite Z.quot_div_nonneg; [|lia|lia].
-      rewrite -Nat2Z_inj_div.
+      rewrite -Nat2Z.inj_div.
       rel_apply_l refines_wp_l.
       wp_apply (enqueueWithTicket_spec' _ (R _ q (pushTicket `mod` q)) with "[-]").
       2: { iIntros. rel_values. }
@@ -790,12 +790,12 @@ Section queue_refinement.
       rel_bind_l (! _)%E.
       rel_apply_l refines_wp_l.
       assert ((Z.of_nat pushTicket `rem` Z.of_nat q)%Z = Z.of_nat (pushTicket `mod` q)) as ->.
-      { rewrite Nat2Z_inj_mod. apply Z.rem_mod_nonneg; lia. }
+      { rewrite Nat2Z.inj_mod. apply Z.rem_mod_nonneg; lia. }
       wp_apply (wp_load_offset with "arrPts").
       { rewrite list_lookup_fmap. rewrite Hattss. reflexivity. }
       iIntros "arrPts".
       rewrite Z.quot_div_nonneg; [|lia|lia].
-      rewrite -Nat2Z_inj_div.
+      rewrite -Nat2Z.inj_div.
       rel_apply_l refines_wp_l.
       wp_apply (enqueueWithTicket_spec' _ (R _ q (pushTicket `mod` q)) with "[-]").
       2: { iIntros. rel_values. }
@@ -866,14 +866,14 @@ Section queue_refinement.
       rel_pures_l.
 
       assert ((Z.of_nat popTicket `rem` Z.of_nat q)%Z = Z.of_nat (popTicket `mod` q)) as ->.
-      { rewrite Nat2Z_inj_mod. apply Z.rem_mod_nonneg; lia. }
+      { rewrite Nat2Z.inj_mod. apply Z.rem_mod_nonneg; lia. }
       rel_apply_l refines_wp_l.
       wp_apply (wp_load_offset with "arrPts").
       { rewrite list_lookup_fmap. rewrite Hattss. reflexivity. }
       iIntros "arrPts".
 
       rewrite Z.quot_div_nonneg; [|lia|lia].
-      rewrite -Nat2Z_inj_div.
+      rewrite -Nat2Z.inj_div.
       iApply wp_fupd.
       simpl.
       wp_apply (dequeueWithTicket_spec2 _ (R _ q (popTicket `mod` q)) with "[-Htok]").
@@ -953,13 +953,13 @@ Section queue_refinement.
       rel_bind_l (! _)%E.
       rel_apply_l refines_wp_l.
       assert ((Z.of_nat popTicket `rem` Z.of_nat q)%Z = Z.of_nat (popTicket `mod` q)) as ->.
-      { rewrite Nat2Z_inj_mod. apply Z.rem_mod_nonneg; lia. }
+      { rewrite Nat2Z.inj_mod. apply Z.rem_mod_nonneg; lia. }
       wp_apply (wp_load_offset with "arrPts").
       { rewrite list_lookup_fmap. rewrite Hattss. reflexivity. }
       iIntros "arrPts".
 
       rewrite Z.quot_div_nonneg; [|lia|lia].
-      rewrite -Nat2Z_inj_div.
+      rewrite -Nat2Z.inj_div.
       rel_apply_l refines_wp_l.
       wp_apply (dequeueWithTicket_spec' _ (R _ q (popTicket `mod` q)) with "[-]").
       { iFrame "#∗". }

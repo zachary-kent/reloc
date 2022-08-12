@@ -141,7 +141,7 @@ Section offer_theory.
     iIntros "O P".
     iDestruct (offer_agree with "O P") as %<-.
     iMod (own_update_2 _ _ _  (Cinl (Excl ())) with "O P") as "O".
-    { rewrite -Cinr_op -pair_op frac_op Qp_half_half.
+    { rewrite -Cinr_op -pair_op frac_op Qp.half_half.
       apply cmra_update_exclusive. done. }
     iModIntro. iFrame. done.
   Qed.
@@ -150,7 +150,7 @@ Section offer_theory.
   Proof.
     iIntros "O".
     iMod (no_offer_to_offer with "O") as "O".
-    rewrite -{1}Qp_three_quarter_quarter.
+    rewrite -{1}Qp.three_quarter_quarter.
     iDestruct (offer_split with "O") as "[Hhalf Hhalf']".
     iModIntro. iFrame.
   Qed.
@@ -163,7 +163,7 @@ Section proofs.
   Definition offer_token γ q := own γ (q : frac).
 
   Lemma offer_token_split γ : own γ 1%Qp ⊣⊢ own γ (1/2)%Qp ∗ own γ (1/2)%Qp.
-  Proof. rewrite -{1}Qp_half_half. rewrite -own_op. done. Qed.
+  Proof. rewrite -{1}Qp.half_half. rewrite -own_op. done. Qed.
 
   (* The specification thread `k` is about to run a flip. *)
   Definition tp_flip k bf lk := (refines_right k (blueFlip #bf lk))%I.
@@ -369,7 +369,7 @@ Section proofs.
       iDestruct "Hdisj" as "[(_ & Htok & Hoff) | Hdisj]".
       2: { iDestruct "Hdisj" as (?) "[[% _]|[% _]]"; by subst. }
       iMod (no_offer_to_offer _ k  with "Hoff") as "Hoff".
-      iEval (rewrite -Qp_half_half) in "Hoff".
+      iEval (rewrite -Qp.half_half) in "Hoff".
       iDestruct (offer_split with "Hoff") as "[Hoff Hoff']".
       iMod ("Hclose" with "[-IH Hoff Htok]") as "_".
       { iNext. iExists _. iFrame. iExists 1. iFrame. iRight. iExists k. iLeft. by iFrame. }
@@ -385,7 +385,7 @@ Section proofs.
         iDestruct "Hdisj" as "[[% _] | Hdisj]"; first by subst.
         iDestruct "Hdisj" as (?) "[(% & Hoff' & Hj) | [% _]]"; last by subst.
         iDestruct (offer_combine with "Hoff Hoff'") as "(<- & Hoff)".
-        rewrite Qp_half_half.
+        rewrite Qp.half_half.
         iMod (offer_to_no_offer with "Hoff") as "Hoff".
         iMod ("Hclose" with "[-IH Hj]") as "_".
         { iNext. iExists _. iFrame. iExists 0. iFrame. iLeft. by iFrame. }
@@ -400,7 +400,7 @@ Section proofs.
       iDestruct "Hdisj" as "[[Hoff' Hj] | Hoff']".
       2: {
         iDestruct (own_valid_2 with "Htok Hoff'") as %Hv.
-        by apply Qp_not_add_le_l in Hv. }
+        by apply Qp.not_add_le_l in Hv. }
       iDestruct (offer_combine with "Hoff Hoff'") as "(<- & Hoff)".
       iDestruct (offer_token_split with "Htok") as "[Htok Htok']".
       iMod ("Hclose" with "[-IH Hj Hoff Htok]") as "_".
@@ -418,16 +418,16 @@ Section proofs.
       { iDestruct (no_offer_exclusive with "Hoff' Hoff") as %?. done. }
       iDestruct "Hdisj" as (?) "[(_ & Hoff' & _) | (% & Hdisj)]".
       { iDestruct (offer_combine with "Hoff Hoff'") as "(<- & Hoff)".
-        rewrite Qp_half_half.
+        rewrite Qp.half_half.
         iDestruct (own_offer_valid with "Hoff") as %Hle.
-        by apply Qp_not_add_le_l in Hle. }
+        by apply Qp.not_add_le_l in Hle. }
       iDestruct "Hdisj" as "[[Hoff' _] | Htok']".
       { iDestruct (offer_combine with "Hoff Hoff'") as "(<- & Hoff)".
-        rewrite Qp_half_half.
+        rewrite Qp.half_half.
         iDestruct (own_offer_valid with "Hoff") as %Hle.
-        by apply Qp_not_add_le_l in Hle. }
+        by apply Qp.not_add_le_l in Hle. }
       iCombine "Htok Htok'" as "Htok".
-      iEval (rewrite Qp_half_half) in "Hoff".
+      iEval (rewrite Qp.half_half) in "Hoff".
       iMod (offer_to_no_offer with "Hoff") as "Hoff".
       iMod ("Hclose" with "[-IH Hj]") as "_".
       { iNext. iExists _. iFrame. iExists 0. iFrame. iLeft. iFrame. done. }
