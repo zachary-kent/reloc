@@ -160,12 +160,12 @@ Tactic Notation "rel_pure_l" open_constr(ef) :=
       unify e' ef;
       eapply (tac_rel_pure_l K e');
       [reflexivity                  (** e = fill K e' *)
-      |iSolveTC                     (** PureClosed ϕ e' e2 *)
+      |tc_solve                     (** PureClosed ϕ e' e2 *)
       | .. ]);
       [try heap_lang.proofmode.solve_vals_compare_safe                (** φ *)
       |first [left; split; reflexivity              (** Here we decide if the mask E is ⊤ *)
              | right; reflexivity]                  (**    (m = n ∧ E = ⊤) ∨ (m = 0) *)
-      |iSolveTC                                     (** IntoLaters *)
+      |tc_solve                                     (** IntoLaters *)
       |simpl; reflexivity           (** eres = fill K e2 *)
       |rel_finish                   (** new goal *)]
   || fail "rel_pure_l: cannot find the reduct".
@@ -178,7 +178,7 @@ Tactic Notation "rel_pure_r" open_constr(ef) :=
       unify e' ef;
       eapply (tac_rel_pure_r K e');
       [reflexivity                  (** e = fill K e1 *)
-      |iSolveTC                     (** PureClosed ϕ e1 e2 *)
+      |tc_solve                     (** PureClosed ϕ e1 e2 *)
       |..]);
       [try heap_lang.proofmode.solve_vals_compare_safe                (** φ *)
       |solve_ndisj        || fail 1 "rel_pure_r: cannot solve ↑specN ⊆ ?"
@@ -242,7 +242,7 @@ Tactic Notation "rel_load_l" :=
        eapply (tac_rel_load_l_simp K); first reflexivity)
     |fail 1 "rel_load_l: cannot find 'Load'"];
   (* the remaining goals are from tac_lel_load_l (except for the first one, which has already been solved by this point) *)
-  [iSolveTC             (** IntoLaters *)
+  [tc_solve             (** IntoLaters *)
   |solve_mapsto ()
   |reflexivity       (** eres = fill K v *)
   |rel_finish  (** new goal *)].
@@ -319,11 +319,11 @@ Tactic Notation "rel_store_l" :=
     [rel_reshape_cont_l ltac:(fun K e' =>
        eapply (tac_rel_store_l_simpl K);
        [reflexivity (** e = fill K (#l <- e') *)
-       |iSolveTC    (** e' is a value *)
+       |tc_solve    (** e' is a value *)
        |idtac..])
     |fail 1 "rel_store_l: cannot find 'Store'"];
   (* the remaining goals are from tac_rel_store_l (except for the first one, which has already been solved by this point) *)
-  [iSolveTC        (** IntoLaters *)
+  [tc_solve        (** IntoLaters *)
   |solve_mapsto ()
   |pm_reflexivity || fail "rel_store_l: this should not happen O-:"
   |reflexivity
@@ -339,7 +339,7 @@ Tactic Notation "rel_store_r" :=
   first
     [rel_reshape_cont_r ltac:(fun K e' =>
        eapply (tac_rel_store_r K);
-       [reflexivity|iSolveTC|idtac..])
+       [reflexivity|tc_solve|idtac..])
     |fail 1 "rel_store_r: cannot find 'Store'"];
   (* the remaining goals are from tac_rel_store_r (except for the first one, which has already been solved by this point) *)
   [solve_ndisj || fail "rel_store_r: cannot prove 'nclose specN ⊆ ?'"
@@ -398,11 +398,11 @@ Tactic Notation "rel_xchg_l" :=
     [rel_reshape_cont_l ltac:(fun K e' =>
        eapply (tac_rel_xchg_l_simpl K);
        [reflexivity (** e = fill K (#l <- e') *)
-       |iSolveTC    (** e' is a value *)
+       |tc_solve    (** e' is a value *)
        |idtac..])
     |fail 1 "rel_xchg_l: cannot find 'Xchg'"];
   (* the remaining goals are from tac_rel_xchg_l (except for the first one, which has already been solved by this point) *)
-  [iSolveTC        (** IntoLaters *)
+  [tc_solve        (** IntoLaters *)
   |solve_mapsto ()
   |pm_reflexivity || fail "rel_xchg_l: this should not happen O-:"
   |reflexivity
@@ -418,7 +418,7 @@ Tactic Notation "rel_xchg_r" :=
   first
     [rel_reshape_cont_r ltac:(fun K e' =>
        eapply (tac_rel_xchg_r K);
-       [reflexivity|iSolveTC|idtac..])
+       [reflexivity|tc_solve|idtac..])
     |fail 1 "rel_xchg_r: cannot find 'Xchg'"];
   (* the remaining goals are from tac_rel_xchg_r (except for the first one, which has already been solved by this point) *)
   [solve_ndisj || fail "rel_xchg_r: cannot prove 'nclose specN ⊆ ?'"
@@ -452,10 +452,10 @@ Tactic Notation "rel_alloc_l" ident(l) "as" constr(H) :=
     [rel_reshape_cont_l ltac:(fun K e' =>
        eapply (tac_rel_alloc_l_simpl K);
        [reflexivity (** e = fill K (Alloc e') *)
-       |iSolveTC    (** e' is a value *)
+       |tc_solve    (** e' is a value *)
        |idtac..])
     |fail 1 "rel_alloc_l: cannot find 'Alloc'"];
-  [iSolveTC        (** IntoLaters *)
+  [tc_solve        (** IntoLaters *)
   |iIntros (l) H; rel_finish  (** new goal *)].
 
 Lemma tac_rel_alloc_r `{!relocG Σ} K' ℶ E t' v' e t A :
@@ -475,7 +475,7 @@ Tactic Notation "rel_alloc_r" ident(l) "as" constr(H) :=
     [rel_reshape_cont_r ltac:(fun K e' =>
        eapply (tac_rel_alloc_r K);
        [reflexivity  (** t = K'[alloc t'] *)
-       |iSolveTC     (** t' is a value *)
+       |tc_solve     (** t' is a value *)
        |idtac..])
     |fail 1 "rel_alloc_r: cannot find 'Alloc'"];
   [solve_ndisj || fail "rel_alloc_r: cannot prove 'nclose specN ⊆ ?'"
@@ -544,8 +544,8 @@ Tactic Notation "rel_cmpxchg_fail_r" :=
     [rel_reshape_cont_r ltac:(fun K e' =>
        eapply (tac_rel_cmpxchg_fail_r K);
        [reflexivity  (** e = fill K (CmpXchg #l e1 e2) *)
-       |iSolveTC     (** e1 is a value *)
-       |iSolveTC     (** e2 is a value *)
+       |tc_solve     (** e1 is a value *)
+       |tc_solve     (** e2 is a value *)
        |idtac..])
     |fail 1 "rel_cmpxchg_fail_r: cannot find 'CmpXchg'"];
   (* the remaining goals are from tac_rel_cmpxchg_fail_r (except for the first one, which has already been solved by this point) *)
@@ -565,8 +565,8 @@ Tactic Notation "rel_cmpxchg_suc_r" :=
     [rel_reshape_cont_r ltac:(fun K e' =>
        eapply (tac_rel_cmpxchg_suc_r K);
        [reflexivity  (** e = fill K (CmpXchg #l e1 e2) *)
-       |iSolveTC     (** e1 is a value *)
-       |iSolveTC     (** e2 is a value *)
+       |tc_solve     (** e1 is a value *)
+       |tc_solve     (** e2 is a value *)
        |idtac..])
     |fail 1 "rel_cmpxchg_suc_r: cannot find 'CmpXchg'"];
   (* the remaining goals are from tac_rel_cmpxchg_suc_r (except for the first one, which has already been solved by this point) *)
@@ -603,7 +603,7 @@ Tactic Notation "rel_newproph_l" ident(p) ident(vs) "as" constr(H) :=
        [reflexivity (** e = fill K (NewProph e') *)
        |idtac..])
     |fail 1 "rel_newproph_l: cannot find 'NewProph'"];
-  [iSolveTC                      (** IntoLaters *)
+  [tc_solve                      (** IntoLaters *)
   |iIntros (p vs) H; rel_finish  (** new goal *)].
 
 Lemma tac_rel_newproph_r `{!relocG Σ} K' ℶ E e t A :

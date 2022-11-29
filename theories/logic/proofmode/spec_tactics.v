@@ -104,14 +104,14 @@ Tactic Notation "tp_pure" constr(j) open_constr(ef) :=
     reshape_expr e ltac:(fun K e' =>
       unify e' ef;
       eapply (tac_tp_pure (fill K' e) (K++K') e' j);
-      [by rewrite ?fill_app | iSolveTC | ..])
+      [by rewrite ?fill_app | tc_solve | ..])
   | |- context[environments.Esnoc _ ?H (refines_right j ?e)] =>
     reshape_expr e ltac:(fun K e' =>
       unify e' ef;
       eapply (tac_tp_pure e K e' j);
-      [by rewrite ?fill_app | iSolveTC | ..])
+      [by rewrite ?fill_app | tc_solve | ..])
   end;
-  [iSolveTC || fail "tp_pure: cannot eliminate modality in the goal"
+  [tc_solve || fail "tp_pure: cannot eliminate modality in the goal"
   |solve_ndisj || fail "tp_pure: cannot prove 'nclose specN ⊆ ?'"
   (* |iAssumptionCore || fail "tp_pure: cannot find spec_ctx" (* spec_ctx *) *)
   |iAssumptionCore || fail "tp_pure: cannot find the RHS" (* TODO fix error message *)
@@ -181,11 +181,11 @@ Qed.
 Tactic Notation "tp_store" constr(j) :=
   iStartProof;
   eapply (tac_tp_store j);
-  [iSolveTC || fail "tp_store: cannot eliminate modality in the goal"
+  [tc_solve || fail "tp_store: cannot eliminate modality in the goal"
   |solve_ndisj || fail "tp_store: cannot prove 'nclose specN ⊆ ?'"
   |iAssumptionCore || fail "tp_store: cannot find '" j " ' RHS"
   |tp_bind_helper
-  |iSolveTC || fail "tp_store: cannot convert the argument to a value"
+  |tc_solve || fail "tp_store: cannot convert the argument to a value"
   |simpl; reflexivity || fail "tp_store: this should not happen"
   |iAssumptionCore || fail "tp_store: cannot find '? ↦ₛ ?'"
   |pm_reduce (* new goal *)].
@@ -226,11 +226,11 @@ Qed.
 Tactic Notation "tp_xchg" constr(j) :=
   iStartProof;
   eapply (tac_tp_store j);
-  [iSolveTC || fail "tp_store: cannot eliminate modality in the goal"
+  [tc_solve || fail "tp_store: cannot eliminate modality in the goal"
   |solve_ndisj || fail "tp_store: cannot prove 'nclose specN ⊆ ?'"
   |iAssumptionCore || fail "tp_store: cannot find '" j " ' RHS"
   |tp_bind_helper
-  |iSolveTC || fail "tp_store: cannot convert the argument to a value"
+  |tc_solve || fail "tp_store: cannot convert the argument to a value"
   |iAssumptionCore || fail "tp_store: cannot find '? ↦ₛ ?'"
   |simpl; reflexivity || fail "tp_store: this should not happen"
   |pm_reduce (* new goal *)].
@@ -278,7 +278,7 @@ Qed.
 Tactic Notation "tp_load" constr(j) :=
   iStartProof;
   eapply (tac_tp_load j);
-  [iSolveTC || fail "tp_load: cannot eliminate modality in the goal"
+  [tc_solve || fail "tp_load: cannot eliminate modality in the goal"
   |solve_ndisj || fail "tp_load: cannot prove 'nclose specN ⊆ ?'"
   |iAssumptionCore || fail "tp_load: cannot find the RHS '" j "'"
   |tp_bind_helper
@@ -325,12 +325,12 @@ Qed.
 Tactic Notation "tp_cmpxchg_fail" constr(j) :=
   iStartProof;
   eapply (tac_tp_cmpxchg_fail j);
-    [iSolveTC || fail "tp_cmpxchg_fail: cannot eliminate modality in the goal"
+    [tc_solve || fail "tp_cmpxchg_fail: cannot eliminate modality in the goal"
     |solve_ndisj || fail "tp_cmpxchg_fail: cannot prove 'nclose specN ⊆ ?'"
     |iAssumptionCore || fail "tp_cmpxchg_fail: cannot find the RHS '" j "'"
     |tp_bind_helper (* e = K'[CmpXchg _ _ _] *)
-    |iSolveTC || fail "tp_cmpxchg_fail: argument is not a value"
-    |iSolveTC || fail "tp_cmpxchg_fail: argument is not a value"
+    |tc_solve || fail "tp_cmpxchg_fail: argument is not a value"
+    |tc_solve || fail "tp_cmpxchg_fail: argument is not a value"
     |iAssumptionCore || fail "tp_cmpxchg_fail: cannot find '? ↦ ?'"
     |try (simpl; congruence) (* v' ≠ v1 *)
     |try heap_lang.proofmode.solve_vals_compare_safe
@@ -374,12 +374,12 @@ Qed.
 Tactic Notation "tp_cmpxchg_suc" constr(j) :=
   iStartProof;
   eapply (tac_tp_cmpxchg_suc j);
-  [iSolveTC || fail "tp_cmpxchg_suc: cannot eliminate modality in the goal"
+  [tc_solve || fail "tp_cmpxchg_suc: cannot eliminate modality in the goal"
   |solve_ndisj || fail "tp_cmpxchg_suc: cannot prove 'nclose specN ⊆ ?'"
   |iAssumptionCore || fail "tp_cmpxchg_suc: cannot the RHS '" j "'"
   |tp_bind_helper (* e = K'[CmpXchg _ _ _] *)
-  |iSolveTC || fail "tp_cmpxchg_suc: argument is not a value"
-  |iSolveTC || fail "tp_cmpxchg_suc: argument is not a value"
+  |tc_solve || fail "tp_cmpxchg_suc: argument is not a value"
+  |tc_solve || fail "tp_cmpxchg_suc: argument is not a value"
   |iAssumptionCore || fail "tp_cmpxchg_suc: cannot find '? ↦ ?'"
   |try (simpl; congruence)     (* v' = v1 *)
   |try heap_lang.proofmode.solve_vals_compare_safe
@@ -420,11 +420,11 @@ Qed.
 Tactic Notation "tp_faa" constr(j) :=
   iStartProof;
   eapply (tac_tp_faa j);
-  [iSolveTC || fail "tp_faa: cannot eliminate modality in the goal"
+  [tc_solve || fail "tp_faa: cannot eliminate modality in the goal"
   |solve_ndisj || fail "tp_faa: cannot prove 'nclose specN ⊆ ?'"
   |iAssumptionCore || fail "tp_faa: cannot find the RHS '" j "'"
   |tp_bind_helper (* e = K'[FAA _ _ _] *)
-  |iSolveTC (* IntoVal *)
+  |tc_solve (* IntoVal *)
   |iAssumptionCore || fail "tp_faa: cannot find '? ↦ ?'"
   |simpl;reflexivity || fail "tp_faa: this should not happen"
   |pm_reduce (* new goal *)].
@@ -466,7 +466,7 @@ Qed.
 Tactic Notation "tp_fork" constr(j) :=
   iStartProof;
   eapply (tac_tp_fork j);
-  [iSolveTC || fail "tp_fork: cannot eliminate modality in the goal"
+  [tc_solve || fail "tp_fork: cannot eliminate modality in the goal"
   |solve_ndisj || fail "tp_fork: cannot prove 'nclose specN ⊆ ?'"
   |iAssumptionCore || fail "tp_fork: cannot find the RHS '" j "'"
   |tp_bind_helper
@@ -476,7 +476,7 @@ Tactic Notation "tp_fork" constr(j) :=
 Tactic Notation "tp_fork" constr(j) "as" ident(j') constr(H) :=
   iStartProof;
   eapply (tac_tp_fork j);
-  [iSolveTC || fail "tp_fork: cannot eliminate modality in the goal"
+  [tc_solve || fail "tp_fork: cannot eliminate modality in the goal"
   |solve_ndisj || fail "tp_fork: cannot prove 'nclose specN ⊆ ?'"
   |iAssumptionCore || fail "tp_fork: cannot find the RHS '" j "'"
   |tp_bind_helper
@@ -531,11 +531,11 @@ Tactic Notation "tp_alloc" constr(j) "as" ident(l) constr(H) :=
         | (iIntros H; tp_normalise j) || fail 1 "tp_alloc:" H "not correct intro pattern" ] in
   iStartProof;
   eapply (tac_tp_alloc j);
-  [iSolveTC || fail "tp_alloc: cannot eliminate modality in the goal"
+  [tc_solve || fail "tp_alloc: cannot eliminate modality in the goal"
   |solve_ndisj || fail "tp_alloc: cannot prove 'nclose specN ⊆ ?'"
   |iAssumptionCore || fail "tp_alloc: cannot find the RHS '" j "'"
   |tp_bind_helper
-  |iSolveTC || fail "tp_alloc: expressions is not a value"
+  |tc_solve || fail "tp_alloc: expressions is not a value"
   |finish ()
 (* new goal *)].
 
