@@ -55,9 +55,7 @@ Section proofs.
   Lemma shot_not_pending γ `{oneshotG Σ} :
     shot γ -∗ pending γ -∗ False.
   Proof.
-    iIntros "Hs Hp".
-    iPoseProof (own_valid_2 with "Hs Hp") as "H".
-    iDestruct "H" as %[].
+    iIntros "Hs Hp". iCombine "Hs Hp" gives %[].
   Qed.
 
   Lemma refinement2 `{oneshotG Σ} :

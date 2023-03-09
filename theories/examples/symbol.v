@@ -63,8 +63,7 @@ Section rules.
     ⌜m ≤ n⌝.
   Proof.
     iIntros "Hn Hm".
-    by iDestruct (own_valid_2 with "Hn Hm")
-      as %[?%max_nat_included _]%auth_both_valid_discrete.
+    by iCombine "Hn Hm" gives %[?%max_nat_included _]%auth_both_valid_discrete.
   Qed.
 
   Lemma same_size (n m : nat) :
@@ -152,8 +151,8 @@ Section proof.
         "(Ha & Hs1' & Hs2' & Htbl1' & Htbl2' & #Hls)" "Hcl".
     iModIntro. iExists _. iFrame. iNext. iIntros "Hs1'".
     rel_load_r. rel_pure_r. rel_pure_r.
-    iDestruct (own_valid_2 with "Ha Hn")
-      as %[?%max_nat_included _]%auth_both_valid_discrete; simpl in *.
+    iCombine "Ha Hn"
+      gives %[?%max_nat_included _]%auth_both_valid_discrete; simpl in *.
     rel_op_l. rel_op_r. rewrite bool_decide_true; last lia.
     rel_pure_r. rel_load_r. rel_op_r.
     iMod ("Hcl" with "[Ha Hs1' Hs2' Htbl1' Htbl2' Hls]") as "_".
@@ -189,8 +188,8 @@ Section proof.
     rel_load_l_atomic.
     iInv sizeN as (m ls) "(Ha & Hs1' & >Hs2' & >Htbl1' & >Htbl2' & Hls)" "Hcl".
     iModIntro. iExists _. iFrame. iNext. iIntros "Hs1'".
-    iDestruct (own_valid_2 with "Ha Hn")
-      as %[?%max_nat_included _]%auth_both_valid_discrete; simpl in *.
+    iCombine "Ha Hn"
+      gives %[?%max_nat_included _]%auth_both_valid_discrete; simpl in *.
     iMod ("Hcl" with "[Ha Hs1' Hs2' Htbl1' Htbl2' Hls]") as "_".
     { iNext. iExists _,_. by iFrame. }
     clear ls. repeat rel_pure_l.
