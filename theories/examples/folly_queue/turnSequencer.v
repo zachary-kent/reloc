@@ -87,10 +87,10 @@ Section spec.
     iInv N as (m) "(>ℓPts & Hturns & Hdisj)" "Hcl".
     wp_load.
     destruct (lt_eq_lt_dec n m) as [[Hle|<-]|Hho].
-    - iDestruct (own_valid_2 with "Hturns Ht") as %HI%set_upto_singleton_valid.
+    - iCombine "Hturns Ht" gives %HI%set_upto_singleton_valid.
       exfalso. lia.
     - iDestruct "Hdisj" as "[[Hr ℓPts'] | Ht']"; last first.
-      { by iDestruct (own_valid_2 with "Ht Ht'") as %?%set_singleton_invalid. }
+      { by iCombine "Ht Ht'" gives %?%set_singleton_invalid. }
       iMod ("Hcl" with "[Ht ℓPts Hturns]") as "_".
       { iNext. iExists _. iFrame. }
       iModIntro. wp_pures.
@@ -122,7 +122,7 @@ Section spec.
       iDestruct "Hc'" as (ℓ1' ?) "Hc'".
       simplify_eq/=.
       iCombine "ℓPts Hc'" as "ℓPts".
-      iDestruct (mapsto_valid_2 with "ℓPts Hc") as %[?%Qp.not_add_le_l _].
+      iCombine "ℓPts Hc" gives %[?%Qp.not_add_le_l _].
       done. }
     wp_load.
     iDestruct (mapsto_agree with "ℓPts Hc") as %[= Heq].
@@ -136,7 +136,7 @@ Section spec.
       iDestruct "Hc'" as (ℓ1' ?) "Hc'".
       simplify_eq/=.
       iCombine "ℓPts Hc'" as "ℓPts".
-      iDestruct (mapsto_valid_2 with "ℓPts Hc") as %[?%Qp.not_add_le_l _].
+      iCombine "ℓPts Hc" gives %[?%Qp.not_add_le_l _].
       done. }
     iDestruct (mapsto_combine with "ℓPts Hc") as "[ℓPts %Heq]".
     simplify_eq/=.

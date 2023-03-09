@@ -66,7 +66,7 @@ Section cnt_model.
     cnt γ q1 n -∗ cnt γ q2 m -∗ ⌜n = m⌝.
   Proof.
     iIntros "H1 H2".
-    iDestruct (own_valid_2 with "H1 H2") as %Hfoo.
+    iCombine "H1 H2" gives %Hfoo.
     iPureIntro. revert Hfoo.
     rewrite -auth_frag_op -Some_op -pair_op.
     rewrite auth_frag_valid Some_valid.

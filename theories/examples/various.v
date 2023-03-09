@@ -232,7 +232,7 @@ Section proofs.
         iDestruct "Hx'" as "[Hx' Hx'1]".
         iDestruct "Hbb" as "[(Hb & Hb' & Hx2 & Hx'2) | Hbb]".
         { iCombine "Hx Hx1" as "Hx".
-          iDestruct (mapsto_valid_2 with "Hx Hx2") as %[Hfoo _]. exfalso.
+          iCombine "Hx Hx2" gives %[Hfoo _]. exfalso.
           compute in Hfoo. eauto. }
         iMod ("Hcl" with "[Hx Hx' Hbb]") as "_".
         { iNext. iExists (S n).
@@ -244,7 +244,7 @@ Section proofs.
         iDestruct (mapsto_agree with "Hx Hx1") as %->.
         iDestruct "Hbb" as "[(Hb & Hb' & Hx2 & Hx'2) | (Hb & Hb')]".
         { iCombine "Hx Hx1" as "Hx".
-          iDestruct (mapsto_valid_2 with "Hx Hx2") as %[Hfoo _]. exfalso.
+          iCombine "Hx Hx2" gives %[Hfoo _]. exfalso.
           compute in Hfoo. eauto. }
         iModIntro; iExists _; iFrame; iNext. iIntros "Hb".
         rel_store_r.
@@ -487,7 +487,7 @@ Section proofs.
   Proof.
     iIntros "#Hinv #Hg #Hf Hcl Hc1 Hc2 Ht".
     iDestruct "Hc2" as "[(Hc2 & Hp) | (Hc2 & Hs & Ht'2 & %)]"; last first.
-    { iDestruct (own_valid_2 with "Ht Ht'2") as %Hfoo.
+    { iCombine "Ht Ht'2" gives %Hfoo.
       inversion Hfoo. }
     iMod (shoot γ with "Hp") as "#Hs".
     iMod ("Hcl" with "[-]") as "_".

@@ -129,7 +129,7 @@ Section offerReg_rules.
     -∗ ⌜N !! o = Some (v, γ, k)⌝.
   Proof.
     iIntros "HN Hfrag".
-    iDestruct (own_valid_2 with "HN Hfrag") as %Hfoo.
+    iCombine "HN Hfrag" gives %Hfoo.
     apply auth_both_valid_discrete in Hfoo.
     simpl in Hfoo. destruct Hfoo as [Hfoo _].
     iAssert (⌜✓ ((to_offer_reg N) !! o)⌝)%I as %Hvalid.

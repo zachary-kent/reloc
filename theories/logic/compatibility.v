@@ -167,14 +167,14 @@ Section compatibility.
           iDestruct "Hv" as (r1' r2' ? ?) "#Hv". simplify_eq/=.
           destruct (decide ((l1, l2) = (r1, r2'))); simplify_eq/=.
           { iInv (relocN.@"ref".@(r1', r2')) as (? ?) "(Hr1 & >Hr2 & Hrr)" "Hcl".
-            iExFalso. by iDestruct (mapstoS_valid_2 with "Hr2 Hl2") as %[]. }
+            iExFalso. by iCombine "Hr2 Hl2" gives %[]. }
           destruct (decide ((l1, l2) = (r1', r2'))); simplify_eq/=.
           ++ assert (r1' ≠ r1) by naive_solver.
              iInv (relocN.@"ref".@(r1, r2')) as (? ?) "(Hr1 & >Hr2 & Hrr)" "Hcl".
-             iExFalso. by iDestruct (mapstoS_valid_2 with "Hr2 Hl2") as %[].
+             iExFalso. by iCombine "Hr2 Hl2" gives %[].
           ++ iInv (relocN.@"ref".@(r1, r2')) as (? ?) "(Hr1 & >Hr2 & Hrr)" "Hcl".
              iInv (relocN.@"ref".@(r1', r2')) as (? ?) "(Hr1' & >Hr2' & Hrr')" "Hcl'".
-             iExFalso. by iDestruct (mapstoS_valid_2 with "Hr2 Hr2'") as %[].
+             iExFalso. by iCombine "Hr2 Hr2'" gives %[].
         * rel_cmpxchg_fail_r.
           iMod ("Hclose" with "[-]").
           { iNext; iExists _, _; by iFrame. }
@@ -185,13 +185,13 @@ Section compatibility.
         iDestruct "Hv" as (r1' r2' ? ?) "#Hv". simplify_eq/=.
         destruct (decide ((l1, l2) = (r1', r2'))); simplify_eq/=.
         { iInv (relocN.@"ref".@(r1', r2)) as (? ?) "(>Hr1 & >Hr2 & Hrr)" "Hcl".
-          iExFalso. by iDestruct (mapsto_valid_2 with "Hr1 Hl1") as %[]. }
+          iExFalso. by iCombine "Hr1 Hl1" gives %[]. }
         destruct (decide ((l1, l2) = (r1', r2))); simplify_eq/=.
         { iInv (relocN.@"ref".@(r1', r2')) as (? ?) "(>Hr1 & >Hr2 & Hrr)" "Hcl".
-          iExFalso. by iDestruct (mapsto_valid_2 with "Hr1 Hl1") as %[]. }
+          iExFalso. by iCombine "Hr1 Hl1" gives %[]. }
         iInv (relocN.@"ref".@(r1', r2)) as (? ?) "(>Hr1 & >Hr2 & Hrr)" "Hcl".
         iInv (relocN.@"ref".@(r1', r2')) as (? ?) "(>Hr1' & >Hr2' & Hrr')" "Hcl'".
-        iExFalso. by iDestruct (mapsto_valid_2 with "Hr1 Hr1'") as %[].
+        iExFalso. by iCombine "Hr1 Hr1'" gives %[].
   Qed.
 
 End compatibility.

@@ -51,7 +51,7 @@ Proof.
     iInv specN as (tp σ') ">[Hown Hsteps]" "Hclose"; iDestruct "Hsteps" as %Hsteps'.
     iDestruct "Hj" as "[#Hs Hj]".
     rewrite tpool_mapsto_eq /tpool_mapsto_def /=.
-    iDestruct (own_valid_2 with "Hown Hj") as %Hvalid.
+    iCombine "Hown Hj" gives %Hvalid.
     move: Hvalid=> /auth_both_valid_discrete
        [/prod_included [/tpool_singleton_included Hv2 _] _].
     destruct tp as [|? tp']; simplify_eq/=.

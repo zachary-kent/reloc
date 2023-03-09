@@ -191,6 +191,14 @@ Section mapsto.
     iApply (mapstoS_valid l _ v2). by iFrame.
   Qed.
 
+  Global Instance mapstoS_combine_sep_gives l dq1 dq2 v1 v2 :
+    CombineSepGives (l ↦ₛ{dq1} v1) (l ↦ₛ{dq2} v2) ⌜✓ (dq1 ⋅ dq2) ∧ v1 = v2⌝.
+  Proof.
+    rewrite /CombineSepGives. iIntros "[H1 H2]". iSplit.
+    - iDestruct (mapstoS_valid_2 with "H1 H2") as %?; auto.
+    - iDestruct (mapstoS_agree with "H1 H2") as %?; auto.
+  Qed.
+
   Lemma mapstoS_half_combine l v1 v2 :
     l ↦ₛ{1/2} v1 -∗ l ↦ₛ{1/2} v2 -∗ ⌜v1 = v2⌝ ∗ l ↦ₛ v1.
   Proof.

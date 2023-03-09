@@ -89,7 +89,7 @@ Section offer_theory.
   Qed.
 
   Lemma no_offer_exclusive γ q k : no_offer γ -∗ own_offer γ q k -∗ False.
-  Proof. iIntros "O P". by iDestruct (own_valid_2 with "O P") as %?. Qed.
+  Proof. iIntros "O P". by iCombine "O P" gives %?. Qed.
 
   Lemma no_offer_to_offer γ k : no_offer γ ==∗ own_offer γ 1 k.
   Proof.
@@ -109,7 +109,7 @@ Section offer_theory.
     own_offer γ q k -∗ own_offer γ q' k' -∗ ⌜k = k'⌝.
   Proof.
     iIntros "O P".
-    iDestruct (own_valid_2 with "O P") as %[_ ?%to_agree_op_inv]%pair_valid.
+    iCombine "O P" gives %[_ ?%to_agree_op_inv]%pair_valid.
     by unfold_leibniz.
   Qed.
 
@@ -399,7 +399,7 @@ Section proofs.
       iDestruct "Hdisj" as (?) "[[% _] | (% & Hdisj)]"; first by subst.
       iDestruct "Hdisj" as "[[Hoff' Hj] | Hoff']".
       2: {
-        iDestruct (own_valid_2 with "Htok Hoff'") as %Hv.
+        iCombine "Htok Hoff'" gives %Hv.
         by apply Qp.not_add_le_l in Hv. }
       iDestruct (offer_combine with "Hoff Hoff'") as "(<- & Hoff)".
       iDestruct (offer_token_split with "Htok") as "[Htok Htok']".

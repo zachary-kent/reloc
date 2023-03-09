@@ -94,12 +94,12 @@ Section semtypes.
         + destruct (decide (l2 = r2)); subst; first by eauto.
           iInv (relocN.@"ref".@(r1, l2)) as (v1 v2) "(>Hr1 & >Hr2 & Hinv1)".
           iInv (relocN.@"ref".@(r1, r2)) as (w1 w2) "(>Hr1' & >Hr2' & Hinv2)".
-          iExFalso. by iDestruct (mapsto_valid_2 with "Hr1 Hr1'") as %[].
+          iExFalso. by iCombine "Hr1 Hr1'" gives %[].
         + destruct (decide (l2 = r2)); subst; last first.
           { iModIntro. iPureIntro. naive_solver. }
           iInv (relocN.@"ref".@(r1, r2)) as (v1 v2) "(>Hr1 & >Hr2 & Hinv1)".
           iInv (relocN.@"ref".@(l1, r2)) as (w1 w2) "(>Hr1' & >Hr2' & Hinv2)".
-          iExFalso. by iDestruct (mapstoS_valid_2 with "Hr2 Hr2'") as %[]. }
+          iExFalso. by iCombine "Hr2 Hr2'" gives %[]. }
     by apply unboxed_type_ref_or_eqtype.
   Qed.
 

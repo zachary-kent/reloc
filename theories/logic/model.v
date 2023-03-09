@@ -196,7 +196,7 @@ Section semtypes_properties.
     iInv (relocN.@"ref".@(l, l1')) as (? ?) "[>Hl ?]" "Hcl".
     iInv (relocN.@"ref".@(l, l2')) as (? ?) "[>Hl' ?]" "Hcl'".
     simpl. iExFalso.
-    iDestruct (gen_heap.mapsto_valid_2 with "Hl Hl'") as %[Hfoo _].
+    iCombine "Hl Hl'" gives %[Hfoo _].
     compute in Hfoo. eauto.
   Qed.
 
@@ -212,8 +212,7 @@ Section semtypes_properties.
     iInv (relocN.@"ref".@(l1', l)) as (? ?) "(? & >Hl & ?)" "Hcl".
     iInv (relocN.@"ref".@(l2', l)) as (? ?) "(? & >Hl' & ?)" "Hcl'".
     simpl. iExFalso.
-    iDestruct (mapstoS_valid_2 with "Hl Hl'") as %Hfoo.
-    compute in Hfoo. eauto.
+    by iCombine "Hl Hl'" gives %[??].
   Qed.
 
 End semtypes_properties.

@@ -134,7 +134,7 @@ Section queue_refinement.
   Proof.
     rewrite /ghost_list /ghost_list_mapsto /list_idx_to_map.
     iIntros "Ha Hb".
-    iDestruct (own_valid_2 with "Ha Hb") as %[Hincl _]%auth_both_valid_discrete.
+    iCombine "Ha Hb" gives %[Hincl _]%auth_both_valid_discrete.
     apply dom_included in Hincl.
     rewrite dom_singleton_L in Hincl.
     rewrite dom_make_map in Hincl.
@@ -214,7 +214,7 @@ Section queue_refinement.
     ⌜popTicket ∈ set_seq (C:=gset nat) 0 pushTicket⌝.
   Proof.
     iIntros (Hsub) "Ha Hf".
-    iDestruct (own_valid_2 with "Ha Hf") as %[H%dom_included _]%auth_both_valid_discrete.
+    iCombine "Ha Hf" gives %[H%dom_included _]%auth_both_valid_discrete.
     rewrite dom_make_map in H.
     rewrite Hsub in H.
     rewrite dom_singleton_L in H.
@@ -893,7 +893,7 @@ Section queue_refinement.
       iDestruct (ghost_list_le with "Hlist Hag") as %popLePush.
       rewrite (big_sepS_delete _ _ popTicket). 2: { rewrite elem_of_set_seq. lia. }
       iDestruct "Hpush" as "[[>Htok'|Hright] Hpush]".
-      { by iDestruct (own_valid_2 with "Htok Htok'") as %Hv%set_singleton_invalid. }
+      { by iCombine "Htok Htok'" gives %Hv%set_singleton_invalid. }
       iDestruct "Hright" as (id' v' vₛ) "(>#Hdec' & Hright & #Hrel & >#Hag')".
       iAssert (push_i A γl γt γm popTicket) with "[Htok]" as "Hi".
       { iLeft. iFrame. }

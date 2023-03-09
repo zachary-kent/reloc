@@ -64,7 +64,7 @@ Section namegen_refinement.
       { iIntros (Hy). destruct Hy as [y Hy].
         rewrite (big_sepS_elem_of _ L (l',y) Hy).
         iDestruct "HL" as "[Hl _]".
-        iDestruct (gen_heap.mapsto_valid_2 with "Hl Hl'") as %[Hfoo _].
+        iCombine "Hl Hl'" gives %[Hfoo _].
         compute in Hfoo. eauto. }
       iAssert (⌜(∃ x, (x, S n) ∈ L) → False⌝)%I with "[HL]" as %Hc.
       { iIntros (Hx). destruct Hx as [x Hy].
