@@ -17,10 +17,10 @@ Definition tpoolUR : ucmra := gmapUR nat (exclR exprO).
 Definition cfgUR := prodUR tpoolUR (heapUR loc (option val)).
 
 (** The CMRA for the thread pool. *)
-Class cfgSG Σ := CFGSG { cfg_inG :> inG Σ (authR cfgUR); cfg_name : gname }.
+Class cfgSG Σ := CFGSG { cfg_inG :: inG Σ (authR cfgUR); cfg_name : gname }.
 Class relocG Σ := RelocG {
-  relocG_heapG :> heapGS Σ;
-  relocG_cfgG :> cfgSG Σ;
+  relocG_heapG :: heapGS Σ;
+  relocG_cfgG :: cfgSG Σ;
 }.
 
 Definition to_heap {L V} `{Countable L} : gmap L V → heapUR L V :=

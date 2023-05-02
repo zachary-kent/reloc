@@ -95,7 +95,7 @@ Proof.
       { apply nsteps_once_inv. by eapply pure_exec. }
       destruct_and!. simplify_eq/=.
       eapply IH; eauto.
-    + eapply (IH m (lt_n_Sn m) (t1 ++ e2 :: t2 ++ efs)); eauto.
+    + eapply (IH m (Nat.lt_succ_diag_r m) (t1 ++ e2 :: t2 ++ efs)); eauto.
 Qed.
 
 Lemma ctx_refines_alt_impl Γ e1 e2 τ :

@@ -18,7 +18,7 @@ Definition lrel_lock `{relocG Σ} : lrel Σ :=
   ∃ A, (() → A) * (A → ()) * (A → ()).
 
 Class tlockG Σ :=
-  tlock_G :> inG Σ (authR (gset_disjUR nat)).
+  tlock_G :: inG Σ (authR (gset_disjUR nat)).
 Definition tlockΣ : gFunctors :=
   #[ GFunctor (authR $ gset_disjUR nat) ].
 Global Instance subG_tlockΣ {Σ} : subG tlockΣ Σ → tlockG Σ.
@@ -28,7 +28,7 @@ Definition lockPool := gset ((loc * loc * gname) * loc).
 Definition lockPoolR := gsetUR ((loc * loc * gname) * loc).
 
 Class lockPoolG Σ :=
-  lockPool_inG :> inG Σ (authR lockPoolR).
+  lockPool_inG :: inG Σ (authR lockPoolR).
 Definition lockPoolΣ := #[ GFunctor (authR $ lockPoolR) ].
 Global Instance subG_lockPoolΣ {Σ} : subG lockPoolΣ Σ → lockPoolG Σ.
 Proof. solve_inG. Qed.

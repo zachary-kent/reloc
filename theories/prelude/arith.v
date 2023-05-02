@@ -77,7 +77,7 @@ Proof.
 Qed.
 
 Lemma ltb_lt_1 n m : n < m → (n <? m) = true.
-Proof. apply ltb_lt. Qed.
+Proof. apply Nat.ltb_lt. Qed.
 
 (* This is just [Nat.mul_comm] with things ordered differently. *)
 Lemma div_mod' (x y : nat) : y ≠ 0 →  (x `div` y) * y + x `mod` y = x.
@@ -87,12 +87,12 @@ Proof. symmetry. rewrite Nat.mul_comm. apply Nat.div_mod. done. Qed.
 Lemma mod0 (a : nat) : 0 `mod` a = 0.
 Proof.
   destruct a; first done.
-  by apply Nat.mod_0_l.
+  by apply Nat.Div0.mod_0_l.
 Qed.
 Lemma div0 (a : nat) : 0 `div` a = 0.
 Proof.
   destruct a; first done.
-  by apply Nat.div_0_l.
+  by apply Nat.Div0.div_0_l.
 Qed.
 
 
@@ -121,4 +121,3 @@ Proof.
   - destruct l; done.
   - destruct l; simpl; first lia. intros H%IH. lia.
 Qed.
-

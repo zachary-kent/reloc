@@ -19,8 +19,8 @@ Definition set_singleton `{!EqDecision A} (a : A) :=
   set_cf (λ a', if decide (a = a') then true else false).
 
 Definition set_nat := set_of nat.
-Definition set_even := set_cf even.
-Definition set_odd := set_cf odd.
+Definition set_even := set_cf Nat.even.
+Definition set_odd := set_cf Nat.odd.
 
 Lemma split_even_odd : set_nat ≡ set_even ⋅ set_odd.
 Proof.
@@ -35,7 +35,7 @@ Definition set_above n := set_cf (λ n', n <=? n').
 Definition set_upto n := set_cf (λ n', n' <? n).
 
 Lemma set_above_lookup n m : n ≤ m → set_above n m = Excl' ().
-Proof. rewrite /set_above /set_cf. by intros ->%leb_le. Qed.
+Proof. rewrite /set_above /set_cf. by intros ->%Nat.leb_le. Qed.
 
 Lemma set_above_lookup_none n m : m < n → (set_above n) m = None.
 Proof. rewrite /set_above /set_cf. by intros ->%Nat.leb_gt. Qed.
@@ -120,8 +120,7 @@ Proof.
   rewrite /set_singleton. rewrite /set_cf.
   rewrite discrete_fun_lookup_op.
   destruct (le_lt_dec n n').
-  - autorewrite with natb.
-    destruct (le_lt_or_eq n n' l); autorewrite with natb; done.
+  - case_decide; subst; by autorewrite with natb.
   - autorewrite with natb. done.
 Qed.
 
@@ -131,7 +130,7 @@ Proof.
   rewrite discrete_fun_lookup_op.
   destruct (le_gt_dec m n).
   - rewrite (set_upto_lookup (n + 1)); last lia.
-    destruct (le_lt_or_eq m n l).
+    assert (m < n ∨ m = n) as [] by lia.
     * autorewrite with natb. done.
     * subst. autorewrite with natb. done.
   - autorewrite with natb. done.
@@ -142,12 +141,12 @@ Definition set_prop {A : Type} (f : A → Prop) `{!∀ a, Decision (f a)} : setU
   λ a, if decide (f a) then Some (Excl ()) else None.
 
 (* All even numbers except for the first n. *)
-Definition set_even_drop n := set_cf (λ n', (even n') && (2 * n <=? n')).
+Definition set_even_drop n := set_cf (λ n', (Nat.even n') && (2 * n <=? n')).
 
 (* All odd numbers except for the first n. *)
-Definition set_odd_drop n := set_cf (λ n', (odd n') && (2 * n + 1 <=? n')).
+Definition set_odd_drop n := set_cf (λ n', (Nat.odd n') && (2 * n + 1 <=? n')).
 
-Lemma set_even_drop_lookup n m : Even m → 2 * n ≤ m → set_even_drop n m = Excl' ().
+Lemma set_even_drop_lookup n m : Nat.Even m → 2 * n ≤ m → set_even_drop n m = Excl' ().
 Proof.
   intros He Hle.
   rewrite /set_even_drop /set_cf.

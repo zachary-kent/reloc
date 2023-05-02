@@ -44,9 +44,9 @@ Qed.
 
 Definition bijUR := gsetUR (A * B).
 Class pBijPreG Σ := PBijPreG
-{ pBijPreG_inG :> inG Σ (authR bijUR) }.
+{ pBijPreG_inG :: inG Σ (authR bijUR) }.
 Class pBijG Σ := PBijG
-{ pBijG_inG :> inG Σ (authR bijUR)
+{ pBijG_inG :: inG Σ (authR bijUR)
 ; pBijG_name : gname }.
 Definition pBijΣ : gFunctors := #[ GFunctor (authR bijUR) ].
 Global Instance subG_pBijΣ {Σ} : subG pBijΣ Σ → pBijPreG Σ.

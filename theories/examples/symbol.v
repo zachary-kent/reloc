@@ -46,7 +46,7 @@ Definition symbol2 : val := λ: <>,
 
 (** * The actual refinement proof.
       Requires monotonic state *)
-Class msizeG Σ := MSizeG { msize_inG :> inG Σ (authR max_natUR) }.
+Class msizeG Σ := MSizeG { msize_inG :: inG Σ (authR max_natUR) }.
 Definition msizeΣ : gFunctors := #[GFunctor (authR max_natUR)].
 
 Global Instance subG_msizeΣ {Σ} : subG msizeΣ Σ → msizeG Σ.

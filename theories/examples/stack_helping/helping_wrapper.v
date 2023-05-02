@@ -61,7 +61,7 @@ Definition offerRegR :=
   gmapUR loc (agreeR (prodO valO (prodO gnameO ref_idO))).
 
 Class offerRegPreG Σ := OfferRegPreG {
-  offerReg_inG :> inG Σ (authUR offerRegR)
+  offerReg_inG :: inG Σ (authUR offerRegR)
 }.
 
 Definition offerize (x : (val * gname * ref_id)) :

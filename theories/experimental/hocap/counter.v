@@ -6,7 +6,7 @@ From iris.algebra Require Export auth frac excl.
 From iris.bi.lib Require Export fractional.
 
 Class cnt_hocapG Σ := CntG {
-    cnt_hocapG_inG :> inG Σ (authR $ optionUR (prodR fracR (agreeR natO)));
+    cnt_hocapG_inG :: inG Σ (authR $ optionUR (prodR fracR (agreeR natO)));
 }.
 
 Definition cnt_hocapΣ := GFunctor (authR (optionUR (prodR fracR (agreeR natO)))).

@@ -13,7 +13,7 @@ Definition take_offer : val :=
   λ: "v", if: CAS (Snd "v") #0 #1 then SOME (Fst "v") else NONE.
 
 Definition offerR := exclR unitR.
-Class offerG Σ := { offer_inG :> inG Σ offerR }.
+Class offerG Σ := { offer_inG :: inG Σ offerR }.
 Definition offerΣ : gFunctors := #[GFunctor offerR].
 Global Instance subG_offerΣ {Σ} : subG offerΣ Σ → offerG Σ.
 Proof. solve_inG. Qed.

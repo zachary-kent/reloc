@@ -17,8 +17,8 @@ Definition requestReg := gmap nat ref_id.
 Definition requestRegR := authR $ gmapUR nat (agreeR ref_idO).
 
 Class queueG Σ := {
-  queue_listUR :> inG Σ listUR;
-  queue_requestUR :> inG Σ requestRegR;
+  queue_listUR :: inG Σ listUR;
+  queue_requestUR :: inG Σ requestRegR;
 }.
 
 (* For the [lia] tactic. *)

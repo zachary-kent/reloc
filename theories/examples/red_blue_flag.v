@@ -57,8 +57,8 @@ Definition offerR :=
         (prodR fracR (agreeR ref_idO)).
 
 Class offerPreG Σ := OfferPreG {
-  offer_inG :> inG Σ offerR;
-  offer_token_inG :> inG Σ fracR;
+  offer_inG :: inG Σ offerR;
+  offer_token_inG :: inG Σ fracR;
 }.
 
 Section offer_theory.

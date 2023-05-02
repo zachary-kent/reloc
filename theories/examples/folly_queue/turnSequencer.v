@@ -28,7 +28,7 @@ Definition waitForTurn : val :=
 Definition turnSequencer : val :=
   (newTS, completeTurn, waitForTurn).
 
-Class TSG Σ := { TSG_tickets :> inG Σ (setUR nat) }.
+Class TSG Σ := { TSG_tickets :: inG Σ (setUR nat) }.
 
 (* Alternative spec for the TS. *)
 Section spec.

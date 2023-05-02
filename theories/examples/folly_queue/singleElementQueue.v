@@ -61,7 +61,7 @@ Section spec.
 
   (* The resource for the turn sequencer. *)
   Definition TSR R (ℓ : loc) (n : nat) : iProp Σ :=
-    (if even n
+    (if Nat.even n
      then ℓ ↦ NONEV
      else ∃ v, ℓ ↦ SOMEV v ∗ R ((n - 1) / 2) v)%I.
 

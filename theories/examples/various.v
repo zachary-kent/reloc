@@ -8,7 +8,7 @@ From reloc Require Export reloc.
 From reloc.lib Require Export lock counter Y.
 
 Definition oneshotR := csumR (exclR unitR) (agreeR unitR).
-Class oneshotG Σ := { oneshot_inG :> inG Σ oneshotR }.
+Class oneshotG Σ := { oneshot_inG :: inG Σ oneshotR }.
 Definition oneshotΣ : gFunctors := #[GFunctor oneshotR].
 Global Instance subG_oneshotΣ {Σ} : subG oneshotΣ Σ → oneshotG Σ.
 Proof. solve_inG. Qed.
