@@ -225,14 +225,14 @@ Qed.
 
 Tactic Notation "tp_xchg" constr(j) :=
   iStartProof;
-  eapply (tac_tp_store j);
-  [tc_solve || fail "tp_store: cannot eliminate modality in the goal"
-  |solve_ndisj || fail "tp_store: cannot prove 'nclose specN ⊆ ?'"
-  |iAssumptionCore || fail "tp_store: cannot find '" j " ' RHS"
+  eapply (tac_tp_xchg j);
+  [tc_solve || fail "tp_xchg: cannot eliminate modality in the goal"
+  |solve_ndisj || fail "tp_xchg: cannot prove 'nclose specN ⊆ ?'"
+  |iAssumptionCore || fail "tp_xchg: cannot find '" j " ' RHS"
   |tp_bind_helper
-  |tc_solve || fail "tp_store: cannot convert the argument to a value"
-  |iAssumptionCore || fail "tp_store: cannot find '? ↦ₛ ?'"
-  |simpl; reflexivity || fail "tp_store: this should not happen"
+  |tc_solve || fail "tp_xchg: cannot convert the argument to a value"
+  |iAssumptionCore || fail "tp_xchg: cannot find '? ↦ₛ ?'"
+  |simpl; reflexivity || fail "tp_xchg: this should not happen"
   |pm_reduce (* new goal *)].
 
 (* *)

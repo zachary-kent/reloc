@@ -195,9 +195,9 @@ Section rules.
     rewrite /IntoVal. iIntros (?<-) "Hl Hlog".
     iApply refines_step_r.
     iIntros (k) "Hk".
-    admit.
-  Admitted.
-
+    tp_xchg k. iExists v. iModIntro. iFrame.
+    by iApply "Hlog".
+  Qed.
 
   Lemma refines_cmpxchg_fail_r E K l e1 e2 v1 v2 v t A :
     nclose specN ⊆ E →
