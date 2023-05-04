@@ -56,7 +56,7 @@ Section cnt_model.
       ==∗
       cnt_auth γ k ∗ cnt γ 1 k.
   Proof.
-    apply (bi.wand_intro_r (cnt_auth γ n)).
+    apply bi.entails_wand, (bi.wand_intro_r (cnt_auth γ n)).
     rewrite /cnt /cnt_auth - !own_op.
     apply own_update. apply auth_update, option_local_update.
     by apply exclusive_local_update.
@@ -76,7 +76,7 @@ Section cnt_model.
   Lemma cnt_agree_2 γ q n m :
     cnt_auth γ n -∗ cnt γ q m -∗ ⌜n = m⌝.
   Proof.
-    apply bi.wand_intro_r. rewrite /cnt /cnt_auth - !own_op.
+    apply bi.entails_wand, bi.wand_intro_r. rewrite /cnt /cnt_auth - !own_op.
     iIntros "H". iDestruct (own_valid with "H") as %Hfoo.
     iPureIntro; revert Hfoo.
     rewrite auth_both_valid_discrete.

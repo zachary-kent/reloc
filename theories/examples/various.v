@@ -47,7 +47,7 @@ Section proofs.
   Proof. by apply own_alloc. Qed.
   Lemma shoot γ `{oneshotG Σ} : pending γ ==∗ shot γ.
   Proof.
-    apply own_update.
+    apply bi.entails_wand, own_update.
     intros n [f |]; simpl; eauto.
     destruct f; simpl; try by inversion 1.
   Qed.

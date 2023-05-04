@@ -224,13 +224,13 @@ Section sep_list2.
   Implicit Types Φ Ψ : nat → A → B → iProp Σ.
 
   Lemma big_sepL2_nil_inv_l Φ l2 :
-    ([∗ list] k↦y1;y2 ∈ []; l2, Φ k y1 y2) -∗ ⌜l2 = []⌝.
+    ([∗ list] k↦y1;y2 ∈ []; l2, Φ k y1 y2) ⊢ ⌜l2 = []⌝.
   Proof.
     rewrite big_sepL2_alt bi.and_elim_l /= -length_zero_iff_nil.
     by apply bi.pure_mono.
   Qed.
   Lemma big_sepL2_nil_inv_r Φ l1 :
-    ([∗ list] k↦y1;y2 ∈ l1; [], Φ k y1 y2) -∗ ⌜l1 = []⌝.
+    ([∗ list] k↦y1;y2 ∈ l1; [], Φ k y1 y2) ⊢ ⌜l1 = []⌝.
   Proof.
     rewrite big_sepL2_alt bi.and_elim_l /= length_zero_iff_nil.
     by apply bi.pure_mono.

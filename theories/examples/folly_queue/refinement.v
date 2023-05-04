@@ -225,7 +225,7 @@ Section queue_refinement.
 
   Definition tokens_from γt n := own γt (set_above n).
   Definition token γt (n : nat) := own γt (set_singleton n).
-  Lemma tokens_take γ m : tokens_from γ m -∗ tokens_from γ (m + 1) ∗ token γ m.
+  Lemma tokens_take γ m : tokens_from γ m ⊢ tokens_from γ (m + 1) ∗ token γ m.
   Proof. rewrite /tokens_from /token -own_op comm -take_first. done. Qed.
 
   (* A single element queue contains: TS, location, gname for ghost state. *)
@@ -408,7 +408,7 @@ Section queue_refinement.
     0 < q →
     i < q →
     (popT `mod` q ≠ i) →
-    turn_ctx γ q i popT pushT -∗
+    turn_ctx γ q i popT pushT ⊢
     turn_ctx γ q i (popT + 1) pushT.
   Proof.
     iIntros (Hgt Hiq Hneq) "Hctx".
@@ -419,7 +419,7 @@ Section queue_refinement.
     0 < q →
     i < q →
     (pushT `mod` q ≠ i) →
-    turn_ctx γ q i popT pushT -∗
+    turn_ctx γ q i popT pushT ⊢
     turn_ctx γ q i popT (pushT+1).
   Proof.
     iIntros (Hgt Hiq Hneq) "Hctx".
@@ -428,7 +428,7 @@ Section queue_refinement.
 
   Lemma turn_ctx_incr_pop_eq γ q popT pushT :
     0 < q →
-    turn_ctx γ q (popT `mod` q) popT pushT -∗
+    turn_ctx γ q (popT `mod` q) popT pushT ⊢
     turn_ctx γ q (popT `mod` q) (popT + 1) pushT ∗
     dequeue_turn γ (popT `div` q).
   Proof.
@@ -444,7 +444,7 @@ Section queue_refinement.
 
   Lemma turn_ctx_incr_push_eq γ q popT pushT :
     0 < q →
-    turn_ctx γ q (pushT `mod` q) popT pushT -∗
+    turn_ctx γ q (pushT `mod` q) popT pushT ⊢
     turn_ctx γ q (pushT `mod` q) popT (pushT+1) ∗
     enqueue_turn γ (pushT `div` q).
   Proof.
@@ -678,7 +678,7 @@ Section queue_refinement.
     simpl.
     assert ({[n]} ∪ ∅ = {[n]}) as ->; first by set_solver.
     rewrite big_sepS_singleton.
-    done.
+    auto.
   Qed.
 
   Lemma enqueue_refinement (A : lrel Σ) (q : nat) γt γm γl ℓpop ℓpush ℓarr SEQs list l x x' :

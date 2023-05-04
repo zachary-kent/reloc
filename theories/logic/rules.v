@@ -7,6 +7,8 @@ From iris.heap_lang Require Import proofmode.
 From reloc.logic Require Import model proofmode.spec_tactics.
 From reloc.prelude Require Import ctx_subst.
 
+Local Set Default Proof Using "Type".
+
 Section rules.
   Context `{relocG Σ}.
   Implicit Types A : lrel Σ.
@@ -121,7 +123,7 @@ Section rules.
   Lemma refines_newproph_r E K t A
     (Hmasked : nclose specN ⊆ E) :
     (∀ (p : proph_id), REL t << fill K (of_val #p) @ E : A)%I
-    -∗ REL t << fill K NewProph @ E : A.
+    ⊢ REL t << fill K NewProph @ E : A.
   Proof.
     iIntros "Hlog".
     iApply refines_step_r.
@@ -133,7 +135,7 @@ Section rules.
   Lemma refines_resolveproph_r E K t (p : proph_id) w A
     (Hmasked : nclose specN ⊆ E) :
     (REL t << fill K (of_val #()) @ E : A)%I
-    -∗ REL t << fill K (ResolveProph #p (of_val w)) @ E : A.
+    ⊢ REL t << fill K (ResolveProph #p (of_val w)) @ E : A.
   Proof.
     iIntros "Hlog".
     iApply refines_step_r.
@@ -145,7 +147,7 @@ Section rules.
   Lemma refines_store_r E K l e e' v v' A
     (Hmasked : nclose specN ⊆ E) :
     IntoVal e' v' →
-    l ↦ₛ v -∗
+    l ↦ₛ v ⊢
     (l ↦ₛ v' -∗ REL e << fill K (of_val #()) @ E : A) -∗
     REL e << fill K (#l <- e') @ E : A.
   Proof.
@@ -160,7 +162,7 @@ Section rules.
     (Hmasked : nclose specN ⊆ E) :
     IntoVal e v →
     (∀ l : loc, l ↦ₛ v -∗ REL t << fill K (of_val #l) @ E : A)%I
-    -∗ REL t << fill K (ref e) @ E : A.
+    ⊢ REL t << fill K (ref e) @ E : A.
   Proof.
     rewrite /IntoVal. intros <-.
     iIntros "Hlog".
@@ -172,7 +174,7 @@ Section rules.
 
   Lemma refines_load_r E K l q v t A
     (Hmasked : nclose specN ⊆ E) :
-    l ↦ₛ{q} v -∗
+    l ↦ₛ{q} v ⊢
     (l ↦ₛ{q} v -∗ REL t << fill K (of_val v) @ E : A)
     -∗ REL t << (fill K !#l) @ E : A.
   Proof.
@@ -186,7 +188,7 @@ Section rules.
   Lemma refines_xchg_r E K l e1 v1 v t A :
     nclose specN ⊆ E →
     IntoVal e1 v1 →
-    l ↦ₛ v -∗
+    l ↦ₛ v ⊢
     (l ↦ₛ v1 -∗ REL t << fill K (of_val v) @ E : A)
     -∗ REL t << fill K (Xchg #l e1) @ E : A.
   Proof.
@@ -203,7 +205,7 @@ Section rules.
     IntoVal e2 v2 →
     vals_compare_safe v v1 →
     v ≠ v1 →
-    l ↦ₛ v -∗
+    l ↦ₛ v ⊢
     (l ↦ₛ v -∗ REL t << fill K (of_val (v, #false)) @ E : A)
     -∗ REL t << fill K (CmpXchg #l e1 e2) @ E : A.
   Proof.
@@ -220,7 +222,7 @@ Section rules.
     IntoVal e2 v2 →
     vals_compare_safe v v1 →
     v = v1 →
-    l ↦ₛ v -∗
+    l ↦ₛ v ⊢
     (l ↦ₛ v2 -∗ REL t << fill K (of_val (v, #true)) @ E : A)
     -∗ REL t << fill K (CmpXchg #l e1 e2) @ E : A.
   Proof.
@@ -248,7 +250,7 @@ Section rules.
   Lemma refines_fork_r E K (e t : expr) A
    (Hmasked : nclose specN ⊆ E) :
    (∀ k, refines_right k e -∗
-     REL t << fill K (of_val #()) @ E : A) -∗
+     REL t << fill K (of_val #()) @ E : A) ⊢
    REL t << fill K (Fork e) @ E : A.
   Proof.
     iIntros "Hlog".
@@ -294,7 +296,7 @@ Section rules.
 
   Lemma refines_fork_l K E e t A :
    (|={⊤,E}=> ▷ (WP e {{ _, True }} ∗
-    (REL fill K (of_val #()) << t @ E : A))) -∗
+    (REL fill K (of_val #()) << t @ E : A))) ⊢
    REL fill K (Fork e) << t : A.
   Proof.
     iIntros "Hlog".
@@ -307,7 +309,7 @@ Section rules.
     IntoVal e v →
     (|={⊤,E}=> ▷ (∀ l : loc, l ↦ v -∗
            REL fill K (of_val #l) << t @ E : A))%I
-    -∗ REL fill K (ref e) << t : A.
+    ⊢ REL fill K (ref e) << t : A.
   Proof.
     iIntros (<-) "Hlog".
     iApply refines_atomic_l; auto.
@@ -319,7 +321,7 @@ Section rules.
     (|={⊤,E}=> ▷ (∀ (vs : list (val*val)) (p : proph_id),
            proph p vs -∗
            REL fill K (of_val #p) << t @ E : A))%I
-    -∗ REL fill K NewProph << t : A.
+    ⊢ REL fill K NewProph << t : A.
   Proof.
     iIntros "Hlog".
     iApply refines_atomic_l; auto.
@@ -333,7 +335,7 @@ Section rules.
            ▷ (∀ (vs' : list (val*val)), ⌜vs = (LitV LitUnit,w)::vs'⌝ -∗
                   proph p vs' -∗
                   REL fill K (of_val #()) << t @ E : A))%I
-    -∗ REL fill K (ResolveProph #p w) << t : A.
+    ⊢ REL fill K (ResolveProph #p w) << t : A.
   Proof.
     iIntros "Hlog".
     iApply refines_atomic_l; auto.
@@ -350,7 +352,7 @@ Section rules.
            WP e @ E {{ v, ∀ (vs' : list (val*val)), ⌜vs = (v,w)::vs'⌝ -∗
                   proph p vs' -∗
                   REL fill K (of_val v) << t @ E : A }})%I
-    -∗ REL fill K (Resolve e #p w) << t : A.
+    ⊢ REL fill K (Resolve e #p w) << t : A.
   Proof.
     iIntros (??) "Hlog".
     iApply refines_atomic_l; auto.
@@ -363,7 +365,7 @@ Section rules.
     (|={⊤,E}=> ∃ v',
       ▷(l ↦{q} v') ∗
       ▷(l ↦{q} v' -∗ (REL fill K (of_val v') << t @ E : A)))%I
-    -∗ REL fill K (! #l) << t : A.
+    ⊢ REL fill K (! #l) << t : A.
   Proof.
     iIntros "Hlog".
     iApply refines_atomic_l; auto.
@@ -375,7 +377,7 @@ Section rules.
     IntoVal e v' →
     (|={⊤,E}=> ∃ v, ▷ l ↦ v ∗
       ▷(l ↦ v' -∗ REL fill K (of_val #()) << t @ E : A))
-    -∗ REL fill K (#l <- e) << t : A.
+    ⊢ REL fill K (#l <- e) << t : A.
   Proof.
     iIntros (<-) "Hlog".
     iApply refines_atomic_l; auto.
@@ -387,7 +389,7 @@ Section rules.
     IntoVal e v' →
     (|={⊤,E}=> ∃ v, ▷ l ↦ v ∗
       ▷(l ↦ v' -∗ REL fill K (of_val v) << t @ E : A))
-    -∗ REL fill K (Xchg #l e) << t : A.
+    ⊢ REL fill K (Xchg #l e) << t : A.
   Proof.
     iIntros (<-) "Hlog".
     iApply refines_atomic_l; auto.
@@ -402,7 +404,7 @@ Section rules.
     (|={⊤,E}=> ∃ v', ▷ l ↦ v' ∗
      (⌜v' ≠ v1⌝ -∗ ▷ (l ↦ v' -∗ REL fill K (of_val (v', #false)) << t @ E : A)) ∧
      (⌜v' = v1⌝ -∗ ▷ (l ↦ v2 -∗ REL fill K (of_val (v', #true)) << t @ E : A)))
-    -∗ REL fill K (CmpXchg #l e1 e2) << t : A.
+    ⊢ REL fill K (CmpXchg #l e1 e2) << t : A.
   Proof.
     iIntros (<-<-?) "Hlog".
     iApply refines_atomic_l; auto.
@@ -424,7 +426,7 @@ Section rules.
     IntoVal e2 #i2 →
     (|={⊤,E}=> ∃ (i1 : Z), ▷ l ↦ #i1 ∗
      ▷ (l ↦ #(i1 + i2) -∗ REL fill K (of_val #i1) << t @ E : A))
-    -∗ REL fill K (FAA #l e2) << t : A.
+    ⊢ REL fill K (FAA #l e2) << t : A.
   Proof.
     iIntros (<-) "Hlog".
     iApply refines_atomic_l; auto.

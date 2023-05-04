@@ -46,7 +46,7 @@ Proof.
       by rewrite /to_tpool /= insert_empty map_fmap_singleton //.
   - iIntros (v).
     iDestruct 1 as (v') "[Hj Hinterp]".
-    rewrite HA.
+    iDestruct (HA with "Hinterp") as "Hinterp".
     iDestruct "Hinterp" as %Hinterp.
     iInv specN as (tp σ') ">[Hown Hsteps]" "Hclose"; iDestruct "Hsteps" as %Hsteps'.
     iDestruct "Hj" as "[#Hs Hj]".

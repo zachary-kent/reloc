@@ -54,7 +54,7 @@ Section contents.
     iApply "HΦ". rewrite /lock_inv. by iFrame "Hts Hinv".
   Qed.
 
-  Lemma turns_take γ m : turns_from γ m -∗ turns_from γ (m + 1) ∗ turn γ m.
+  Lemma turns_take γ m : turns_from γ m ⊢ turns_from γ (m + 1) ∗ turn γ m.
   Proof. by rewrite /turns_from /turn -own_op comm -take_first. Qed.
 
   Lemma acquire_spec γTS ts (turn : loc) :

@@ -167,7 +167,7 @@ Section mapsto.
 
   Lemma mapstoS_agree l q1 q2 v1 v2 : l ↦ₛ{q1} v1 -∗ l ↦ₛ{q2} v2 -∗ ⌜v1 = v2⌝.
   Proof.
-    apply bi.wand_intro_r.
+    apply bi.entails_wand, bi.wand_intro_r.
     rewrite heapS_mapsto_eq -own_op -auth_frag_op own_valid uPred.discrete_valid.
     f_equiv=> /=.
     rewrite -pair_op singleton_op right_id -pair_op.
@@ -180,7 +180,7 @@ Section mapsto.
   Lemma mapstoS_valid l q v : l ↦ₛ{q} v -∗ ✓ q.
   Proof.
     rewrite heapS_mapsto_eq /heapS_mapsto_def own_valid !uPred.discrete_valid.
-    apply pure_mono=> /auth_frag_valid /= [_ Hfoo].
+    apply bi.entails_wand, pure_mono=> /auth_frag_valid /= [_ Hfoo].
     revert Hfoo. simpl. rewrite singleton_valid.
     by intros [? _].
   Qed.

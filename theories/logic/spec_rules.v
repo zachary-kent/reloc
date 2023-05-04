@@ -6,6 +6,8 @@ From iris.heap_lang Require Export lang notation tactics.
 From reloc.logic Require Export spec_ra.
 Import uPred.
 
+Local Set Default Proof Using "Type".
+
 Section rules.
   Context `{relocG Σ}.
   Implicit Types P Q : iProp Σ.
@@ -44,7 +46,7 @@ Section rules.
     P →
     PureExec P n e e' →
     nclose specN ⊆ E →
-    spec_ctx ∗ j ⤇ fill K e ={E}=∗ spec_ctx ∗ j ⤇ fill K e'.
+    spec_ctx ∗ j ⤇ fill K e ⊢ |={E}=> spec_ctx ∗ j ⤇ fill K e'.
   Proof.
     iIntros (HP Hex ?) "[#Hspec Hj]". iFrame "Hspec".
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def /=.
@@ -132,7 +134,7 @@ Section rules.
   Lemma step_alloc E j K e v :
     IntoVal e v →
     nclose specN ⊆ E →
-    spec_ctx ∗ j ⤇ fill K (ref e) ={E}=∗ ∃ l, spec_ctx ∗ j ⤇ fill K (#l) ∗ l ↦ₛ v.
+    spec_ctx ∗ j ⤇ fill K (ref e) ⊢ |={E}=> ∃ l, spec_ctx ∗ j ⤇ fill K (#l) ∗ l ↦ₛ v.
   Proof.
     iIntros (<-?) "[#Hinv Hj]". iFrame "Hinv".
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def /=.
@@ -160,7 +162,7 @@ Section rules.
   Lemma step_load E j K l q v:
     nclose specN ⊆ E →
     spec_ctx ∗ j ⤇ fill K (!#l) ∗ l ↦ₛ{q} v
-    ={E}=∗ spec_ctx ∗ j ⤇ fill K (of_val v) ∗ l ↦ₛ{q} v.
+    ⊢ |={E}=> spec_ctx ∗ j ⤇ fill K (of_val v) ∗ l ↦ₛ{q} v.
   Proof.
     iIntros (?) "(#Hinv & Hj & Hl)". iFrame "Hinv".
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def.
@@ -184,7 +186,7 @@ Section rules.
     IntoVal e v →
     nclose specN ⊆ E →
     spec_ctx ∗ j ⤇ fill K (#l <- e) ∗ l ↦ₛ v'
-    ={E}=∗ spec_ctx ∗ j ⤇ fill K #() ∗ l ↦ₛ v.
+    ⊢ |={E}=> spec_ctx ∗ j ⤇ fill K #() ∗ l ↦ₛ v.
   Proof.
     iIntros (<-?) "(#Hinv & Hj & Hl)". iFrame "Hinv".
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def.
@@ -215,7 +217,7 @@ Section rules.
     IntoVal e v →
     nclose specN ⊆ E →
     spec_ctx ∗ j ⤇ fill K (Xchg #l e) ∗ l ↦ₛ v'
-    ={E}=∗ spec_ctx ∗ j ⤇ fill K (of_val v') ∗ l ↦ₛ v.
+    ⊢ |={E}=> spec_ctx ∗ j ⤇ fill K (of_val v') ∗ l ↦ₛ v.
   Proof.
     iIntros (<-?) "(#Hinv & Hj & Hl)". iFrame "Hinv".
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def.
@@ -250,7 +252,7 @@ Section rules.
     vals_compare_safe v' v1 →
     v' ≠ v1 →
     spec_ctx ∗ j ⤇ fill K (CmpXchg #l e1 e2) ∗ l ↦ₛ{q} v'
-    ={E}=∗ spec_ctx ∗ j ⤇ fill K (v', #false)%V ∗ l ↦ₛ{q} v'.
+    ⊢ |={E}=> spec_ctx ∗ j ⤇ fill K (v', #false)%V ∗ l ↦ₛ{q} v'.
   Proof.
     iIntros (<-<-???) "(#Hinv & Hj & Hl)". iFrame "Hinv".
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def heapS_mapsto_eq /heapS_mapsto_def.
@@ -277,7 +279,7 @@ Section rules.
     vals_compare_safe v1' v1 →
     v1' = v1 →
     spec_ctx ∗ j ⤇ fill K (CmpXchg #l e1 e2) ∗ l ↦ₛ v1'
-    ={E}=∗ spec_ctx ∗ j ⤇ fill K (v1', #true)%V ∗ l ↦ₛ v2.
+    ⊢ |={E}=> spec_ctx ∗ j ⤇ fill K (v1', #true)%V ∗ l ↦ₛ v2.
   Proof.
     iIntros (<-<-???) "(#Hinv & Hj & Hl)"; subst. iFrame "Hinv".
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def heapS_mapsto_eq /heapS_mapsto_def.
@@ -308,7 +310,7 @@ Section rules.
     IntoVal e1 #i2 →
     nclose specN ⊆ E →
     spec_ctx ∗ j ⤇ fill K (FAA #l e1) ∗ l ↦ₛ #i1
-    ={E}=∗ spec_ctx ∗ j ⤇ fill K #i1 ∗ l ↦ₛ #(i1+i2).
+    ⊢ |={E}=> spec_ctx ∗ j ⤇ fill K #i1 ∗ l ↦ₛ #(i1+i2).
   Proof.
     iIntros (<-?) "(#Hinv & Hj & Hl)"; subst. iFrame "Hinv".
     rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def heapS_mapsto_eq /heapS_mapsto_def.
@@ -337,7 +339,7 @@ Section rules.
   (** Fork *)
   Lemma step_fork E j K e :
     nclose specN ⊆ E →
-    spec_ctx ∗ j ⤇ fill K (Fork e) ={E}=∗
+    spec_ctx ∗ j ⤇ fill K (Fork e) ⊢ |={E}=>
     ∃ j', (spec_ctx ∗ j ⤇ fill K #()) ∗ (spec_ctx ∗ j' ⤇ e).
   Proof.
     iIntros (?) "[#Hspec Hj]". iFrame "Hspec".

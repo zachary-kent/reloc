@@ -48,7 +48,7 @@ Section semtypes.
 
   Lemma unboxed_type_sound τ Δ v v' :
     UnboxedType τ →
-    interp τ Δ v v' -∗ ⌜val_is_unboxed v ∧ val_is_unboxed v'⌝.
+    interp τ Δ v v' ⊢ ⌜val_is_unboxed v ∧ val_is_unboxed v'⌝.
   Proof.
     induction 1; simpl;
     first [iDestruct 1 as (? ?) "[% [% ?]]"
@@ -59,7 +59,7 @@ Section semtypes.
 
   Lemma eq_type_sound τ Δ v v' :
     EqType τ →
-    interp τ Δ v v' -∗ ⌜v = v'⌝.
+    interp τ Δ v v' ⊢ ⌜v = v'⌝.
   Proof.
     intros Hτ; revert v v'; induction Hτ; iIntros (v v') "#H1 /=".
     - by iDestruct "H1" as %[-> ->].
@@ -224,7 +224,7 @@ Section env_typed.
 
   Lemma env_ltyped2_lookup Γ vs x A :
     Γ !! x = Some A →
-    ⟦ Γ ⟧* vs -∗ ∃ v1 v2, ⌜ vs !! x = Some (v1,v2) ⌝ ∧ A v1 v2.
+    ⟦ Γ ⟧* vs ⊢ ∃ v1 v2, ⌜ vs !! x = Some (v1,v2) ⌝ ∧ A v1 v2.
   Proof.
     intros ?. rewrite /env_ltyped2 big_sepM2_lookup_l //.
     iDestruct 1 as ([v1 v2] ?) "H". eauto with iFrame.
@@ -245,7 +245,7 @@ Section env_typed.
   Proof. apply (big_sepM2_empty' _). Qed.
 
   Lemma env_ltyped2_empty_inv vs :
-    ⟦ ∅ ⟧* vs -∗ ⌜vs = ∅⌝.
+    ⟦ ∅ ⟧* vs ⊢ ⌜vs = ∅⌝.
   Proof. apply big_sepM2_empty_r. Qed.
 
   Global Instance env_ltyped2_persistent Γ vs : Persistent (⟦ Γ ⟧* vs).

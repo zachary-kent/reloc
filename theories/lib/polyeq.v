@@ -31,7 +31,7 @@ Section proof.
 
   Lemma polyeq_true τ v1 v2 :
     EqType τ →
-    interp τ [] v1 v2 -∗
+    interp τ [] v1 v2 ⊢
     REL polyeq τ v1 v2 << #true : lrel_bool.
   Proof.
     intros Hτ ; revert v1 v2. induction Hτ=> v1 v2 /=.
