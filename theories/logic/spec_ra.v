@@ -32,17 +32,17 @@ Section definitionsS.
 
   Definition heapS_mapsto_def (l : loc) (q : Qp) (v: val) : iProp Σ :=
     own cfg_name (◯ (∅, {[ l := (q, to_agree (Some v)) ]})).
-  Definition heapS_mapsto_aux : { x | x = @heapS_mapsto_def }. by eexists. Qed.
-  Definition heapS_mapsto := proj1_sig heapS_mapsto_aux.
+  Definition heapS_mapsto_aux : seal (@heapS_mapsto_def). by eexists. Qed.
+  Definition heapS_mapsto := heapS_mapsto_aux.(unseal).
   Definition heapS_mapsto_eq :
-    @heapS_mapsto = @heapS_mapsto_def := proj2_sig heapS_mapsto_aux.
+    @heapS_mapsto = @heapS_mapsto_def := heapS_mapsto_aux.(seal_eq).
 
   Definition tpool_mapsto_def (j : nat) (e: expr) : iProp Σ :=
     own cfg_name (◯ ({[ j := Excl e ]}, ∅)).
-  Definition tpool_mapsto_aux : { x | x = @tpool_mapsto_def }. by eexists. Qed.
-  Definition tpool_mapsto := proj1_sig tpool_mapsto_aux.
+  Definition tpool_mapsto_aux : seal (@tpool_mapsto_def). by eexists. Qed.
+  Definition tpool_mapsto := tpool_mapsto_aux.(unseal).
   Definition tpool_mapsto_eq :
-    @tpool_mapsto = @tpool_mapsto_def := proj2_sig tpool_mapsto_aux.
+    @tpool_mapsto = @tpool_mapsto_def := tpool_mapsto_aux.(seal_eq).
 
   Definition mkstate (σ : gmap loc (option val)) (κs : gset proph_id) :=
     {| heap := σ; used_proph_id := κs |}.
@@ -59,7 +59,6 @@ Section definitionsS.
   Global Instance spec_ctx_persistent : Persistent spec_ctx.
   Proof. apply _. Qed.
 End definitionsS.
-Global Typeclasses Opaque heapS_mapsto tpool_mapsto spec_ctx.
 
 Notation "l ↦ₛ{ q } v" := (heapS_mapsto l q v)
   (at level 20, q at level 50, format "l  ↦ₛ{ q }  v") : bi_scope.
@@ -160,9 +159,9 @@ Section mapsto.
   Global Instance mapstoS_as_fractional l q v :
     AsFractional (l ↦ₛ{q} v) (λ q, l ↦ₛ{q} v)%I q.
   Proof. split. done. apply _. Qed.
-  Global Instance frame_mapstoS p l v q1 q2 RES :
-    FrameFractionalHyps p (l ↦ₛ{q1} v) (λ q, l ↦ₛ{q} v)%I RES q1 q2 →
-    Frame p (l ↦ₛ{q1} v) (l ↦ₛ{q2} v) RES | 5.
+  Global Instance frame_mapstoS p l v q1 q2 q :
+    FrameFractionalQp q1 q2 q →
+    Frame p (l ↦ₛ{q1} v) (l ↦ₛ{q2} v) (l ↦ₛ{q} v) | 5.
   Proof. apply: frame_fractional. Qed.
 
   Lemma mapstoS_agree l q1 q2 v1 v2 : l ↦ₛ{q1} v1 -∗ l ↦ₛ{q2} v2 -∗ ⌜v1 = v2⌝.
