@@ -203,8 +203,7 @@ Section mapsto.
   Proof.
     iIntros "Hl1 Hl2".
     iDestruct (mapstoS_agree with "Hl1 Hl2") as %?. simplify_eq.
-    iSplit; eauto.
-    iApply (fractional_half_2 with "Hl1 Hl2").
+    iSplit; eauto. iCombine "Hl1 Hl2" as "?". done.
   Qed.
 
 End mapsto.
