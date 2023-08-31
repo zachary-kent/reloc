@@ -37,7 +37,8 @@ Section refinement.
     Cnt (N.@"cnt1") cn γln -∗
     Cnt (N.@"cnt2") co γlo -∗
     ticket γ m -∗
-    REL wait_loop #m (co, cn)%V << spin_lock.acquire l' : ().
+    (* breaking the ticket_lock abstraction... *)
+    REL ticket_lock.wait_loop #m (co, cn)%V << spin_lock.acquire l' : ().
   Proof.
     iIntros "#Hinv #Hcntn #Hcnto Hticket".
     iLöb as "IH". rel_rec_l.

@@ -8,7 +8,8 @@ From iris.heap_lang.lib Require Export ticket_lock.
 (* A different `acquire` funciton to showcase the atomic rule for FG_increment *)
 Definition acquire : val := λ: "lk",
   let: "n" := FG_increment (Snd "lk") in
-  wait_loop "n" "lk".
+  (* breaking the ticket-lock abstraction... *)
+  ticket_lock.wait_loop "n" "lk".
 (* A different `release` function to showcase the rule for wkincr *)
 Definition release : val := λ: "lk", wkincr (Fst "lk").
 
@@ -128,7 +129,7 @@ Section refinement.
   Lemma wait_loop_refinement (lo ln : loc) γ lk (m : nat) :
     inv N (lockInv lo ln γ lk) -∗
     ticket γ m -∗
-    REL wait_loop #m (#lo, #ln)%V << reloc.lib.lock.acquire lk : ().
+    REL ticket_lock.wait_loop #m (#lo, #ln)%V << reloc.lib.lock.acquire lk : ().
   Proof.
     iIntros "#Hinv Hticket".
     rel_rec_l.
