@@ -144,7 +144,7 @@ Section to_heap.
   Qed.
 
   Lemma to_heap_valid σ : ✓ to_heap σ.
-  Proof. intros l. rewrite lookup_fmap. by case (σ !! l). Qed.
+  Proof. intros l. rewrite lookup_fmap. by case: (σ !! l). Qed.
 
 End to_heap.
 

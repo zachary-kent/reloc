@@ -100,7 +100,7 @@ Definition to_offer_reg : offerReg -> offerRegR := fmap offerize.
 
 Lemma to_offer_reg_valid N : ✓ to_offer_reg N.
 Proof.
-  intros l. rewrite lookup_fmap. case (N !! l); simpl; try done.
+  intros l. rewrite lookup_fmap. case: (N !! l); simpl; try done.
   intros [[v γ] k]; simpl. done.
 Qed.
 
