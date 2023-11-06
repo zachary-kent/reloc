@@ -258,7 +258,7 @@ Section proof.
       repeat rel_pure_l.
       rel_apply_r (refines_acquire_r with "Hl2").
       iIntros "Hl2". repeat rel_pure_r.
-      iDestruct (mapstoS_half_combine with "Hs2 Hs2'") as "[% Hs2]"; simplify_eq.
+      iDestruct (pointstoS_half_combine with "Hs2 Hs2'") as "[% Hs2]"; simplify_eq.
       rel_load_r. repeat rel_pure_r.
       rel_store_r. repeat rel_pure_r.
       (* Before we close the lock, we need to gather some evidence *)
@@ -277,7 +277,7 @@ Section proof.
       iCombine "Htbl1 Htbl1'" as "Htbl1".
       iModIntro. iExists _. iFrame. iNext. iIntros "[Htbl1 Htbl1']".
       repeat rel_pure_l. repeat rel_pure_r. rel_load_r.
-      iDestruct (mapstoS_half_combine with "Htbl2 Htbl2'") as "[% Htbl2]"; simplify_eq.
+      iDestruct (pointstoS_half_combine with "Htbl2 Htbl2'") as "[% Htbl2]"; simplify_eq.
       repeat rel_pure_r. rel_store_r. repeat rel_pure_r.
       rel_apply_r (refines_release_r with "Hl2").
       iIntros "Hl2". repeat rel_pure_r.
@@ -337,7 +337,7 @@ Section proof.
       repeat rel_pure_l.
       rel_apply_r (refines_acquire_r with "Hl2").
       iIntros "Hl2". repeat rel_pure_r.
-      iDestruct (mapstoS_half_combine with "Hs2 Hs2'") as "[% Hs2]"; simplify_eq.
+      iDestruct (pointstoS_half_combine with "Hs2 Hs2'") as "[% Hs2]"; simplify_eq.
       rel_load_r. repeat rel_pure_r.
       rel_store_r. repeat rel_pure_r.
       (* Before we close the lock, we need to gather some evidence *)
@@ -356,7 +356,7 @@ Section proof.
       iCombine "Htbl1 Htbl1'" as "Htbl1".
       iModIntro. iExists _. iFrame. iNext. iIntros "[Htbl1 Htbl1']".
       repeat rel_pure_l. repeat rel_pure_r. rel_load_r.
-      iDestruct (mapstoS_half_combine with "Htbl2 Htbl2'") as "[% Htbl2]"; simplify_eq.
+      iDestruct (pointstoS_half_combine with "Htbl2 Htbl2'") as "[% Htbl2]"; simplify_eq.
       repeat rel_pure_r. rel_store_r. repeat rel_pure_r.
       rel_apply_r (refines_release_r with "Hl2").
       iIntros "Hl2". repeat rel_pure_r.

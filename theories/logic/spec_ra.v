@@ -151,20 +151,20 @@ End to_heap.
 Section pointsto.
   Context `{!cfgSG Σ}.
 
-  Global Instance mapstoS_fractional l v : Fractional (λ q, l ↦ₛ{q} v)%I.
+  Global Instance pointstoS_fractional l v : Fractional (λ q, l ↦ₛ{q} v)%I.
   Proof.
     intros p q. rewrite heapS_pointsto_eq -own_op -auth_frag_op.
     by rewrite -pair_op singleton_op -pair_op agree_idemp right_id.
   Qed.
-  Global Instance mapstoS_as_fractional l q v :
+  Global Instance pointstoS_as_fractional l q v :
     AsFractional (l ↦ₛ{q} v) (λ q, l ↦ₛ{q} v)%I q.
   Proof. split. done. apply _. Qed.
-  Global Instance frame_mapstoS p l v q1 q2 q :
+  Global Instance frame_pointstoS p l v q1 q2 q :
     FrameFractionalQp q1 q2 q →
     Frame p (l ↦ₛ{q1} v) (l ↦ₛ{q2} v) (l ↦ₛ{q} v) | 5.
   Proof. apply: frame_fractional. Qed.
 
-  Lemma mapstoS_agree l q1 q2 v1 v2 : l ↦ₛ{q1} v1 -∗ l ↦ₛ{q2} v2 -∗ ⌜v1 = v2⌝.
+  Lemma pointstoS_agree l q1 q2 v1 v2 : l ↦ₛ{q1} v1 -∗ l ↦ₛ{q2} v2 -∗ ⌜v1 = v2⌝.
   Proof.
     apply bi.entails_wand, bi.wand_intro_r.
     rewrite heapS_pointsto_eq -own_op -auth_frag_op own_valid uPred.discrete_valid.
@@ -176,7 +176,7 @@ Section pointsto.
     by move=> [_] /to_agree_op_inv_L [->].
   Qed.
 
-  Lemma mapstoS_valid l q v : l ↦ₛ{q} v -∗ ✓ q.
+  Lemma pointstoS_valid l q v : l ↦ₛ{q} v -∗ ✓ q.
   Proof.
     rewrite heapS_pointsto_eq /heapS_pointsto_def own_valid !uPred.discrete_valid.
     apply bi.entails_wand, pure_mono=> /auth_frag_valid /= [_ Hfoo].
@@ -184,25 +184,25 @@ Section pointsto.
     by intros [? _].
   Qed.
 
-  Lemma mapstoS_valid_2 l q1 q2 v1 v2 : l ↦ₛ{q1} v1 -∗ l ↦ₛ{q2} v2 -∗ ✓ (q1 + q2)%Qp.
+  Lemma pointstoS_valid_2 l q1 q2 v1 v2 : l ↦ₛ{q1} v1 -∗ l ↦ₛ{q2} v2 -∗ ✓ (q1 + q2)%Qp.
   Proof.
-    iIntros "H1 H2". iDestruct (mapstoS_agree with "H1 H2") as %->.
-    iApply (mapstoS_valid l _ v2). by iFrame.
+    iIntros "H1 H2". iDestruct (pointstoS_agree with "H1 H2") as %->.
+    iApply (pointstoS_valid l _ v2). by iFrame.
   Qed.
 
-  Global Instance mapstoS_combine_sep_gives l dq1 dq2 v1 v2 :
+  Global Instance pointstoS_combine_sep_gives l dq1 dq2 v1 v2 :
     CombineSepGives (l ↦ₛ{dq1} v1) (l ↦ₛ{dq2} v2) ⌜✓ (dq1 ⋅ dq2) ∧ v1 = v2⌝.
   Proof.
     rewrite /CombineSepGives. iIntros "[H1 H2]". iSplit.
-    - iDestruct (mapstoS_valid_2 with "H1 H2") as %?; auto.
-    - iDestruct (mapstoS_agree with "H1 H2") as %?; auto.
+    - iDestruct (pointstoS_valid_2 with "H1 H2") as %?; auto.
+    - iDestruct (pointstoS_agree with "H1 H2") as %?; auto.
   Qed.
 
-  Lemma mapstoS_half_combine l v1 v2 :
+  Lemma pointstoS_half_combine l v1 v2 :
     l ↦ₛ{1/2} v1 -∗ l ↦ₛ{1/2} v2 -∗ ⌜v1 = v2⌝ ∗ l ↦ₛ v1.
   Proof.
     iIntros "Hl1 Hl2".
-    iDestruct (mapstoS_agree with "Hl1 Hl2") as %?. simplify_eq.
+    iDestruct (pointstoS_agree with "Hl1 Hl2") as %?. simplify_eq.
     iSplit; eauto. iCombine "Hl1 Hl2" as "?". done.
   Qed.
 
