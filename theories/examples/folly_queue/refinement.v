@@ -94,7 +94,7 @@ Section queue_refinement.
 
   Definition ghost_list γl (xs : list val) := own γl (● make_map (list_idx_to_map xs)).
 
-  Definition ghost_list_mapsto γl i (x : val) := own γl (◯ {[i := to_agree x]}).
+  Definition ghost_list_pointsto γl i (x : val) := own γl (◯ {[i := to_agree x]}).
 
   Lemma ghost_list_alloc : ⊢ |==> ∃ γl, ghost_list γl [].
     iMod (own_alloc (● ∅ : listUR)) as (γl) "Hauth"; first by apply auth_auth_valid.
@@ -103,10 +103,10 @@ Section queue_refinement.
   Qed.
 
   Lemma ghost_list_append γl xs (x : val) :
-    ghost_list γl xs ==∗ ghost_list γl (xs ++ [x]) ∗ ghost_list_mapsto γl (length xs) x.
+    ghost_list γl xs ==∗ ghost_list γl (xs ++ [x]) ∗ ghost_list_pointsto γl (length xs) x.
   Proof.
     iIntros "HL".
-    rewrite /ghost_list /ghost_list_mapsto.
+    rewrite /ghost_list /ghost_list_pointsto.
     rewrite -(own_op γl).
     iApply (own_update with "HL").
     apply auth_update_alloc.
@@ -130,9 +130,9 @@ Section queue_refinement.
   Qed.
 
   Lemma ghost_list_le γl xs i x :
-    ghost_list γl xs -∗ ghost_list_mapsto γl i x -∗ ⌜i < length xs⌝.
+    ghost_list γl xs -∗ ghost_list_pointsto γl i x -∗ ⌜i < length xs⌝.
   Proof.
-    rewrite /ghost_list /ghost_list_mapsto /list_idx_to_map.
+    rewrite /ghost_list /ghost_list_pointsto /list_idx_to_map.
     iIntros "Ha Hb".
     iCombine "Ha Hb" gives %[Hincl _]%auth_both_valid_discrete.
     apply dom_included in Hincl.
@@ -146,10 +146,10 @@ Section queue_refinement.
 
   Lemma ghost_list_lookup (γl : gname) xs (i : nat) (x : val) :
     xs !! i = Some x →
-    ghost_list γl xs ==∗ ghost_list γl xs ∗ ghost_list_mapsto γl i x.
+    ghost_list γl xs ==∗ ghost_list γl xs ∗ ghost_list_pointsto γl i x.
   Proof.
     iIntros (Hs) "Hlist".
-    rewrite /ghost_list /ghost_list_mapsto /list_idx_to_map.
+    rewrite /ghost_list /ghost_list_pointsto /list_idx_to_map.
     rewrite -own_op.
     iApply (own_update with "Hlist").
     apply: auth_update_dfrac_alloc.
@@ -243,7 +243,7 @@ Section queue_refinement.
      we're at at the queue in total (global index n). *)
   Definition R γl q i (j : nat) (v : val) : iProp Σ :=
     let n := j * q + i
-    in ghost_list_mapsto γl n v.
+    in ghost_list_pointsto γl n v.
 
   (* Turn management. *)
 
@@ -575,7 +575,7 @@ Section queue_refinement.
     (∃ id v vₛ, own γm (◯ {[ i := to_agree id ]}) ∗
                 (refines_right id (of_val vₛ)) ∗
                 A v vₛ ∗
-                ghost_list_mapsto γl i v).
+                ghost_list_pointsto γl i v).
 
   Definition mpmcInv A γt γm γl q (ℓpop ℓpush ℓarr : loc) (SEQs : list seq)
     (xsᵢ : list val) (ℓs : loc) (lk : val) : iProp Σ :=

@@ -125,7 +125,7 @@ Section spec.
       iCombine "ℓPts Hc" gives %[?%Qp.not_add_le_l _].
       done. }
     wp_load.
-    iDestruct (mapsto_agree with "ℓPts Hc") as %[= Heq].
+    iDestruct (pointsto_agree with "ℓPts Hc") as %[= Heq].
     iMod ("Hcl" with "[Ht ℓPts Hturns]") as "_".
     { iNext. iExists m. iFrame. }
     iModIntro. wp_pures. simplify_eq/=.
@@ -138,7 +138,7 @@ Section spec.
       iCombine "ℓPts Hc'" as "ℓPts".
       iCombine "ℓPts Hc" gives %[?%Qp.not_add_le_l _].
       done. }
-    iDestruct (mapsto_combine with "ℓPts Hc") as "[ℓPts %Heq]".
+    iDestruct (pointsto_combine with "ℓPts Hc") as "[ℓPts %Heq]".
     simplify_eq/=.
     rewrite dfrac_op_own Qp.half_half.
     wp_store.

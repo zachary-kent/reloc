@@ -25,7 +25,7 @@ Section rules.
 
   (** * Aux. lemmas *)
   Lemma step_insert K tp j e σ κ e' σ' efs :
-    tp !! j = Some (fill K e) → head_step e σ κ e' σ' efs →
+    tp !! j = Some (fill K e) → base_step e σ κ e' σ' efs →
     erased_step (tp, σ) (<[j:=fill K e']> tp ++ efs, σ').
   Proof.
     intros. rewrite -(take_drop_middle tp j (fill K e)) //.
@@ -36,7 +36,7 @@ Section rules.
   Qed.
 
   Lemma step_insert_no_fork K tp j e σ κ e' σ' :
-    tp !! j = Some (fill K e) → head_step e σ κ e' σ' [] →
+    tp !! j = Some (fill K e) → base_step e σ κ e' σ' [] →
     erased_step (tp, σ) (<[j:=fill K e']> tp, σ').
   Proof. rewrite -(right_id_L [] (++) (<[_:=_]>_)). by apply step_insert. Qed.
 
@@ -49,7 +49,7 @@ Section rules.
     spec_ctx ∗ j ⤇ fill K e ⊢ |={E}=> spec_ctx ∗ j ⤇ fill K e'.
   Proof.
     iIntros (HP Hex ?) "[#Hspec Hj]". iFrame "Hspec".
-    rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def /=.
+    rewrite /spec_ctx tpool_pointsto_eq /tpool_pointsto_def /=.
     iDestruct "Hspec" as (ρ) "Hspec".
     iInv specN as (tp σ) ">[Hown Hrtc]" "Hclose".
     iDestruct "Hrtc" as %Hrtc.
@@ -95,7 +95,7 @@ Section rules.
     ∃ (p : proph_id), spec_ctx ∗ j ⤇ fill K #p.
   Proof.
     iIntros (?) "[#Hinv Hj]". iFrame "Hinv".
-    rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def /=.
+    rewrite /spec_ctx tpool_pointsto_eq /tpool_pointsto_def /=.
     iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iCombine "Hown Hj"
@@ -116,7 +116,7 @@ Section rules.
     spec_ctx ∗ j ⤇ fill K #().
   Proof.
     iIntros (?) "[#Hinv Hj]". iFrame "Hinv".
-    rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def /=.
+    rewrite /spec_ctx tpool_pointsto_eq /tpool_pointsto_def /=.
     iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iCombine "Hown Hj"
@@ -137,7 +137,7 @@ Section rules.
     spec_ctx ∗ j ⤇ fill K (ref e) ⊢ |={E}=> ∃ l, spec_ctx ∗ j ⤇ fill K (#l) ∗ l ↦ₛ v.
   Proof.
     iIntros (<-?) "[#Hinv Hj]". iFrame "Hinv".
-    rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def /=.
+    rewrite /spec_ctx tpool_pointsto_eq /tpool_pointsto_def /=.
     iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     destruct (exist_fresh (dom (heap σ))) as [l Hl%not_elem_of_dom].
@@ -150,7 +150,7 @@ Section rules.
     { eapply auth_update_alloc, prod_local_update_2,
         (alloc_singleton_local_update _ l (1%Qp,to_agree (Some v : leibnizO _))); last done.
       by apply lookup_to_heap_None. }
-    rewrite heapS_mapsto_eq /heapS_mapsto_def /=.
+    rewrite heapS_pointsto_eq /heapS_pointsto_def /=.
     iExists l. iFrame "Hj Hl". iApply "Hclose". iNext.
     iExists (<[j:=fill K (# l)]> tp), (state_upd_heap <[l:=Some v]> σ).
     rewrite to_heap_insert to_tpool_insert'; last eauto. iFrame. iPureIntro.
@@ -165,9 +165,9 @@ Section rules.
     ⊢ |={E}=> spec_ctx ∗ j ⤇ fill K (of_val v) ∗ l ↦ₛ{q} v.
   Proof.
     iIntros (?) "(#Hinv & Hj & Hl)". iFrame "Hinv".
-    rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def.
+    rewrite /spec_ctx tpool_pointsto_eq /tpool_pointsto_def.
     iDestruct "Hinv" as (ρ) "Hinv".
-    rewrite heapS_mapsto_eq /heapS_mapsto_def /=.
+    rewrite heapS_pointsto_eq /heapS_pointsto_def /=.
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iCombine "Hown Hj"
       gives %[[?%tpool_singleton_included' _]%prod_included ?]%auth_both_valid_discrete.
@@ -189,9 +189,9 @@ Section rules.
     ⊢ |={E}=> spec_ctx ∗ j ⤇ fill K #() ∗ l ↦ₛ v.
   Proof.
     iIntros (<-?) "(#Hinv & Hj & Hl)". iFrame "Hinv".
-    rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def.
+    rewrite /spec_ctx tpool_pointsto_eq /tpool_pointsto_def.
     iDestruct "Hinv" as (ρ) "Hinv".
-    rewrite heapS_mapsto_eq /heapS_mapsto_def /=.
+    rewrite heapS_pointsto_eq /heapS_pointsto_def /=.
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iCombine "Hown Hj"
       gives %[[?%tpool_singleton_included' _]%prod_included _]%auth_both_valid_discrete.
@@ -220,9 +220,9 @@ Section rules.
     ⊢ |={E}=> spec_ctx ∗ j ⤇ fill K (of_val v') ∗ l ↦ₛ v.
   Proof.
     iIntros (<-?) "(#Hinv & Hj & Hl)". iFrame "Hinv".
-    rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def.
+    rewrite /spec_ctx tpool_pointsto_eq /tpool_pointsto_def.
     iDestruct "Hinv" as (ρ) "Hinv".
-    rewrite heapS_mapsto_eq /heapS_mapsto_def /=.
+    rewrite heapS_pointsto_eq /heapS_pointsto_def /=.
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iCombine "Hown Hj"
       gives %[[?%tpool_singleton_included' _]%prod_included _]%auth_both_valid_discrete.
@@ -255,7 +255,7 @@ Section rules.
     ⊢ |={E}=> spec_ctx ∗ j ⤇ fill K (v', #false)%V ∗ l ↦ₛ{q} v'.
   Proof.
     iIntros (<-<-???) "(#Hinv & Hj & Hl)". iFrame "Hinv".
-    rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def heapS_mapsto_eq /heapS_mapsto_def.
+    rewrite /spec_ctx tpool_pointsto_eq /tpool_pointsto_def heapS_pointsto_eq /heapS_pointsto_def.
     iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iCombine "Hown Hj"
@@ -282,7 +282,7 @@ Section rules.
     ⊢ |={E}=> spec_ctx ∗ j ⤇ fill K (v1', #true)%V ∗ l ↦ₛ v2.
   Proof.
     iIntros (<-<-???) "(#Hinv & Hj & Hl)"; subst. iFrame "Hinv".
-    rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def heapS_mapsto_eq /heapS_mapsto_def.
+    rewrite /spec_ctx tpool_pointsto_eq /tpool_pointsto_def heapS_pointsto_eq /heapS_pointsto_def.
     iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iCombine "Hown Hj"
@@ -313,7 +313,7 @@ Section rules.
     ⊢ |={E}=> spec_ctx ∗ j ⤇ fill K #i1 ∗ l ↦ₛ #(i1+i2).
   Proof.
     iIntros (<-?) "(#Hinv & Hj & Hl)"; subst. iFrame "Hinv".
-    rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def heapS_mapsto_eq /heapS_mapsto_def.
+    rewrite /spec_ctx tpool_pointsto_eq /tpool_pointsto_def heapS_pointsto_eq /heapS_pointsto_def.
     iDestruct "Hinv" as (ρ) "Hinv".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iCombine "Hown Hj"
@@ -343,7 +343,7 @@ Section rules.
     ∃ j', (spec_ctx ∗ j ⤇ fill K #()) ∗ (spec_ctx ∗ j' ⤇ e).
   Proof.
     iIntros (?) "[#Hspec Hj]". iFrame "Hspec".
-    rewrite /spec_ctx tpool_mapsto_eq /tpool_mapsto_def.
+    rewrite /spec_ctx tpool_pointsto_eq /tpool_pointsto_def.
     iDestruct "Hspec" as (ρ) "Hspec".
     iInv specN as (tp σ) ">[Hown %]" "Hclose".
     iCombine "Hown Hj"

@@ -30,15 +30,15 @@ Section proof.
     - iIntros "#Histk".
       destruct ls' as [|h' ls']; first by eauto.
       simpl. iDestruct 1 as (z) "[Histk' _]".
-      iDestruct (mapsto_agree with "Histk' Histk") as %Hfoo.
+      iDestruct (pointsto_agree with "Histk' Histk") as %Hfoo.
       exfalso. naive_solver.
     - iDestruct 1 as (z) "[Histk Hls]".
       destruct ls' as [|h' ls']; simpl.
       + iIntros "Histk'".
-        iDestruct (mapsto_agree with "Histk' Histk") as %Hfoo.
+        iDestruct (pointsto_agree with "Histk' Histk") as %Hfoo.
         exfalso. naive_solver.
       + iDestruct 1 as (z') "[Histk' Hls']".
-        iDestruct (mapsto_agree with "Histk' Histk") as %Hfoo; simplify_eq/=.
+        iDestruct (pointsto_agree with "Histk' Histk") as %Hfoo; simplify_eq/=.
         iDestruct (IHls with "Hls Hls'") as %Hbar. simplify_eq/=.
         eauto.
   Qed.
@@ -76,7 +76,7 @@ Section proof.
       rel_pures_l. rel_rec_l. by iApply "IH".
     - (* CmpXchg succeeds *)
       iIntros (?). simplify_eq/=. iNext. iIntros "Hstk".
-      iMod (mapsto_persist with "Hnstk") as "Hnstk".
+      iMod (pointsto_persist with "Hnstk") as "Hnstk".
       rewrite /stack_link. iDestruct "Hlnk" as (ls1 ls2) "(Hls1 & Hls2 & #HA)".
       rel_apply_r (refines_CG_push_r with "Hls2").
       iIntros "Hls2".
@@ -157,7 +157,7 @@ Section proof.
       rel_alloc_r st' as "Hst'". rel_pures_r.
       rel_apply_r refines_newlock_r. iIntros (l) "Hl". rel_pures_r.
       rel_values.
-      iMod (mapsto_persist with "Hisk") as "#Hisk".
+      iMod (pointsto_persist with "Hisk") as "#Hisk".
       iMod (inv_alloc (stackN.@(st,(#st', l)%V)) _ (sinv A st (#st', l)%V) with "[-]")
         as "#Hinv".
       { iNext. iExists _. iFrame. iExists [],[]. simpl.

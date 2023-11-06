@@ -250,10 +250,10 @@ Section proof.
       rel_load_l. repeat rel_pure_l.
       rel_store_l_atomic.
       iInv sizeN as (m' ls') "(Ha & >Hs1' & >Hs2' & >Htbl1' & >Htbl2' & #Hls)" "Hcl".
-      iDestruct (mapsto_agree with "Hs1 Hs1'") as %Hm'.
+      iDestruct (pointsto_agree with "Hs1 Hs1'") as %Hm'.
       simplify_eq/=.
       iCombine "Hs1 Hs1'" as "Hs1".
-      iDestruct (mapsto_agree with "Htbl1 Htbl1'") as %->.
+      iDestruct (pointsto_agree with "Htbl1 Htbl1'") as %->.
       iModIntro. iExists _. iFrame. iNext. iIntros "[Hs1 Hs1']".
       repeat rel_pure_l.
       rel_apply_r (refines_acquire_r with "Hl2").
@@ -273,7 +273,7 @@ Section proof.
       rel_store_l_atomic.
       iClear "Hls".
       iInv sizeN as (m ls) "(Ha & >Hs1 & >Hs2 & >Htbl1 & >Htbl2 & #Hls)" "Hcl".
-      iDestruct (gen_heap.mapsto_agree with "Htbl1 Htbl1'") as %->.
+      iDestruct (gen_heap.pointsto_agree with "Htbl1 Htbl1'") as %->.
       iCombine "Htbl1 Htbl1'" as "Htbl1".
       iModIntro. iExists _. iFrame. iNext. iIntros "[Htbl1 Htbl1']".
       repeat rel_pure_l. repeat rel_pure_r. rel_load_r.
@@ -329,10 +329,10 @@ Section proof.
       rel_load_l. repeat rel_pure_l.
       rel_store_l_atomic.
       iInv sizeN as (m' ls') "(Ha & >Hs1' & >Hs2' & >Htbl1' & >Htbl2' & #Hls)" "Hcl".
-      iDestruct (mapsto_agree with "Hs1 Hs1'") as %Hm'.
+      iDestruct (pointsto_agree with "Hs1 Hs1'") as %Hm'.
       simplify_eq/=.
       iCombine "Hs1 Hs1'" as "Hs1".
-      iDestruct (mapsto_agree with "Htbl1 Htbl1'") as %->.
+      iDestruct (pointsto_agree with "Htbl1 Htbl1'") as %->.
       iModIntro. iExists _. iFrame. iNext. iIntros "[Hs1 Hs1']".
       repeat rel_pure_l.
       rel_apply_r (refines_acquire_r with "Hl2").
@@ -352,7 +352,7 @@ Section proof.
       rel_store_l_atomic.
       iClear "Hls".
       iInv sizeN as (m ls) "(Ha & >Hs1 & >Hs2 & >Htbl1 & >Htbl2 & #Hls)" "Hcl".
-      iDestruct (mapsto_agree with "Htbl1 Htbl1'") as %->.
+      iDestruct (pointsto_agree with "Htbl1 Htbl1'") as %->.
       iCombine "Htbl1 Htbl1'" as "Htbl1".
       iModIntro. iExists _. iFrame. iNext. iIntros "[Htbl1 Htbl1']".
       repeat rel_pure_l. repeat rel_pure_r. rel_load_r.

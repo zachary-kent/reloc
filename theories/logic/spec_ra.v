@@ -30,19 +30,19 @@ Definition to_tpool (tp : list expr) : tpoolUR := Excl <$> (map_seq 0 tp).
 Section definitionsS.
   Context `{cfgSG Σ, invGS Σ}.
 
-  Definition heapS_mapsto_def (l : loc) (q : Qp) (v: val) : iProp Σ :=
+  Definition heapS_pointsto_def (l : loc) (q : Qp) (v: val) : iProp Σ :=
     own cfg_name (◯ (∅, {[ l := (q, to_agree (Some v)) ]})).
-  Definition heapS_mapsto_aux : seal (@heapS_mapsto_def). by eexists. Qed.
-  Definition heapS_mapsto := heapS_mapsto_aux.(unseal).
-  Definition heapS_mapsto_eq :
-    @heapS_mapsto = @heapS_mapsto_def := heapS_mapsto_aux.(seal_eq).
+  Definition heapS_pointsto_aux : seal (@heapS_pointsto_def). by eexists. Qed.
+  Definition heapS_pointsto := heapS_pointsto_aux.(unseal).
+  Definition heapS_pointsto_eq :
+    @heapS_pointsto = @heapS_pointsto_def := heapS_pointsto_aux.(seal_eq).
 
-  Definition tpool_mapsto_def (j : nat) (e: expr) : iProp Σ :=
+  Definition tpool_pointsto_def (j : nat) (e: expr) : iProp Σ :=
     own cfg_name (◯ ({[ j := Excl e ]}, ∅)).
-  Definition tpool_mapsto_aux : seal (@tpool_mapsto_def). by eexists. Qed.
-  Definition tpool_mapsto := tpool_mapsto_aux.(unseal).
-  Definition tpool_mapsto_eq :
-    @tpool_mapsto = @tpool_mapsto_def := tpool_mapsto_aux.(seal_eq).
+  Definition tpool_pointsto_aux : seal (@tpool_pointsto_def). by eexists. Qed.
+  Definition tpool_pointsto := tpool_pointsto_aux.(unseal).
+  Definition tpool_pointsto_eq :
+    @tpool_pointsto = @tpool_pointsto_def := tpool_pointsto_aux.(seal_eq).
 
   Definition mkstate (σ : gmap loc (option val)) (κs : gset proph_id) :=
     {| heap := σ; used_proph_id := κs |}.
@@ -52,18 +52,18 @@ Section definitionsS.
   Definition spec_ctx : iProp Σ :=
     (∃ ρ, inv specN (spec_inv ρ))%I.
 
-  Global Instance heapS_mapsto_timeless l q v : Timeless (heapS_mapsto l q v).
-  Proof. rewrite heapS_mapsto_eq. apply _. Qed.
-  Global Instance tpool_mapsto_timeless j e: Timeless (tpool_mapsto j e).
-  Proof. rewrite tpool_mapsto_eq. apply _. Qed.
+  Global Instance heapS_pointsto_timeless l q v : Timeless (heapS_pointsto l q v).
+  Proof. rewrite heapS_pointsto_eq. apply _. Qed.
+  Global Instance tpool_pointsto_timeless j e: Timeless (tpool_pointsto j e).
+  Proof. rewrite tpool_pointsto_eq. apply _. Qed.
   Global Instance spec_ctx_persistent : Persistent spec_ctx.
   Proof. apply _. Qed.
 End definitionsS.
 
-Notation "l ↦ₛ{ q } v" := (heapS_mapsto l q v)
+Notation "l ↦ₛ{ q } v" := (heapS_pointsto l q v)
   (at level 20, q at level 50, format "l  ↦ₛ{ q }  v") : bi_scope.
-Notation "l ↦ₛ v" := (heapS_mapsto l 1 v) (at level 20) : bi_scope.
-Notation "j ⤇ e" := (tpool_mapsto j e) (at level 20) : bi_scope.
+Notation "l ↦ₛ v" := (heapS_pointsto l 1 v) (at level 20) : bi_scope.
+Notation "j ⤇ e" := (tpool_pointsto j e) (at level 20) : bi_scope.
 
 Section conversions.
   Context `{cfgSG Σ}.
@@ -148,12 +148,12 @@ Section to_heap.
 
 End to_heap.
 
-Section mapsto.
+Section pointsto.
   Context `{!cfgSG Σ}.
 
   Global Instance mapstoS_fractional l v : Fractional (λ q, l ↦ₛ{q} v)%I.
   Proof.
-    intros p q. rewrite heapS_mapsto_eq -own_op -auth_frag_op.
+    intros p q. rewrite heapS_pointsto_eq -own_op -auth_frag_op.
     by rewrite -pair_op singleton_op -pair_op agree_idemp right_id.
   Qed.
   Global Instance mapstoS_as_fractional l q v :
@@ -167,7 +167,7 @@ Section mapsto.
   Lemma mapstoS_agree l q1 q2 v1 v2 : l ↦ₛ{q1} v1 -∗ l ↦ₛ{q2} v2 -∗ ⌜v1 = v2⌝.
   Proof.
     apply bi.entails_wand, bi.wand_intro_r.
-    rewrite heapS_mapsto_eq -own_op -auth_frag_op own_valid uPred.discrete_valid.
+    rewrite heapS_pointsto_eq -own_op -auth_frag_op own_valid uPred.discrete_valid.
     f_equiv=> /=.
     rewrite -pair_op singleton_op right_id -pair_op.
     rewrite auth_frag_valid pair_valid.
@@ -178,7 +178,7 @@ Section mapsto.
 
   Lemma mapstoS_valid l q v : l ↦ₛ{q} v -∗ ✓ q.
   Proof.
-    rewrite heapS_mapsto_eq /heapS_mapsto_def own_valid !uPred.discrete_valid.
+    rewrite heapS_pointsto_eq /heapS_pointsto_def own_valid !uPred.discrete_valid.
     apply bi.entails_wand, pure_mono=> /auth_frag_valid /= [_ Hfoo].
     revert Hfoo. simpl. rewrite singleton_valid.
     by intros [? _].
@@ -206,4 +206,4 @@ Section mapsto.
     iSplit; eauto. iCombine "Hl1 Hl2" as "?". done.
   Qed.
 
-End mapsto.
+End pointsto.

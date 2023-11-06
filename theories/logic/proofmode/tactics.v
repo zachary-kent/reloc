@@ -233,7 +233,7 @@ Proof.
 Qed.
 
 Tactic Notation "rel_load_l" :=
-  let solve_mapsto _ :=
+  let solve_pointsto _ :=
     let l := match goal with |- _ = Some (_, (?l ↦{_} _)%I) => l end in
     iAssumptionCore || fail "rel_load_l: cannot find" l "↦ ?" in
   rel_pures_l;
@@ -243,7 +243,7 @@ Tactic Notation "rel_load_l" :=
     |fail 1 "rel_load_l: cannot find 'Load'"];
   (* the remaining goals are from tac_lel_load_l (except for the first one, which has already been solved by this point) *)
   [tc_solve             (** IntoLaters *)
-  |solve_mapsto ()
+  |solve_pointsto ()
   |reflexivity       (** eres = fill K v *)
   |rel_finish  (** new goal *)].
 
@@ -255,7 +255,7 @@ errors in a more precise way. E.g. if we are executing !#l and l ↦ₛ is
 not found in the environment, then we can immediately fail with an
 error *)
 Tactic Notation "rel_load_r" :=
-  let solve_mapsto _ :=
+  let solve_pointsto _ :=
     let l := match goal with |- _ = Some (_, (?l ↦ₛ{_} _)%I) => l end in
     iAssumptionCore || fail "rel_load_r: cannot find" l "↦ₛ ?" in
   rel_pures_r;
@@ -265,7 +265,7 @@ Tactic Notation "rel_load_r" :=
     |fail 1 "rel_load_r: cannot find 'Load'"];
   (* the remaining goals are from tac_rel_load_r (except for the first one, which has already been solved by this point) *)
   [solve_ndisj || fail "rel_load_r: cannot prove 'nclose specN ⊆ ?'"
-  |solve_mapsto ()
+  |solve_pointsto ()
   |reflexivity
   |rel_finish  (** new goal *)].
 
@@ -311,7 +311,7 @@ Proof.
 Qed.
 
 Tactic Notation "rel_store_l" :=
-  let solve_mapsto _ :=
+  let solve_pointsto _ :=
     let l := match goal with |- _ = Some (_, (?l ↦ _)%I) => l end in
     iAssumptionCore || fail "rel_store_l: cannot find" l "↦ₛ ?" in
   rel_pures_l;
@@ -324,7 +324,7 @@ Tactic Notation "rel_store_l" :=
     |fail 1 "rel_store_l: cannot find 'Store'"];
   (* the remaining goals are from tac_rel_store_l (except for the first one, which has already been solved by this point) *)
   [tc_solve        (** IntoLaters *)
-  |solve_mapsto ()
+  |solve_pointsto ()
   |pm_reflexivity || fail "rel_store_l: this should not happen O-:"
   |reflexivity
   |rel_finish  (** new goal *)].
@@ -332,7 +332,7 @@ Tactic Notation "rel_store_l" :=
 Tactic Notation "rel_store_l_atomic" := rel_apply_l refines_store_l.
 
 Tactic Notation "rel_store_r" :=
-  let solve_mapsto _ :=
+  let solve_pointsto _ :=
     let l := match goal with |- _ = Some (_, (?l ↦ₛ _)%I) => l end in
     iAssumptionCore || fail "rel_store_r: cannot find" l "↦ₛ ?" in
   rel_pures_r;
@@ -343,7 +343,7 @@ Tactic Notation "rel_store_r" :=
     |fail 1 "rel_store_r: cannot find 'Store'"];
   (* the remaining goals are from tac_rel_store_r (except for the first one, which has already been solved by this point) *)
   [solve_ndisj || fail "rel_store_r: cannot prove 'nclose specN ⊆ ?'"
-  |solve_mapsto ()
+  |solve_pointsto ()
   |pm_reflexivity || fail "rel_store_r: this should not happen O-:"
   |reflexivity
   |rel_finish  (** new goal *)].
@@ -390,7 +390,7 @@ Proof.
 Qed.
 
 Tactic Notation "rel_xchg_l" :=
-  let solve_mapsto _ :=
+  let solve_pointsto _ :=
     let l := match goal with |- _ = Some (_, (?l ↦ _)%I) => l end in
     iAssumptionCore || fail "rel_xchg_l: cannot find" l "↦ₛ ?" in
   rel_pures_l;
@@ -403,7 +403,7 @@ Tactic Notation "rel_xchg_l" :=
     |fail 1 "rel_xchg_l: cannot find 'Xchg'"];
   (* the remaining goals are from tac_rel_xchg_l (except for the first one, which has already been solved by this point) *)
   [tc_solve        (** IntoLaters *)
-  |solve_mapsto ()
+  |solve_pointsto ()
   |pm_reflexivity || fail "rel_xchg_l: this should not happen O-:"
   |reflexivity
   |rel_finish  (** new goal *)].
@@ -411,7 +411,7 @@ Tactic Notation "rel_xchg_l" :=
 Tactic Notation "rel_xchg_l_atomic" := rel_apply_l refines_xchg_l.
 
 Tactic Notation "rel_xchg_r" :=
-  let solve_mapsto _ :=
+  let solve_pointsto _ :=
     let l := match goal with |- _ = Some (_, (?l ↦ₛ _)%I) => l end in
     iAssumptionCore || fail "rel_xchg_r: cannot find" l "↦ₛ ?" in
   rel_pures_r;
@@ -422,7 +422,7 @@ Tactic Notation "rel_xchg_r" :=
     |fail 1 "rel_xchg_r: cannot find 'Xchg'"];
   (* the remaining goals are from tac_rel_xchg_r (except for the first one, which has already been solved by this point) *)
   [solve_ndisj || fail "rel_xchg_r: cannot prove 'nclose specN ⊆ ?'"
-  |solve_mapsto ()
+  |solve_pointsto ()
   |pm_reflexivity || fail "rel_xchg_r: this should not happen O-:"
   |reflexivity
   |rel_finish  (** new goal *)].
@@ -536,7 +536,7 @@ Proof.
 Qed.
 
 Tactic Notation "rel_cmpxchg_fail_r" :=
-  let solve_mapsto _ :=
+  let solve_pointsto _ :=
     let l := match goal with |- _ = Some (_, (?l ↦ₛ _)%I) => l end in
     iAssumptionCore || fail "rel_cmpxchg_fail_r: cannot find" l "↦ₛ ?" in
   rel_pures_r;
@@ -550,14 +550,14 @@ Tactic Notation "rel_cmpxchg_fail_r" :=
     |fail 1 "rel_cmpxchg_fail_r: cannot find 'CmpXchg'"];
   (* the remaining goals are from tac_rel_cmpxchg_fail_r (except for the first one, which has already been solved by this point) *)
   [solve_ndisj || fail "rel_cmpxchg_fail_r: cannot prove 'nclose specN ⊆ ?'"
-  |solve_mapsto ()
+  |solve_pointsto ()
   |try (simpl; congruence)   (** v ≠ v1 *)
   |try heap_lang.proofmode.solve_vals_compare_safe
   |reflexivity
   |rel_finish  (** new goal *)].
 
 Tactic Notation "rel_cmpxchg_suc_r" :=
-  let solve_mapsto _ :=
+  let solve_pointsto _ :=
     let l := match goal with |- _ = Some (_, (?l ↦ₛ _)%I) => l end in
     iAssumptionCore || fail "rel_cmpxchg_suc_r: cannot find" l "↦ₛ ?" in
   rel_pures_r;
@@ -571,7 +571,7 @@ Tactic Notation "rel_cmpxchg_suc_r" :=
     |fail 1 "rel_cmpxchg_suc_r: cannot find 'CmpXchg'"];
   (* the remaining goals are from tac_rel_cmpxchg_suc_r (except for the first one, which has already been solved by this point) *)
   [solve_ndisj || fail "rel_cmpxchg_suc_r: cannot prove 'nclose specN ⊆ ?'"
-  |solve_mapsto ()
+  |solve_pointsto ()
   |try (simpl; congruence)   (** v = v1 *)
   |try heap_lang.proofmode.solve_vals_compare_safe
   |pm_reflexivity  (** new env *)

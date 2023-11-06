@@ -422,7 +422,7 @@ Section stack_example.
     destruct ls1 as [|h1 ls1]; simpl; rel_rec_l; rel_pures_l.
     - iInv stackN as (ls1 ls2) "(>Hst1 & >Hst2 & HA)" "Hcl".
       iDestruct "Hst2" as (st2l lk2 ->) "[Hlk Hst2]".
-      iDestruct (mapsto_agree with "Hl1 Hst1") as %Hfoo.
+      iDestruct (pointsto_agree with "Hl1 Hst1") as %Hfoo.
       assert (ls1 = []) as ->.
       { revert Hfoo; by destruct ls1. }
       rel_rec_r. rel_pures_r. rel_apply_r (refines_acquire_r with "Hlk").
@@ -441,7 +441,7 @@ Section stack_example.
     - rel_store_l_atomic.
       iInv stackN as (ls1' ls2) "(>Hst1 & >Hst2 & HA)" "Hcl".
       iDestruct "Hst2" as (st2l lk2 ->) "[Hlk Hst2]".
-      iDestruct (mapsto_agree with "Hl1 Hst1") as %Hfoo.
+      iDestruct (pointsto_agree with "Hl1 Hst1") as %Hfoo.
       assert (ls1' = h1::ls1) as ->.
       { destruct ls1'; simplify_eq/=; eauto. }
       iModIntro. iExists _. iFrame. iNext. iIntros "Hl1".
@@ -481,7 +481,7 @@ Section stack_example.
     rel_store_l_atomic.
     iInv stackN as (ls1' ls2) "(>Hst1 & >Hst2 & HA)" "Hcl".
     iDestruct "Hst2" as (st2l lk2 ->) "[Hlk Hst2]".
-    iDestruct (mapsto_agree with "Hl1 Hst1") as %Hfoo. simplify_eq/=.
+    iDestruct (pointsto_agree with "Hl1 Hst1") as %Hfoo. simplify_eq/=.
     iModIntro. iExists _. iFrame. iNext. iIntros "Hl1".
     rel_rec_r. rel_pures_r. rel_apply_r (refines_acquire_r with "Hlk").
     iIntros "Hlk". rel_pures_r. rel_rec_r. rel_load_r.

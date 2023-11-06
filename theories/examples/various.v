@@ -220,7 +220,7 @@ Section proofs.
         rel_load_l. rel_pure_l. rel_pure_r.
         rel_store_l_atomic.
         iInv i3n as (n') "(>Hx & Hx' & >Hbb)" "Hcl".
-        iDestruct (mapsto_agree with "Hx Hx1") as %->.
+        iDestruct (pointsto_agree with "Hx Hx1") as %->.
         iCombine "Hx Hx1" as "Hx".
         iModIntro. iExists _; iFrame. iNext.
         iIntros "Hx".
@@ -239,7 +239,7 @@ Section proofs.
         repeat rel_pure_l. repeat rel_pure_r.
         rel_store_l_atomic. clear n'.
         iInv i3n as (n') "(>Hx & Hx' & >Hbb)" "Hcl".
-        iDestruct (mapsto_agree with "Hx Hx1") as %->.
+        iDestruct (pointsto_agree with "Hx Hx1") as %->.
         iDestruct "Hbb" as "[(Hb & Hb' & Hx2 & Hx'2) | (Hb & Hb')]".
         { iCombine "Hx Hx1" as "Hx".
           iCombine "Hx Hx2" gives %[Hfoo _]. exfalso.

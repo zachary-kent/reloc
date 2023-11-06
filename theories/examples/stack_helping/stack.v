@@ -308,7 +308,7 @@ Section refinement.
       iDestruct 1 as (z) "[Histk Hls]".
       destruct ls' as [|h' ls']; simpl; eauto.
       iDestruct 1 as (z') "[Histk' Hls']".
-      iDestruct (mapsto_agree with "Histk' Histk") as %Hfoo. simplify_eq/=.
+      iDestruct (pointsto_agree with "Histk' Histk") as %Hfoo. simplify_eq/=.
       iDestruct (IHls with "Hls Hls'") as %Hbar. simplify_eq/=.
       eauto.
   Qed.
@@ -533,7 +533,7 @@ Section refinement.
         iIntros "Hol".
         rel_apply_r (refines_CG_push_r with "Hst2").
         iIntros "Hst2".
-        iMod (mapsto_persist with "Hnew") as "#Hnew".
+        iMod (pointsto_persist with "Hnew") as "#Hnew".
         iMod ("Hcl" with "[-]") as "_".
         { iNext. iExists (Some new),_,(h1::ls1'),_; iFrame.
           simpl. by eauto with iFrame. }
