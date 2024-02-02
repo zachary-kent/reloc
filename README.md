@@ -10,7 +10,7 @@ See the small ReLoC [docs/guide.md](docs/guide.md) and the Iris [ProofGuide.md](
 
 ## Building
 
-This project has been tested with Coq 8.17.0.
+This project has been tested with Coq 8.18.0.
 
 ### OPAM
 
