@@ -146,7 +146,7 @@ Section spec.
     iDestruct "ℓPts" as "[ℓPts ℓPts']".
     iDestruct (turns_add with "Hturns Ht") as "Hturns".
     iMod ("Hcl" with "[-Hϕ]") as "_".
-    { iNext. iExists (n + 1). iFrame. iLeft. iFrame. iExists _; eauto with iFrame. }
+    { iNext. iExists (n + 1). eauto with iFrame. }
     iModIntro. by iApply "Hϕ".
   Qed.
 

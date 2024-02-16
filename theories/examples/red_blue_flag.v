@@ -238,7 +238,7 @@ Section proofs.
     iMod no_offer_alloc as (γ) "Hno".
     iMod (own_alloc (1%Qp)) as (γ') "Htok"; first done.
     iMod (inv_alloc iN _ (I γ γ' rf bf chan lk) with "[-]") as "#Hinv".
-    { iNext. iFrame. iExists _. iFrame. iExists 0. iFrame. iLeft. iFrame. done. }
+    { iNext. iFrame. iExists 0. iFrame. iLeft. iFrame. done. }
     iApply refines_pair.
 
     (* Refines read. *)
@@ -299,17 +299,17 @@ Section proofs.
 
         iDestruct ("Hrest" with "Hj") as "Hoff".
         iMod ("Hclose" with "[-]") as "_".
-        { iNext. iExists _. iFrame. rewrite /is_locked_r. iExists _. iFrame. done. }
+        { by iFrame. }
         rel_pures_l.
         rel_values. }
       iIntros "Hoff".
-      iMod ("Hclose" with "[-]") as "_". { iNext. iExists _. iFrame. }
+      iMod ("Hclose" with "[$]") as "_".
       rel_pures_l.
 
       (* The second CAS. *)
       rel_cmpxchg_l_atomic.
       iInv iN as (?) "(>Hlk & rfPts & bfPts & Hchan)" "Hclose".
-      iExists _. iFrame "rfPts". iModIntro. iSplit.
+      iFrame "rfPts". iModIntro. iSplit.
       2: {
         iIntros ([= ->]). iNext. iIntros "rfPts".
         rel_pures_l.
@@ -357,8 +357,7 @@ Section proofs.
            and use the IH. *)
         iIntros (Heq). simplify_eq/=.
         iNext. iIntros "Hchan".
-        iMod ("Hclose" with "[-IH Hk]") as "_".
-        { iNext. iExists _. iFrame. iExists _. iFrame. }
+        iMod ("Hclose" with "[$]") as "_".
         iApply (refines_combine with "[] Hk").
         do 2 rel_pure_l _.
         iApply "IH". }
@@ -404,7 +403,7 @@ Section proofs.
       iDestruct (offer_combine with "Hoff Hoff'") as "(<- & Hoff)".
       iDestruct (offer_token_split with "Htok") as "[Htok Htok']".
       iMod ("Hclose" with "[-IH Hj Hoff Htok]") as "_".
-      { iNext. iExists _. iFrame. iExists n. iFrame. iRight.
+      { iNext. iExists _. iFrame. iRight.
         iExists k. iRight. by iFrame. }
       rel_pures_l.
 

@@ -173,8 +173,6 @@ Section refinement.
     iPoseProof "H" as "H2".
     iMod "H" as (o n) "(Hlo & Hln & Hissued & HR & Hrest)". iModIntro.
     iExists _; iFrame.
-    iSplitL "Hlo HR".
-    { iExists _. iFrame. }
     iSplit.
     - iDestruct "Hrest" as "[H _]".
       iIntros "[Hln Ho]".
@@ -200,11 +198,9 @@ Section refinement.
       case_decide; simplify_eq/=; rel_if_l.
       (* Whether the ticket is called out *)
       + iDestruct "Hrest" as "[_ H]".
-        iApply ("H" with "[-HP] HP").
-        { iExists _. iFrame. }
+        iApply ("H" with "[$] HP").
       + iDestruct "Hrest" as "[H _]".
-        iMod ("H" with "[-HP Hm]") as "_".
-        { iExists _. iFrame. }
+        iMod ("H" with "[$]") as "_".
         iApply ("IH" with "HP Hm").
   Qed.
 
@@ -221,8 +217,6 @@ Section refinement.
     iModIntro.
     openI.
     iModIntro. iExists _,_; iFrame.
-    iSplitL "Hbticket Hl'".
-    { iExists _. iFrame. }
     clear st o n.
     iSplit.
     - iIntros (o). iDestruct 1 as (n) "(Hlo & Hln & Hissued & Hrest)".
@@ -235,8 +229,7 @@ Section refinement.
       { iDestruct (ticket_nondup with "Ht Ht'") as %[]. }
       rel_apply_r (refines_acquire_r with "Hl'").
       iIntros "Hl'".
-      iMod ("Hcl" with "[-]") as "_".
-      { iNext. iExists _,_,_; by iFrame. }
+      iMod ("Hcl" with "[$]") as "_".
       rel_values.
   Qed.
 

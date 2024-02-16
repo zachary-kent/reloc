@@ -557,9 +557,7 @@ Section refinement.
     iMod (inv_alloc stackN _ (stackInv A γo st mb (#st', lk)%V) with "[-]") as "#Hinv".
     { iNext. unfold stackInv.
       iExists None, _, [],[]. iFrame.
-      iSplit; eauto.
-      - rewrite /is_stack. iExists _,_. eauto with iFrame.
-      - iSplit; first done. iApply offerInv_empty. }
+      iSplit; eauto. iSplit; first done. iApply offerInv_empty. }
     iApply refines_pair; last first.
     (* * Push refinement *)
     { rel_arrow_val. iIntros (h1 h2) "#Hh"; simplify_eq/=.

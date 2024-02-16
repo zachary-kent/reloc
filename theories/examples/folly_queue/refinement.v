@@ -723,7 +723,6 @@ Section queue_refinement.
         iFrame. iFrame "HA".
         rewrite big_sepL2_nil.
         iSplitL; last done.
-        iExists popTicket, (pushTicket + 1), _, _, _.
         assert ((pushTicket + 1)%Z = (pushTicket + 1)%nat) as -> by lia.
         assert (popTicket `max` (pushTicket + 1) = pushTicket + 1) as -> by lia.
         assert (popTicket - (pushTicket + 1) = 0) as -> by lia.
@@ -845,8 +844,6 @@ Section queue_refinement.
 
       iMod ("Hcl" with "[-arrPts Hturn Htok]") as "_".
       { iNext. iExists [], []. simpl. iFrame.
-        iExists (popTicket + 1), pushTicket, _, _, _.
-        simpl.
         assert ((popTicket + 1)%Z = (popTicket + 1)%nat) as ->; first lia.
         replace ((popTicket + 1) `max` pushTicket) with (popTicket + 1) by lia.
         (* assert (popTicket `max` pushTicket + 1 = (popTicket + 1) `max` pushTicket) as ->; first lia. *)
@@ -903,8 +900,9 @@ Section queue_refinement.
         iCombine "Hi Hpush" as "Hpush".
         rewrite -big_sepS_insert; last set_solver by lia.
         (* rewrite difference_union_distr_l_L. *)
-        replace ({[popTicket]} ∪ set_seq 0 pushTicket ∖ {[popTicket]}) with (set_seq (C:=gset nat) 0 pushTicket) by set_solver by lia.
-        iExists _, _, _, _, _. by iFrame. }
+        replace ({[popTicket]} ∪ set_seq 0 pushTicket ∖ {[popTicket]})
+          with (set_seq (C:=gset nat) 0 pushTicket) by set_solver by lia.
+        by iFrame. }
 
       iModIntro. iNext. iModIntro.
       iDestruct (map_list_agree with "Hag Hag'") as %->.
@@ -936,7 +934,6 @@ Section queue_refinement.
       (* Close the invariant. *)
       iMod ("Hcl" with "[-arrPts Hturn]") as "_".
       { iNext. iExists xs, xsₛ'. iFrame.
-        iExists (popTicket + 1), pushTicket, _, _, _.
         assert ((popTicket + 1)%Z = (popTicket + 1)%nat) as -> by lia.
         assert (popTicket + 1 - pushTicket = 0) as -> by lia.
         iFrame.
@@ -1005,7 +1002,7 @@ Section queue_refinement.
     iMod (own_alloc (set_above 0)) as (γt) "Htok"; first done.
     iMod (own_alloc (● ∅ : requestRegR)) as (γm) "Hdec"; first by apply auth_auth_valid.
     iMod (inv_alloc queueN _ (I A γt γm γl q ℓpop ℓpush ℓarr SEQs _ _) with "[-]") as "#Hinv".
-    { iNext. iExists [], []. simpl. iFrame. iExists 0, 0, ∅, 1%Qp, ∅. cbn. iFrame.
+    { iNext. iExists [], []. simpl. iFrame.
       rewrite !dom_empty_L !big_sepS_empty. iFrame. done. }
 
     iApply refines_pair.

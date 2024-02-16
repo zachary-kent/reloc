@@ -103,13 +103,11 @@ Section proofs.
         rel_store_l; repeat rel_pure_l.
       + rel_apply_r (refines_rand_r (extract_bool vs)).
         rel_store_r.
-        rel_apply_l (refines_release_l with "Hlk Hlocked [-]").
-        { iExists vs. iFrame. iLeft. iFrame. }
+        rel_apply_l (refines_release_l with "Hlk Hlocked [$]").
         iNext. rel_values.
       + rel_apply_r (refines_rand_r (extract_bool vs)).
         rel_store_r.
-        rel_apply_l (refines_release_l with "Hlk Hlocked [-]").
-        { iExists vs. iFrame. iLeft. iFrame. }
+        rel_apply_l (refines_release_l with "Hlk Hlocked [$]").
         iNext. rel_values.
   Qed.
 
@@ -130,13 +128,12 @@ Section proofs.
            (∃ (b : bool), is_locked_r lk false
                         ∗ ce ↦ #b
                         ∗ (cl ↦ₛ NONEV ∨ cl ↦ₛ SOMEV #b))%I
-            with "[-]") as "#Hinv".
-    { iNext. iExists false. iFrame. }
+            with "[$]") as "#Hinv".
     iApply refines_pair.
     - rel_pure_l; rel_pure_r. iApply refines_arrow. iIntros (??) "!> _".
       rel_pure_l; rel_rec_l; rel_pure_r; rel_rec_r. repeat rel_pure_l.
       rel_load_l_atomic. iInv coinN as (b) "(Hlk & Hce & H)" "Hclose".
-      iModIntro. iExists _. iFrame. iNext. iIntros "Hce". repeat rel_pure_r.
+      iModIntro. iFrame. iNext. iIntros "Hce". repeat rel_pure_r.
       rel_apply_r (refines_acquire_r with "Hlk"). iIntros "Hlk".
       repeat rel_pure_r.
       iDestruct "H" as "[Hcl|Hcl]"; rel_load_r; repeat rel_pure_r.
@@ -144,28 +141,24 @@ Section proofs.
         rel_store_r. repeat rel_pure_r.
         rel_resolveproph_r. repeat rel_pure_r.
         rel_apply_r (refines_release_r with "Hlk"). iIntros "Hlk".
-        repeat rel_pure_r. iMod ("Hclose" with "[-]") as "_".
-        { eauto with iFrame. }
+        repeat rel_pure_r. iMod ("Hclose" with "[$]") as "_".
         rel_values.
       + rel_apply_r (refines_release_r with "Hlk"). iIntros "Hlk".
-        repeat rel_pure_r. iMod ("Hclose" with "[-]") as "_".
-        { eauto with iFrame. }
+        repeat rel_pure_r. iMod ("Hclose" with "[$]") as "_".
         rel_values.
     - rel_pure_l; rel_pure_r. iApply refines_arrow. iIntros (??) "!> _".
       rel_pure_l; rel_rec_l; rel_pure_r; rel_rec_r. repeat rel_pure_l.
       rel_apply_l refines_rand_l. iNext. iIntros (b).
       rel_store_l_atomic. iInv coinN as (b') "(Hlk & Hce & H)" "Hclose".
-      iModIntro. iExists _. iFrame. iNext. iIntros "Hce". repeat rel_pure_r.
+      iModIntro. iFrame. iNext. iIntros "Hce". repeat rel_pure_r.
       rel_apply_r (refines_acquire_r with "Hlk"). iIntros "Hlk".
       repeat rel_pure_r.
       iDestruct "H" as "[Hcl|Hcl]"; rel_store_r; repeat rel_pure_r.
       + rel_apply_r (refines_release_r with "Hlk"). iIntros "Hlk".
-        repeat rel_pure_r. iMod ("Hclose" with "[-]") as "_".
-        { eauto with iFrame. }
+        repeat rel_pure_r. iMod ("Hclose" with "[$]") as "_".
         rel_values.
       + rel_apply_r (refines_release_r with "Hlk"). iIntros "Hlk".
-        repeat rel_pure_r. iMod ("Hclose" with "[-]") as "_".
-        { eauto with iFrame. }
+        repeat rel_pure_r. iMod ("Hclose" with "[$]") as "_".
         rel_values.
   Qed.
 
@@ -205,11 +198,11 @@ Section proofs.
         rel_apply_r (refines_rand_r b). repeat rel_pure_r.
         rel_cmpxchg_suc_r. repeat rel_pure_r.
         rel_apply_l (refines_release_l with "Hlk Hlocked [-]").
-        { iExists vs'. iFrame. iRight. iExists b. iFrame. }
+        { iExists vs'. iFrame. iRight. iFrame. }
         iNext. repeat rel_pure_l; rel_values.
       + repeat rel_pure_r.
         rel_apply_l (refines_release_l with "Hlk Hlocked [-]").
-        { iExists vs. iFrame. iRight. iExists x. iFrame. }
+        { iExists vs. iFrame. iRight. iFrame. }
         iNext. repeat rel_pure_l; rel_values.
     - rel_pure_l; rel_pure_r. iApply refines_arrow. iIntros (??) "!> _".
       rel_pure_l; rel_rec_l; rel_pure_r; rel_rec_r. repeat rel_pure_l.
@@ -244,7 +237,7 @@ Section proofs.
           ∗ (c' ↦ₛ NONEV ∗ c ↦ NONEV
             ∨ ∃ (b : bool), c' ↦ₛ SOMEV #b ∗ c ↦ SOMEV #b))%I
             with "[-]") as "#Hinv".
-    { iNext. iFrame. iRight. iExists false. iFrame. }
+    { iNext. iFrame. iRight. iFrame. }
     do 2 rel_pure_r.
 
     iApply refines_pair.
@@ -275,7 +268,7 @@ Section proofs.
           { eauto with iFrame. }
           rel_values.
         * iDestruct "H" as (x) "[Hc' Hc]".
-          iModIntro; iExists _. iFrame. iSplit; last first.
+          iModIntro; iFrame. iSplit; last first.
           { iIntros (?); simplify_eq/=. }
           iIntros (_). iNext. iIntros "Hc".
           rel_pures_l.
@@ -283,7 +276,7 @@ Section proofs.
           { eauto with iFrame. }
           iApply "IH".
       + iClear "IH".
-        iDestruct "H" as (b) "[Hc' Hc]". iExists _. iFrame. iNext. iIntros "Hc".
+        iDestruct "H" as (b) "[Hc' Hc]". iFrame. iNext. iIntros "Hc".
         repeat rel_pure_l.
         rel_apply_r (refines_acquire_r with "Hlk").
         iIntros "Hlk". repeat rel_pure_r. rel_load_r.
@@ -297,7 +290,7 @@ Section proofs.
       repeat rel_rec_l. repeat rel_rec_r. repeat rel_pure_l. repeat rel_pure_r.
       rel_store_l_atomic. iInv coinN as "(Hlk & [[Hc' Hc]|H])" "Hclose";
         iModIntro.
-      + iExists _. iFrame. iNext. iIntros "Hc".
+      + iFrame. iNext. iIntros "Hc".
         rel_apply_r (refines_acquire_r with "Hlk").
         iIntros "Hlk". repeat rel_pure_r. rel_store_r.
         repeat rel_pure_r. rel_apply_r (refines_release_r with "Hlk").
@@ -306,7 +299,7 @@ Section proofs.
         { eauto with iFrame. }
         rel_values.
       + iDestruct "H" as (x) "[Hc' Hc]".
-        iExists _. iFrame. iNext. iIntros "Hc".
+        iFrame. iNext. iIntros "Hc".
         rel_apply_r (refines_acquire_r with "Hlk").
         iIntros "Hlk". repeat rel_pure_r. rel_store_r.
         repeat rel_pure_r. rel_apply_r (refines_release_r with "Hlk").

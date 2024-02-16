@@ -81,9 +81,8 @@ Section proof.
       rel_apply_r (refines_CG_push_r with "Hls2").
       iIntros "Hls2".
       iMod ("Hclose" with "[-]").
-      { iNext. rewrite {2}/sinv. iExists _. iFrame.
-        iExists (v::ls1),_. simpl. iFrame "Hls2 Hvv HA".
-        iExists _. iFrame. }
+      { iNext. rewrite {2}/sinv. iFrame.
+        iExists (v::ls1). simpl. auto with iFrame. }
       rel_pures_l. rel_values.
   Qed.
 
@@ -108,13 +107,13 @@ Section proof.
       rel_apply_r (refines_CG_pop_fail_r with "Hls2").
       iIntros "Hls2". simpl in *.
       iMod ("Hclose" with "[Hstk Hls2]") as "_".
-      { iExists _. iFrame. iExists [], []. iFrame; auto. }
+      { iExists _. iFrame. iExists []. iFrame; auto. }
       rel_load_l.
       rel_pures_l. rel_values.
       iModIntro. iExists _,_. eauto.
     - iDestruct "Hls1" as (z1) "[Hls1 Hrest]".
       iMod ("Hclose" with "[Hstk Hls2]") as "_".
-      { iExists _. iFrame. iExists (h1 :: ls1), _. simpl. auto. }
+      { iExists _. iFrame. iExists (h1 :: ls1). simpl. auto. }
       rel_load_l. rel_pures_l.
       rel_cmpxchg_l_atomic.
       iInv N as (istk') "(>Hstk & Hlnk)" "Hclose".
@@ -134,7 +133,7 @@ Section proof.
         rel_apply_r (refines_CG_pop_suc_r with "Hst").
         iIntros "Hst".
         iMod ("Hclose" with "[-]") as "_".
-        { iExists _. iFrame. iExists _, _; auto. }
+        { iExists _. iFrame. iExists _; auto. }
         rel_values. iModIntro. iExists _,_; eauto.
   Qed.
 
@@ -162,8 +161,7 @@ Section proof.
         as "#Hinv".
       { iNext. iExists _. iFrame. iExists [],[]. simpl.
         iSplitL "Hisk"; first by eauto.
-        rewrite right_id. rewrite /is_stack.
-        iExists _,_; eauto with iFrame. }
+        rewrite right_id. rewrite /is_stack. eauto with iFrame. }
       iModIntro. iExists _. eauto with iFrame.
     - rel_pure_l. rel_pure_r. iApply refines_arrow_val.
       iModIntro. iIntros (st1 st2) "Hst".

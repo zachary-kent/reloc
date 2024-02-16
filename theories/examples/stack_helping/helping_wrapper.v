@@ -410,8 +410,7 @@ Section stack_example.
       rel_apply_r (refines_CG_pop_suc_r with "[Hst2 Hl]").
       { iExists st2l,#lk'. rewrite /is_locked_r. by eauto with iFrame. }
       iIntros "Hst2".
-      iMod ("Hcl" with "[-Hcont Hj]") as "_".
-      { iNext. iExists _,_. by eauto with iFrame. }
+      iMod ("Hcl" with "[$]") as "_".
       by iApply "Hcont". }
   { rel_arrow_val. iIntros (??) "[-> ->]". rel_pures_l. rel_pures_r.
     iDestruct "Hstack" as (st1l lk1 ->) "[#HstI #Hstack]". rewrite /stackI.
@@ -432,8 +431,7 @@ Section stack_example.
       rel_rec_r. rel_pures_r.
       rel_apply_r (refines_release_r with "Hlk"). iIntros "Hlk".
       iMod ("Hcl" with "[-Hl1 Hlocked]") as "_".
-      { iNext. iExists [], []. simpl. iFrame.
-        rewrite right_id. iExists _,_. eauto with iFrame. }
+      { iNext. iExists [], []. simpl. by iFrame. }
       rel_apply_l (refines_release_l with "HstI Hlocked [Hl1]").
       { iExists []. eauto with iFrame. }
       iNext. rel_pures_l; rel_pures_r; rel_values.
@@ -452,8 +450,7 @@ Section stack_example.
       rel_apply_r (refines_release_r with "Hlk"). iIntros "Hlk".
       iDestruct "Hl1" as "[Hl1 Hst1]".
       iMod ("Hcl" with "[-Hl1 Hlocked]") as "_".
-      { iNext. iExists _,_. simpl. iFrame.
-        iExists _,_. eauto with iFrame. }
+      { by iFrame. }
       rel_pures_l.
       rel_apply_l (refines_release_l with "HstI Hlocked [Hl1]").
       { iExists _. eauto with iFrame. }
@@ -524,8 +521,7 @@ Section stack_example.
                       (st ↦{#1/2} val_of_list ls1)
                     ∗ is_stack (#st',lk2) ls2
                     ∗ ([∗ list] v1;v2 ∈ ls1;ls2, A v1 v2)) with "[Hst1 Hst2 Hlk2]") as "#Hinv".
-    { iNext. iExists [], []; simpl; iFrame. rewrite right_id.
-      iExists _,_. eauto with iFrame. }
+    { iNext. iExists [], []; simpl; by iFrame. }
     iMod (inv_alloc iN _ (I A γo mb _) with "[-Hlk1]") as "#Hofferinv".
     { iNext. iExists ∅. iFrame. iApply offerInv_empty. }
     iApply refines_pair.
