@@ -273,7 +273,7 @@ Section proof.
       rel_store_l_atomic.
       iClear "Hls".
       iInv sizeN as (m ls) "(Ha & >Hs1 & >Hs2 & >Htbl1 & >Htbl2 & #Hls)" "Hcl".
-      iDestruct (gen_heap.pointsto_agree with "Htbl1 Htbl1'") as %->.
+      iDestruct (pointsto_agree with "Htbl1 Htbl1'") as %->.
       iCombine "Htbl1 Htbl1'" as "Htbl1".
       iModIntro. iExists _. iFrame. iNext. iIntros "[Htbl1 Htbl1']".
       repeat rel_pure_l. repeat rel_pure_r. rel_load_r.

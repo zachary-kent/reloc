@@ -68,12 +68,12 @@ Section queue_refinement.
     list_idx_to_map (xs ++ [x]) = <[length xs := x]>(list_idx_to_map xs).
   Proof.
     rewrite /list_idx_to_map.
-    rewrite app_length /= Nat.add_1_r.
+    rewrite length_app /= Nat.add_1_r.
     rewrite seq_S /=.
     rewrite zip_with_app /=.
-    2: { by rewrite seq_length. }
+    2: { by rewrite length_seq. }
     rewrite list_to_map_snoc; first done.
-    rewrite fst_zip. 2: { rewrite seq_length. done. }
+    rewrite fst_zip. 2: { rewrite length_seq. done. }
     intros [i Hl]%elem_of_list_lookup_1.
     apply lookup_seq in Hl as Hlm.
     simpl in Hlm.
@@ -116,7 +116,7 @@ Section queue_refinement.
     rewrite /list_idx_to_map.
     rewrite lookup_fmap.
     rewrite not_elem_of_list_to_map_1; first done.
-    rewrite fst_zip. 2: { rewrite seq_length. done. }
+    rewrite fst_zip. 2: { rewrite length_seq. done. }
     rewrite elem_of_list_In.
     rewrite in_seq. lia.
   Qed.
@@ -139,7 +139,7 @@ Section queue_refinement.
     rewrite dom_singleton_L in Hincl.
     rewrite dom_make_map in Hincl.
     rewrite dom_list_to_map in Hincl.
-    rewrite fst_zip in Hincl. 2: { rewrite seq_length. done. }
+    rewrite fst_zip in Hincl. 2: { rewrite length_seq. done. }
     rewrite list_to_set_seq in Hincl.
     iPureIntro. set_solver.
   Qed.
@@ -159,7 +159,7 @@ Section queue_refinement.
     rewrite lookup_fmap.
     erewrite elem_of_list_to_map_1.
     - simpl. reflexivity.
-    - rewrite fst_zip. 2: { rewrite seq_length. done. }
+    - rewrite fst_zip. 2: { rewrite length_seq. done. }
       apply NoDup_seq.
     - apply elem_of_lookup_zip_with.
       exists i, i, x.
@@ -729,7 +729,7 @@ Section queue_refinement.
         iFrame. simpl.
         rewrite big_sepS_empty.
         iPureIntro. split; last done. split.
-        { rewrite app_length. simpl. lia. }
+        { rewrite length_app. simpl. lia. }
         rewrite drop_app_le; last lia.
         rewrite Hlisteq. done. }
       rel_pures_l.
@@ -782,8 +782,8 @@ Section queue_refinement.
         assert (popTicket `max` (pushTicket + 1) = popTicket `max` pushTicket) as -> by lia.
         simpl. iFrame.
         iPureIntro. split.
-        - rewrite app_length. simpl. lia.
-        - apply drop_ge. rewrite app_length. simpl. lia. }
+        - rewrite length_app. simpl. lia.
+        - apply drop_ge. rewrite length_app. simpl. lia. }
 
       rel_pures_l.
       rel_bind_l (! _)%E.

@@ -109,7 +109,7 @@ Section conversions.
     - rewrite lookup_insert_ne; last lia. by rewrite !tpool_lookup lookup_app_l.
     - by rewrite lookup_insert tpool_lookup lookup_app_r // Nat.sub_diag.
     - rewrite lookup_insert_ne; last lia.
-      rewrite !tpool_lookup ?lookup_ge_None_2 ?app_length //=;
+      rewrite !tpool_lookup ?lookup_ge_None_2 ?length_app //=;
          change (ofe_car exprO) with expr; lia.
   Qed.
 

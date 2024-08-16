@@ -29,7 +29,7 @@ Section rules.
     erased_step (tp, σ) (<[j:=fill K e']> tp ++ efs, σ').
   Proof.
     intros. rewrite -(take_drop_middle tp j (fill K e)) //.
-    rewrite insert_app_r_alt take_length_le ?Nat.sub_diag /=;
+    rewrite insert_app_r_alt length_take_le ?Nat.sub_diag /=;
       eauto using lookup_lt_Some, Nat.lt_le_incl.
     rewrite -(assoc_L (++)) /=. eexists.
     eapply step_atomic; eauto. by apply: Ectx_step'.
@@ -359,7 +359,7 @@ Section rules.
       by rewrite lookup_ge_None_2. }
     iExists (length tp). iFrame "Hj Hfork". iApply "Hclose". iNext.
     iExists (<[j:=fill K #()]> tp ++ [e]), σ.
-    rewrite to_tpool_snoc insert_length to_tpool_insert //. iFrame. iPureIntro.
+    rewrite to_tpool_snoc length_insert to_tpool_insert //. iFrame. iPureIntro.
     eapply rtc_r, step_insert; eauto. econstructor; eauto.
   Qed.
 
