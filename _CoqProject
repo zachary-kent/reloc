@@ -55,6 +55,7 @@ theories/examples/various.v
 theories/examples/lateearlychoice.v
 theories/examples/coinflip.v
 theories/examples/red_blue_flag.v
+theories/examples/rwcas.v
 
 theories/examples/folly_queue/set.v
 theories/examples/folly_queue/CG_queue.v
