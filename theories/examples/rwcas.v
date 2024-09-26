@@ -43,7 +43,7 @@ Section CG_rwcas.
     by iApply "Hlog".
   Qed.
 
-  (* A similar atomic specification for the counter_read fn *)
+  (* A similar atomic specification for the read fn *)
   Lemma read_atomic_l R P E K x t A :
     P -∗
     □ (|={⊤,E}=> ∃ n : Z, x ↦ #n ∗ R n ∗
@@ -65,11 +65,6 @@ Section CG_rwcas.
 
   Definition rwcas_inv x x' : iProp Σ :=
     (∃ n : Z, x ↦ #n ∗ x' ↦ₛ #n)%I.
-
-  Definition counterN : namespace := nroot .@ "counter".
-
-  Definition counter_inv lk cnt cnt' : iProp Σ :=
-    (∃ n : Z, is_locked_r lk false ∗ cnt ↦ #n ∗ cnt' ↦ₛ #n)%I.
 
  (* A logically atomic specification for
      a fine-grained write with a baked in frame. *)
@@ -120,14 +115,14 @@ Section CG_rwcas.
       (FG_write_atomic_l
               (fun n => x' ↦ₛ #n)%I
               True%I); first done.
-    iModIntro. iInv rwcasN as ">Hcnt" "Hcl". iModIntro.
-    iDestruct "Hcnt" as (n) "[Hcnt Hcnt']".
+    iModIntro. iInv rwcasN as ">Hv" "Hcl". iModIntro.
+    iDestruct "Hv" as (n) "[Hv Hv']".
     iExists _; iFrame.
     iSplit.
-    - iIntros "(Hcnt & Hcnt')".
+    - iIntros "(Hv & Hv')".
       iApply ("Hcl" with "[-]").
       iNext. iExists _. iFrame.
-    - iIntros "(Hcnt & Hcnt') _".
+    - iIntros "(Hv & Hv') _".
       unfold CG_write. rel_pures_r.
       rel_store_r.
       iMod ("Hcl" with "[-]").
@@ -144,16 +139,16 @@ Section CG_rwcas.
       (read_atomic_l
          (fun n => x' ↦ₛ #n)%I
          True%I); first done.
-    iModIntro. iInv rwcasN as (n) "[>Hcnt >Hcnt']" "Hclose".
+    iModIntro. iInv rwcasN as (n) "[>Hv >Hv']" "Hclose".
     iModIntro.
-    iExists n. iFrame "Hcnt Hcnt'".
+    iExists n. iFrame "Hv Hv'".
     iSplit.
-    - iIntros "(Hcnt & Hcnt')". iApply "Hclose".
+    - iIntros "(Hv & Hv')". iApply "Hclose".
       iNext. iExists n. by iFrame.
-    - iIntros "(Hcnt & Hcnt') _ /=".
-      rel_apply_r (read_r with "Hcnt'").
-      iIntros "Hcnt'".
-      iMod ("Hclose" with "[Hcnt Hcnt']"); simpl.
+    - iIntros "(Hv & Hv') _ /=".
+      rel_apply_r (read_r with "Hv'").
+      iIntros "Hv'".
+      iMod ("Hclose" with "[Hv Hv']"); simpl.
       { iNext. iExists _. by iFrame. }
       rel_values.
   Qed.
@@ -164,12 +159,12 @@ Section CG_rwcas.
     iApply refines_arrow_val.
     iModIntro. iIntros (? ?) "_"; simplify_eq/=.
     rel_rec_l. rel_rec_r.
-    rel_alloc_r cnt' as "Hcnt'".
-    rel_alloc_l cnt as "Hcnt". simpl.
+    rel_alloc_r v' as "Hv'".
+    rel_alloc_l v as "Hv". simpl.
 
     (* establishing the invariant *)
-    iAssert (rwcas_inv cnt cnt')
-      with "[Hcnt Hcnt']" as "Hinv".
+    iAssert (rwcas_inv v v')
+      with "[Hv Hv']" as "Hinv".
     { iExists 0. by iFrame. }
     iMod (inv_alloc rwcasN with "[Hinv]") as "#Hinv"; trivial.
 
