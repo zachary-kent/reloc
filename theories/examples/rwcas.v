@@ -2,7 +2,6 @@ From reloc Require Export reloc.
 From reloc.lib Require Import lock.
 Set Default Proof Using "Type".
 
-(** A course-grained write function that acquires a lock, performs the write, and then releases the lock *)
 Definition CG_write : val := λ: "x" "v", "x" <- "v".
 
 (** Can read the cell simply by derefencing it *)
@@ -15,14 +14,12 @@ Definition CG_rwcas : val := λ: <>,
 
 (** Fine-grained, strongly linearizable implementation of a read-write cell. 
     Read from the cell and attempt to CAS; loop until success *)
-Definition FG_write : val := rec: "write" "x" "v" :=
-  let: "c" := !"x" in
-  if: CAS "x" "c" "v"
-  then #()
-  else "write" "x" "v".
-
-Definition wkwrite : val := λ: "l" "v",
-  "l" <- "v".
+Definition FG_write : val :=
+  rec: "write" "x" "v" :=
+    let: "c" := !"x" in
+    if: CAS "x" "c" "v"
+      then #()
+      else "write" "x" "v".
 
 (* Fine-grained implementatiaon of a read-write cell *)
 Definition FG_rwcas : val := λ: <>,
