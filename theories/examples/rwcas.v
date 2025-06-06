@@ -2,31 +2,78 @@ From reloc Require Export reloc.
 From reloc.lib Require Import lock.
 Set Default Proof Using "Type".
 
-Definition CG_write : val := λ: "x" "v", "x" <- "v".
+From reloc Require Import reloc lib.lock.
+From iris.algebra Require Import numbers csum excl auth list gmap gset.
+From iris.bi.lib Require Export fixpoint.
+
+
+Definition atomic_write : val := λ: "x" "v", "x" <- "v".
 
 (** Can read the cell simply by derefencing it *)
 Definition read : val := λ: "x",  !"x".
 
 (* Course-grained implementatiaon of a read-write cell *)
-Definition CG_rwcas : val := λ: <>,
+Definition atomic_rwcas : val := λ: <>,
   let: "x" := ref #0 in
-  ((λ: "v", CG_write "x" "v"), (λ: <>, read "x")).
+  ((λ: "v", atomic_write "x" "v"), (λ: <>, read "x")).
 
 (** Fine-grained, strongly linearizable implementation of a read-write cell. 
     Read from the cell and attempt to CAS; loop until success *)
-Definition FG_write : val :=
+Definition lf_write : val :=
   rec: "write" "x" "v" :=
     let: "c" := !"x" in
     if: CAS "x" "c" "v"
       then #()
       else "write" "x" "v".
 
-(* Fine-grained implementatiaon of a read-write cell *)
-Definition FG_rwcas : val := λ: <>,
-  let: "x" := ref #0 in
-  ((λ: "v", FG_write "x" "v"), (λ: <>, read "x")).
+Definition wf_write : val :=
+  λ: "l" "v",
+    let: "p" := NewProph in
+    Resolve (CmpXchg "l" !"l" "v") "p" #().
 
-Section CG_rwcas.
+(* Fine-grained implementatiaon of a read-write cell *)
+Definition lf_rwcas : val := λ: <>,
+  let: "x" := ref #0 in
+  ((λ: "v", lf_write "x" "v"), (λ: <>, read "x")).
+
+(* LP stepping requests. *)
+Definition requestReg := gmap proph_id ref_id.
+Definition requestRegUR := authUR $ gmapUR proph_id (agreeR ref_idO).
+
+Class rwcasG Σ := {
+  rwcas_requestUR :: inG Σ requestRegUR;
+}.
+
+Section wf.
+
+  Context `{!relocG Σ, !inG Σ (authR $ gmapUR proph_id (agreeR ref_idO))}.
+
+  Definition extract_result (vs : list (val * val)) : option (bool * val) :=
+    match vs with
+    | (_, PairV (LitV (LitBool b)) v) :: _ => Some (b, v)
+    | _ => None (* (true, LitV LitUnit) *)
+    end.
+
+  Definition ids_at γₘ p id := own γₘ (◯ {[ p := to_agree id ]}).
+
+  Definition rwcas_inv γₘ lᵢ lₛ : iProp Σ :=
+    ∃ (v : val) pvs ps, 
+      lᵢ ↦ v ∗ (* implementation location *)
+      lₛ ↦ₛ v ∗ (* spec location*)
+      proph_map_interp pvs ps ∗ (* Authoritative ownership over prophecy map *)
+      [∗ set] p ∈ ps, 
+        ∀ w, ⌜extract_result (proph_list_resolves pvs p) = Some (false, w)⌝ → (* If the cmpxchg fails *)
+          ∃ id, 
+            ids_at γₘ p id ∗ (* The thread/proph id [p] is bound to refinement id [id]*)
+              (refines_right id #()) ∨ (* The failing write has already been linearized; the spec of its right refinement has already been reduced to [()] *)
+              (⌜v ≠ w⌝ ∗ ∃ z, refines_right id (atomic_write #lₛ z)).
+              (* Or the value currently stored in the cell is not what the failing cmpxchg will eventually read from the cell.
+                 Thus, there exists some future sucessful write that will cause it to fail. 
+                 The invariant contains the un-reduced left refinement for this writer to reduce *)
+
+End wf.
+
+Section atomic_rwcas.
   Context `{relocG Σ}.
 
   Lemma read_r E K x (n : Z) t A
@@ -65,13 +112,13 @@ Section CG_rwcas.
 
  (* A logically atomic specification for
      a fine-grained write with a baked in frame. *)
-  Lemma FG_write_atomic_l R P E K x v t A  :
+  Lemma lf_write_atomic_l R P E K x v t A  :
     P -∗
     □ (|={⊤,E}=> ∃ n : Z, x ↦ #n ∗ R n ∗
        ((x ↦ #n ∗ R n ={E,⊤}=∗ True) ∧
         (x ↦ #v ∗ R n -∗ P -∗
             REL fill K (of_val #()) << t @ E : A)))
-    -∗ REL fill K (FG_write #x #v) << t : A.
+    -∗ REL fill K (lf_write #x #v) << t : A.
   Proof.
     iIntros "HP #H".
     iLöb as "IH".
@@ -89,7 +136,7 @@ Section CG_rwcas.
       iSplitR; eauto. { iDestruct 1 as %Hfoo. exfalso. done. }
       iIntros "_ !> Hx". simpl.
       iDestruct "HQ" as "[_ HQ]".
-      replace (n' + 1)%Z with (1 + n')%Z; last by lia. (* TODO :( *)
+      replace (n' + 1)%Z with (1 + n')%Z by lia. (* TODO :( *)
       iSpecialize ("HQ" with "[$Hx $HR]").
       rel_pures_l. by iApply "HQ".
     - iExists #n'. iFrame. simpl.
@@ -102,14 +149,14 @@ Section CG_rwcas.
       by iApply "IH".
   Qed.
 
-  Lemma FG_CG_write_refinement x x' v1 v2 :
+  Lemma FG_atomic_write_refinement x x' v1 v2 :
     inv rwcasN (rwcas_inv x x') -∗ lrel_int v1 v2 -∗
-    REL FG_write #x v1 << CG_write #x' v2 : lrel_unit.
+    REL lf_write #x v1 << atomic_write #x' v2 : lrel_unit.
   Proof.
     iIntros "#Hinv".
     iIntros "(%v & -> & ->)".
     rel_apply_l
-      (FG_write_atomic_l
+      (lf_write_atomic_l
               (fun n => x' ↦ₛ #n)%I
               True%I); first done.
     iModIntro. iInv rwcasN as ">Hv" "Hcl". iModIntro.
@@ -120,7 +167,7 @@ Section CG_rwcas.
       iApply ("Hcl" with "[-]").
       iNext. iExists _. iFrame.
     - iIntros "(Hv & Hv') _".
-      unfold CG_write. rel_pures_r.
+      unfold atomic_write. rel_pures_r.
       rel_store_r.
       iMod ("Hcl" with "[-]").
       { iNext. iExists v; iFrame. }
@@ -150,8 +197,8 @@ Section CG_rwcas.
       rel_values.
   Qed.
 
-  Lemma FG_CG_rwcas_refinement :
-    ⊢ REL FG_rwcas << CG_rwcas : () → (lrel_int → ()) * (() → lrel_int).
+  Lemma FG_atomic_rwcas_refinement :
+    ⊢ REL lf_rwcas << atomic_rwcas : () → (lrel_int → ()) * (() → lrel_int).
   Proof.
     iApply refines_arrow_val.
     iModIntro. iIntros (? ?) "_"; simplify_eq/=.
@@ -172,18 +219,18 @@ Section CG_rwcas.
     iApply refines_pair.
     - iApply refines_arrow_val.
       iModIntro. iIntros (? ?) "Hrel". rel_seq_l; rel_seq_r.
-      iApply (FG_CG_write_refinement with "Hinv"). iFrame.
+      iApply (FG_atomic_write_refinement with "Hinv"). iFrame.
     - iApply refines_arrow_val.
       iModIntro. iIntros (? ?) "_". rel_seq_l; rel_seq_r.
       iApply (read_refinement with "Hinv").
   Qed.
 
-End CG_rwcas.
+End atomic_rwcas.
 
 Theorem rwcas_ctx_refinement :
-  ∅ ⊨ FG_rwcas ≤ctx≤ CG_rwcas :
+  ∅ ⊨ lf_rwcas ≤ctx≤ atomic_rwcas :
          () → ((TNat → ()) * (() → TNat)).
 Proof.
   eapply (refines_sound relocΣ).
-  iIntros (? Δ). simpl. iApply FG_CG_rwcas_refinement.
+  iIntros (? Δ). simpl. iApply FG_atomic_rwcas_refinement.
 Qed.

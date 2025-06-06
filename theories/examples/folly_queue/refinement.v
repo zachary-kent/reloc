@@ -173,8 +173,8 @@ Section queue_refinement.
     popTicket ≤ pushTicket →
     length xs = pushTicket - popTicket →
     own γl (◯ {[pushTicket := to_agree xn ]}) -∗
-    ([∗ list] i↦x ∈ xs, own γl (◯ {[popTicket + i := to_agree x]})) -∗
-    [∗ list] i↦x ∈ xs ++ [xn], own γl (◯ {[popTicket + i := to_agree x]}).
+    ([∗ list] i ↦ x ∈ xs, own γl (◯ {[popTicket + i := to_agree x]})) -∗
+    [∗ list] i ↦ x ∈ xs ++ [xn], own γl (◯ {[popTicket + i := to_agree x]}).
   Proof.
     iIntros (Hle Hlen) "Hf Hl".
     rewrite big_sepL_app.
@@ -890,10 +890,10 @@ Section queue_refinement.
       iDestruct (ghost_list_le with "Hlist Hag") as %popLePush.
       rewrite (big_sepS_delete _ _ popTicket). 2: { rewrite elem_of_set_seq. lia. }
       iDestruct "Hpush" as "[[>Htok'|Hright] Hpush]".
-      { by iCombine "Htok Htok'" gives %Hv%set_singleton_invalid. }
+      { by iCombine "Htok Htok'" gives %?%set_singleton_invalid. }
       iDestruct "Hright" as (id' v' vₛ) "(>#Hdec' & Hright & #Hrel & >#Hag')".
       iAssert (push_i A γl γt γm popTicket) with "[Htok]" as "Hi".
-      { iLeft. iFrame. }
+      { by iLeft. }
 
       iMod ("Hcl" with "[-Hright]") as "_".
       { iNext. iExists xs, xsₛ. iFrame.
@@ -1000,7 +1000,7 @@ Section queue_refinement.
 
     (* Establish the invariant. *)
     iMod (own_alloc (set_above 0)) as (γt) "Htok"; first done.
-    iMod (own_alloc (● ∅ : requestRegR)) as (γm) "Hdec"; first by apply auth_auth_valid.
+    iMod (own_alloc (● ∅ : requestRegR)) as (γm) "Hdec". by apply auth_auth_valid.
     iMod (inv_alloc queueN _ (I A γt γm γl q ℓpop ℓpush ℓarr SEQs _ _) with "[-]") as "#Hinv".
     { iNext. iExists [], []. simpl. iFrame.
       rewrite !dom_empty_L !big_sepS_empty. iFrame. done. }
