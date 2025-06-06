@@ -46,30 +46,55 @@ Class rwcasG Σ := {
 
 Section wf.
 
-  Context `{!relocG Σ, !inG Σ (authR $ gmapUR proph_id (agreeR ref_idO))}.
+  Context `{!relocG Σ, !rwcasG Σ}.
 
-  Definition extract_result (vs : list (val * val)) : option (bool * val) :=
+  Definition rwcasN : namespace := nroot .@ "rwcas".
+
+  Definition extract_result (vs : list (val * val)) : option (bool * Z) :=
     match vs with
-    | (_, PairV (LitV (LitBool b)) v) :: _ => Some (b, v)
+    | (_, PairV (LitV (LitBool b)) (LitV (LitInt n))) :: _ => Some (b, n)
     | _ => None (* (true, LitV LitUnit) *)
     end.
 
   Definition ids_at γₘ p id := own γₘ (◯ {[ p := to_agree id ]}).
 
   Definition rwcas_inv γₘ lᵢ lₛ : iProp Σ :=
-    ∃ (v : val) pvs ps, 
-      lᵢ ↦ v ∗ (* implementation location *)
-      lₛ ↦ₛ v ∗ (* spec location*)
+    ∃ (n : Z) pvs ps, 
+      lᵢ ↦ #n ∗ (* implementation location *)
+      lₛ ↦ₛ #n ∗ (* spec location*)
       proph_map_interp pvs ps ∗ (* Authoritative ownership over prophecy map *)
-      [∗ set] p ∈ ps, 
-        ∀ w, ⌜extract_result (proph_list_resolves pvs p) = Some (false, w)⌝ → (* If the cmpxchg fails *)
+      [∗ set] p ∈ ps, (* For every thread/proph id *)
+        ∀ m, ⌜extract_result (proph_list_resolves pvs p) = Some (false, m)⌝ → (* If the cmpxchg fails *)
           ∃ id, 
             ids_at γₘ p id ∗ (* The thread/proph id [p] is bound to refinement id [id]*)
               (refines_right id #()) ∨ (* The failing write has already been linearized; the spec of its right refinement has already been reduced to [()] *)
-              (⌜v ≠ w⌝ ∗ ∃ z, refines_right id (atomic_write #lₛ z)).
+              (⌜n ≠ m⌝ ∗ ∃ (p : Z), refines_right id (atomic_write #lₛ #p)).
               (* Or the value currently stored in the cell is not what the failing cmpxchg will eventually read from the cell.
                  Thus, there exists some future sucessful write that will cause it to fail. 
                  The invariant contains the un-reduced left refinement for this writer to reduce *)
+
+
+  Lemma read_refinement γₘ lᵢ lₛ :
+    inv rwcasN (rwcas_inv γₘ lᵢ lₛ) -∗
+    REL read #lᵢ << read #lₛ : lrel_int.
+  Proof.
+    iIntros "#Hinv".
+    rewrite /read.
+    rel_pure_l.
+    rel_pure_r.
+    rel_load_l_atomic.
+    iInv rwcasN as (n pvs ps) "(Hlᵢ & Hlₛ & H● & Hproph)" "Hclose".
+    iExists #n.
+    iSplitL "Hlᵢ"; first done.
+    iIntros "!> !> Hli".
+    rel_load_r.
+    rel_values.
+    iApply fupd_mono.
+    - iIntros "_".
+      by iExists _.
+    - iApply "Hclose".
+      iFrame.
+  Qed.
 
 End wf.
 

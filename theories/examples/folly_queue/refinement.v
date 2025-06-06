@@ -80,7 +80,7 @@ Section queue_refinement.
     destruct Hlm as [-> Hlm].
     lia.
   Qed.
-
+ 
   Definition make_map (m : gmap nat val) : gmapUR nat (agreeR valO) :=
     to_agree <$> m.
 
