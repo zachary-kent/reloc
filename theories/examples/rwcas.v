@@ -4,6 +4,7 @@ Set Default Proof Using "Type".
 
 From reloc Require Import reloc lib.lock.
 From iris.algebra Require Import numbers csum excl auth list gmap gset.
+From iris.base_logic.lib Require Import token.
 From iris.bi.lib Require Export fixpoint.
 
 
@@ -37,8 +38,11 @@ Definition lf_rwcas : val := λ: <>,
   ((λ: "v", lf_write "x" "v"), (λ: <>, read "x")).
 
 (* LP stepping requests. *)
-Definition requestReg := gmap proph_id ref_id.
-Definition requestRegUR := authUR $ gmapUR proph_id (agreeR ref_idO).
+(* Map the proph id of every failing write to a triple [(id, γₜ, v)]*)
+Definition requestReg := gmap proph_id (agree (ref_id * gname * Z)).
+Definition requestRegUR := authUR $ gmapUR proph_id (agreeR (prodO (prodO ref_idO gnameO) ZO)).
+
+Check to_agree_op_inv_L.
 
 Class rwcasG Σ := {
   rwcas_requestUR :: inG Σ requestRegUR;
@@ -46,7 +50,7 @@ Class rwcasG Σ := {
 
 Section wf.
 
-  Context `{!relocG Σ, !rwcasG Σ}.
+  Context `{!relocG Σ, !rwcasG Σ, !tokenG Σ}.
 
   Definition rwcasN : namespace := nroot .@ "rwcas".
 
@@ -58,22 +62,41 @@ Section wf.
 
   Definition ids_at γₘ p id := own γₘ (◯ {[ p := to_agree id ]}).
 
-  Definition rwcas_inv γₘ lᵢ lₛ : iProp Σ :=
+  Check ids_at.
+
+  (* Definition rwcas_inv γₘ lᵢ lₛ : iProp Σ :=
     ∃ (n : Z) pvs ps, 
       lᵢ ↦ #n ∗ (* implementation location *)
       lₛ ↦ₛ #n ∗ (* spec location*)
+
       proph_map_interp pvs ps ∗ (* Authoritative ownership over prophecy map *)
       [∗ set] p ∈ ps, (* For every thread/proph id *)
         ∀ m, ⌜extract_result (proph_list_resolves pvs p) = Some (false, m)⌝ → (* If the cmpxchg fails *)
           ∃ id, 
             ids_at γₘ p id ∗ (* The thread/proph id [p] is bound to refinement id [id]*)
-              (refines_right id #()) ∨ (* The failing write has already been linearized; the spec of its right refinement has already been reduced to [()] *)
-              (⌜n ≠ m⌝ ∗ ∃ (p : Z), refines_right id (atomic_write #lₛ #p)).
+              (refines_right id #()) ∨ (* The failing write has already been linearized and the spec of its right refinement has already been reduced to [()] *)
+              (⌜n ≠ m⌝ ∗ ∃ (p : Z), refines_right id (atomic_write #lₛ #p)) ∨
+              (* Or the value currently stored in the cell is not what the failing cmpxchg will eventually read from the cell.
+                 Thus, there exists some future sucessful write that will cause it to fail. 
+                 The invariant contains the un-reduced left refinement for this writer to reduce *) *)
+
+
+  Definition rwcas_inv γ lᵢ lₛ : iProp Σ :=
+    ∃ (n : Z) requests, 
+      lᵢ ↦ #n ∗ (* implementation location *)
+      lₛ ↦ₛ #n ∗ (* spec location*)
+      own γ (● requests) ∗ (* Authoritative ownership over prophecy map *)
+      [∗ map] p ↦ req ∈ requests, (* For every thread/proph id *)
+        ∀ id γₜ m,
+          ⌜req = to_agree (id, γₜ, m)⌝ →
+            refines_right id #() ∨ (* The failing write has already been linearized and the spec of its right refinement has already been reduced to [()] *)
+            (⌜n ≠ m⌝ ∗ ∃ (p : Z), refines_right id (atomic_write #lₛ #p)) ∨
               (* Or the value currently stored in the cell is not what the failing cmpxchg will eventually read from the cell.
                  Thus, there exists some future sucessful write that will cause it to fail. 
                  The invariant contains the un-reduced left refinement for this writer to reduce *)
-
-
+            token γₜ.
+            (* The failing write has linearized and returned *)
+              
   Lemma read_refinement γₘ lᵢ lₛ :
     inv rwcasN (rwcas_inv γₘ lᵢ lₛ) -∗
     REL read #lᵢ << read #lₛ : lrel_int.
@@ -83,7 +106,7 @@ Section wf.
     rel_pure_l.
     rel_pure_r.
     rel_load_l_atomic.
-    iInv rwcasN as (n pvs ps) "(Hlᵢ & Hlₛ & H● & Hproph)" "Hclose".
+    iInv rwcasN as (n requests) "(Hlᵢ & Hlₛ & H● & Hreq)" "Hclose".
     iExists #n.
     iSplitL "Hlᵢ"; first done.
     iIntros "!> !> Hli".
@@ -95,6 +118,35 @@ Section wf.
     - iApply "Hclose".
       iFrame.
   Qed.
+
+  Lemma write_refinement γₘ lᵢ lₛ (q : Z) : 
+    inv rwcasN (rwcas_inv γₘ lᵢ lₛ) -∗
+    REL wf_write #lᵢ #q << atomic_write #lₛ #q : lrel_unit.
+  Proof.
+    iIntros "#Hinv".
+    rewrite /wf_write /atomic_write.
+    rel_pures_l.
+    rel_pures_r.
+    rel_newproph_l vs p as "Hₚ".
+    rel_pures_l.
+    rel_load_l_atomic.
+    iInv rwcasN as (n req) "(Hlᵢ & Hlₛ & H● & Hreq)" "Hclose".
+    iExists #n.
+    iSplitL "Hlᵢ"; first done.
+    iIntros "!> !> Hlᵢ".
+    iMod ("Hclose" with "[Hlᵢ Hlₛ H● Hreq]") as "_".
+    { iFrame. }
+    destruct (extract_result vs) as [[[|] m] | ] eqn:Hres.
+    - admit.
+      (* iApply refines_split. (* This write will succeed *)
+      rel_apply_l refines_resolveatomic_l.
+      { done. } *)
+       
+    - iApply refines_split.
+      iIntros (id) "Hspec".
+
+    - admit.
+    rel_pures
 
 End wf.
 
