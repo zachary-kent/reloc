@@ -30,7 +30,8 @@ Definition lf_write : val :=
 Definition wf_write : val :=
   λ: "l" "v",
     let: "p" := NewProph in
-    Resolve (CmpXchg "l" !"l" "v") "p" #().
+    let: "res" := CmpXchg "l" !"l" "v" in
+    resolve_proph: "p" to: "res".
 
 (* Fine-grained implementatiaon of a read-write cell *)
 Definition lf_rwcas : val := λ: <>,
@@ -56,7 +57,7 @@ Section wf.
 
   Definition extract_result (vs : list (val * val)) : option (bool * Z) :=
     match vs with
-    | (_, PairV (LitV (LitBool b)) (LitV (LitInt n))) :: _ => Some (b, n)
+    | (PairV (LitV (LitInt n)) (LitV (LitBool b)), _) :: _ => Some (b, n)
     | _ => None (* (true, LitV LitUnit) *)
     end.
 
@@ -80,22 +81,56 @@ Section wf.
                  Thus, there exists some future sucessful write that will cause it to fail. 
                  The invariant contains the un-reduced left refinement for this writer to reduce *) *)
 
+  Definition registry_inv lₛ n (requests : requestReg) : iProp Σ :=
+    [∗ map] p ↦ req ∈ requests, (* For every thread/proph id *)
+      ∃ id γₜ m,
+        ⌜req = to_agree (id, γₜ, m)⌝ ∗
+          (refines_right id #() ∨ (* The failing write has already been linearized and the spec of its right refinement has already been reduced to [()] *)
+          (⌜n ≠ m⌝ ∗ ∃ (p : Z), refines_right id (atomic_write #lₛ #p)) ∨
+            (* Or the value currently stored in the cell is not what the failing cmpxchg will eventually read from the cell.
+                Thus, there exists some future sucessful write that will cause it to fail. 
+                The invariant contains the un-reduced left refinement for this writer to reduce *)
+          token γₜ).
+          (* The failing write has linearized and returned *)
 
   Definition rwcas_inv γ lᵢ lₛ : iProp Σ :=
-    ∃ (n : Z) requests, 
+    ∃ (n : Z) (requests : requestReg), 
       lᵢ ↦ #n ∗ (* implementation location *)
       lₛ ↦ₛ #n ∗ (* spec location*)
       own γ (● requests) ∗ (* Authoritative ownership over prophecy map *)
-      [∗ map] p ↦ req ∈ requests, (* For every thread/proph id *)
-        ∀ id γₜ m,
-          ⌜req = to_agree (id, γₜ, m)⌝ →
-            refines_right id #() ∨ (* The failing write has already been linearized and the spec of its right refinement has already been reduced to [()] *)
-            (⌜n ≠ m⌝ ∗ ∃ (p : Z), refines_right id (atomic_write #lₛ #p)) ∨
-              (* Or the value currently stored in the cell is not what the failing cmpxchg will eventually read from the cell.
-                 Thus, there exists some future sucessful write that will cause it to fail. 
-                 The invariant contains the un-reduced left refinement for this writer to reduce *)
-            token γₜ.
-            (* The failing write has linearized and returned *)
+      registry_inv lₛ n requests.
+
+  Lemma refines_right_write E l (n n' : Z) requests :
+    nclose relocN ⊆ E →
+      l ↦ₛ #n' -∗ 
+        registry_inv l n requests ={E}=∗ 
+          registry_inv l n' requests ∗ ∃ q : Z, l ↦ₛ #q.
+  Proof.
+    iIntros (HNE) "Hl Hreqs".
+    iInduction requests as [|p' desc reqs' Hp'] "IH" using map_ind forall (n').
+    - iFrame. rewrite /registry_inv. by iModIntro.
+    - rewrite /registry_inv. do 2 rewrite -> big_sepM_insert by done.
+      iDestruct "Hreqs" as "[(%id & %γₜ & %m' & -> & [Hlin | [(%Hne & %q' & Href) | Hresp]]) Hreqs']";
+      iMod ("IH" with "Hl Hreqs'") as "(Hreqs' & %q & Hl)".
+      + iSplitR "Hl".
+        * iSplitR "Hreqs'".
+          -- iExists _, _, _. by iFrame.
+          -- done.
+        * by iFrame.
+      + rewrite /atomic_write.
+        tp_pures id.
+        tp_store id.
+        iSplitR "Hl".
+          * iSplitR "Hreqs'".
+            -- iExists _, _, _. by iFrame.
+            -- done.
+          * by iFrame.
+      + iSplitR "Hl".
+        * iSplitR "Hreqs'".
+          -- iExists _, _, _. by iFrame.
+          -- done.
+        * by iFrame.
+  Qed.
               
   Lemma read_refinement γₘ lᵢ lₛ :
     inv rwcasN (rwcas_inv γₘ lᵢ lₛ) -∗
@@ -119,6 +154,9 @@ Section wf.
       iFrame.
   Qed.
 
+  Check token_alloc.
+
+
   Lemma write_refinement γₘ lᵢ lₛ (q : Z) : 
     inv rwcasN (rwcas_inv γₘ lᵢ lₛ) -∗
     REL wf_write #lᵢ #q << atomic_write #lₛ #q : lrel_unit.
@@ -130,14 +168,99 @@ Section wf.
     rel_newproph_l vs p as "Hₚ".
     rel_pures_l.
     rel_load_l_atomic.
-    iInv rwcasN as (n req) "(Hlᵢ & Hlₛ & H● & Hreq)" "Hclose".
+    iInv rwcasN as (n reqs) "(Hlᵢ & Hlₛ & H● & Hreqs)" "Hclose".
     iExists #n.
     iSplitL "Hlᵢ"; first done.
     iIntros "!> !> Hlᵢ".
-    iMod ("Hclose" with "[Hlᵢ Hlₛ H● Hreq]") as "_".
-    { iFrame. }
     destruct (extract_result vs) as [[[|] m] | ] eqn:Hres.
-    - admit.
+    (* iMod token_alloc as "[%γₜ Hγₜ]". *)
+    - (* We are destined to succeed *)
+      (* Close invariant with same request registry *)
+      iMod ("Hclose" with "[Hlᵢ Hlₛ H● Hreqs]") as "_".
+      { iFrame. }
+      clear reqs.
+      rel_cmpxchg_l_atomic.
+      iInv rwcasN as (n' reqs) "(Hlᵢ & Hlₛ & H● & Hreqs)" "Hclose".
+      iExists _. iFrame.
+      iModIntro.
+      iSplit.
+      + (* Contrary to the prophecy, the CmpXchg fails *)
+        iIntros "%Hne !> Hlᵢ".
+        rel_pures_l.
+        iMod ("Hclose" with "[Hlᵢ Hlₛ H● Hreqs]") as "_".
+        { iFrame. }
+        rel_apply_l refines_resolveproph_l.
+        iModIntro.
+        iExists _. iSplitL "Hₚ"; first done.
+        iIntros "!> %vs' ->".
+        simplify_eq.
+      + (* Consistent with the prophecy, we suceed *)
+        iIntros "-> !> Hlᵢ".
+        rel_pures_l.
+        rel_store_r.
+        iMod ("Hclose" with "[Hlᵢ Hlₛ H● Hreqs]") as "_".
+        { iClear "Hinv".
+          iExists q, _. iFrame.
+          iNext. 
+          iInduction reqs as [|p' desc reqs' Hp'] "IH" using map_ind.
+          - done.
+          - do 2 rewrite -> big_sepM_insert by done.
+            iDestruct "Hreqs" as "[(%id & %γₜ & %m' & -> & [Hlin | [(%Hne & %q' & Href) | Hresp]]) Hreqs']".
+            + iSplitR "Hreqs'".
+              2: { by iApply "IH". }
+              iExists _, _, _. by iFrame.
+            + iSplitR "Hreqs'".
+              2: { by iApply "IH". }
+              iExists id, γₜ, m'.
+              iSplitR; first done.
+              destruct (decide (q = m')) as [-> | Hneq].
+              * iLeft. tp_store id.
+            
+
+             pose proof (to_agree_uninj desc) as [[[id γₜ] z] H].
+            { rewrite agree_valid. }     }
+        rel_apply_l refines_resolveproph_l.
+        iModIntro.
+        iExists _. iSplitL "Hₚ"; first done.
+        iIntros "!> %vs' ->".
+
+      (* Resolve the prophecy *)
+      rel_apply_l refines_resolveatomic_l.
+      { done. }
+      iExists vs.
+      iSplitL "Hₚ"; first done.
+      clear req.
+      iModIntro.
+      iInv rwcasN as (n' reqs) "(Hlᵢ & Hlₛ & H● & Hreqs)" "Hclose".
+      destruct (decide (n' = n)) as [-> | Hne].
+      + (* As expected, the cmpxchg succeeds *)
+        wp_cmpxchg_suc.
+        iApply (fupd_mono _ _ (REL (#n, #true)%V;; #() << #lₛ <- #q : ())).
+        * by iIntros.
+        * iApply (fupd_mono _ _ (lₛ ↦ₛ #n ∗ (lₛ ↦ₛ #q -∗ REL (#n, #true)%V;; #() << #() : ()))).
+          -- iIntros "[Hlₛ Hrel]".
+             rel_store_r.
+             by iApply "Hrel".
+          --
+        rel_store_r. rewrite refines_eq /refines_def.
+          simpl.
+          iApply fud
+          -- iNtros.
+          -- 
+
+
+
+      
+      iModIntro. iApply fupd_mono with "[]".
+        * iIntros "_".
+          wp_cmpxchg_suc.
+        * 
+        wp_cmpxchg_suc.
+      admit.
+    - (* We are destined to fail *)
+
+    
+      admit.
       (* iApply refines_split. (* This write will succeed *)
       rel_apply_l refines_resolveatomic_l.
       { done. } *)

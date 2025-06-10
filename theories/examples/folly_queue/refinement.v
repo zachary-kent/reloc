@@ -25,7 +25,7 @@ Class queueG Σ := {
 (* To support Z.div, Z.modulo, Z.quot, and Z.rem: *)
 Ltac Zify.zify_post_hook ::= Z.to_euclidean_division_equations.
 
-(* Begin hooks to make `lia` work with Nat.modulo and Nat.div *)
+(* Begin hooks to make `lia` work witrefines_right_CG_dequeueh Nat.modulo and Nat.div *)
 Require Import Arith ZArith ZifyClasses ZifyInst Lia.
 
 Global Program Instance Op_Nat_mod : BinOp Nat.modulo :=
@@ -331,8 +331,8 @@ Section queue_refinement.
         eapply (Zdiv_unique _ _ _ 0); lia.
     - assert (i <? ops `mod` q = false)%nat as ->.
       { by apply Nat.ltb_nlt. }
-      rewrite Nat.add_0_r.
       destruct (decide (i < (ops + 1) `mod` q)) as [Hops3|Hops3].
+      rewrite Nat.add_0_r.
       + rewrite ltb_lt_1 //.
         assert (ops `mod` q < (ops + 1) `mod` q) as Hsucc by lia.
         cut (ops `div` q = (ops + 1) `div` q)%Z; first lia.

@@ -158,6 +158,20 @@ Section rules.
     by iApply "Hlog".
   Qed.
 
+  Lemma refines_store_r_inv E₁ E₂ K l e e' v v' A
+    (Hmasked : nclose specN ⊆ E) :
+    IntoVal e' v' →
+    l ↦ₛ v ⊢
+    (l ↦ₛ v' -∗ REL e << fill K (of_val #()) @ E : A) ={E₁, E₂}=∗
+    REL e << fill K (#l <- e') : A.
+  Proof.
+    rewrite /IntoVal. iIntros (<-) "Hl Hlog".
+    iApply refines_step_r.
+    iIntros (k) "Hk". simpl.
+    tp_store k. iModIntro. iExists _. iFrame.
+    by iApply "Hlog".
+  Qed.
+
   Lemma refines_alloc_r E K e v t A
     (Hmasked : nclose specN ⊆ E) :
     IntoVal e v →

@@ -286,6 +286,16 @@ Section related_facts.
     iMod "H" as "H". iApply ("H" with "Hr").
   Qed.
 
+  (* Lemma refines_fupd R E e t A :
+    (R ∗ refines E e t A ∗ (R ={E,⊤}=∗ True)) ={E,⊤}=∗ refines ⊤ e t A.
+  Proof.
+    rewrite refines_eq /refines_def.
+    iIntros "(R & Hrel & Hcl)". destruct t.
+    - iSpecialize ("H" $! k with "[%//]").
+     simpl. iIntros (j) "Hr /=".
+    iMod "H" as "H". iApply ("H" with "Hr").
+  Qed. *)
+
   Lemma refines_left_fupd E e k A :
     (REL e <<{k} _ @ E : A) ={E,⊤}=∗ REL e <<{k} _ @ ⊤ : A.
   Proof.
@@ -294,6 +304,16 @@ Section related_facts.
     iSpecialize ("H" $! k with "[%//]").
     iMod "H" as "H". iModIntro.
     iIntros (j) "->". done.
+  Qed.
+
+  Lemma refines_fupd R E e t A :
+    refines E e t A ∗ (R ={E,⊤}=∗ True) ={E,⊤}=∗ refines ⊤ e t A.
+  Proof.
+    rewrite refines_eq /refines_def.
+    iIntros "(R & Hrel & Hcl)". destruct t.
+    - iSpecialize ("H" $! k with "[%//]").
+     simpl. iIntros (j) "Hr /=".
+    iMod "H" as "H". iApply ("H" with "Hr").
   Qed.
 
   Global Instance elim_fupd_refines p E1 E2 e t P A :
