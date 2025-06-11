@@ -30,8 +30,8 @@ Definition lf_write : val :=
 Definition wf_write : val :=
   λ: "l" "v",
     let: "p" := NewProph in
-    let: "res" := CmpXchg "l" !"l" "v" in
-    resolve_proph: "p" to: "res".
+    Resolve (CmpXchg "l" !"l" "v") "p" #();;
+    #().
 
 (* Fine-grained implementatiaon of a read-write cell *)
 Definition lf_rwcas : val := λ: <>,
@@ -81,25 +81,21 @@ Section wf.
                  Thus, there exists some future sucessful write that will cause it to fail. 
                  The invariant contains the un-reduced left refinement for this writer to reduce *) *)
 
-  Definition registry_inv lₛ n (requests : list (agree (ref_id * gname * Z))) : iProp Σ :=
-    [∗ list] req ∈ requests, (* For every thread/proph id *)
-      ∃ id γₜ m,
-        ⌜req = to_agree (id, γₜ, m)⌝ ∗
-          (refines_right id #() ∨ (* The failing write has already been linearized and the spec of its right refinement has already been reduced to [()] *)
-          (⌜m ≠ n⌝ ∗ ∃ (p : Z), refines_right id (atomic_write #lₛ #p)) ∨
-            (* Or the value currently stored in the cell is not what the failing cmpxchg will eventually read from the cell.
-                Thus, there exists some future sucessful write that will cause it to fail. 
-                The invariant contains the un-reduced left refinement for this writer to reduce *)
-          token γₜ).
-          (* The failing write has linearized and returned *)
-
-  Check map_seq.
+  Definition registry_inv lₛ n (requests : list (ref_id * gname * Z)) : iProp Σ :=
+    [∗ list] '(id, γₜ, m) ∈ requests, (* For every thread/proph id *)
+        (refines_right id #() ∨ (* The failing write has already been linearized and the spec of its right refinement has already been reduced to [()] *)
+        (⌜m ≠ n⌝ ∗ ∃ (p : Z), refines_right id (atomic_write #lₛ #p)) ∨
+          (* Or the value currently stored in the cell is not what the failing cmpxchg will eventually read from the cell.
+              Thus, there exists some future sucessful write that will cause it to fail. 
+              The invariant contains the un-reduced left refinement for this writer to reduce *)
+        token γₜ).
+        (* The failing write has linearized and returned *)
 
   Definition rwcas_inv (γ : gname) lᵢ lₛ : iProp Σ :=
-    ∃ (n : Z) (requests : list (agree (ref_id * gname * Z))), 
+    ∃ (n : Z) (requests : list (ref_id * gname * Z)), 
       lᵢ ↦ #n ∗ (* implementation location *)
       lₛ ↦ₛ #n ∗ (* spec location*)
-      own γ (● map_seq O requests) ∗ (* Authoritative ownership over prophecy map *)
+      own γ (● map_seq O (to_agree <$> requests)) ∗ (* Authoritative ownership over prophecy map *)
       registry_inv lₛ n requests.
 
   Lemma refines_right_write E l (m n p : Z) requests :
@@ -109,28 +105,22 @@ Section wf.
           registry_inv l p requests ∗ ∃ q : Z, l ↦ₛ #q.
   Proof.
     iIntros (HNE) "Hl Hreqs".
-    iInduction requests as [|desc reqs'] "IH" forall (m).
+    iInduction requests as [|[[id γₜ] m'] reqs'] "IH" forall (m).
     - by iFrame.
-    -  rewrite /registry_inv. do 2 rewrite -> big_sepL_cons by done.
-      iDestruct "Hreqs" as "[(%id & %γₜ & %m' & -> & [Hlin | [(%Hne & %q' & Href) | Hresp]]) Hreqs']";
+    - rewrite /registry_inv. do 2 rewrite -> big_sepL_cons by done.
+      iDestruct "Hreqs" as "[[Hlin | [(%Hne & %q' & Href) | Hresp]] Hreqs']";
       iMod ("IH" with "Hl Hreqs'") as "(Hreqs' & %q & Hl)".
       + iSplitR "Hl".
-        * iSplitR "Hreqs'".
-          -- iExists _, _, _. by iFrame.
-          -- done.
+        * iSplitR "Hreqs'"; by iFrame.
         * by iFrame.
       + rewrite /atomic_write.
         tp_pures id.
         tp_store id.
         iSplitR "Hl".
-          * iSplitR "Hreqs'".
-            -- iExists _, _, _. by iFrame.
-            -- done.
+          * iSplitR "Hreqs'"; by iFrame.
           * by iFrame.
       + iSplitR "Hl".
-        * iSplitR "Hreqs'".
-          -- iExists _, _, _. by iFrame.
-          -- done.
+        * iSplitR "Hreqs'"; by iFrame.
         * by iFrame.
   Qed.
               
@@ -176,34 +166,26 @@ Section wf.
       iMod ("Hclose" with "[Hlᵢ Hlₛ H● Hreqs]") as "_".
       { iFrame. }
       clear reqs.
-      rel_cmpxchg_l_atomic.
+      rel_apply_l refines_resolveatomic_l.
+      { done. }
       iInv rwcasN as (n' reqs) "(Hlᵢ & Hlₛ & H● & Hreqs)" "Hclose".
       iExists _. iFrame.
       iModIntro.
-      iSplit.
-      + (* Contrary to the prophecy, the CmpXchg fails *)
-        iIntros "%Hne !> Hlᵢ".
-        rel_pures_l.
-        iMod ("Hclose" with "[Hlᵢ Hlₛ H● Hreqs]") as "_".
-        { iFrame. }
-        rel_apply_l refines_resolveproph_l.
-        iModIntro.
-        iExists _. iSplitL "Hₚ"; first done.
-        iIntros "!> %vs' ->".
-        simplify_eq.
+      destruct (decide (n' = n)) as [-> | Hne].
       + (* Consistent with the prophecy, we suceed *)
-        iIntros "-> !> Hlᵢ".
+        wp_cmpxchg_suc.
+        iIntros "!> %vs' -> _".
         rel_pures_l.
         iMod (refines_right_write _ _ _ _ q with "Hlₛ Hreqs") as "(Hreqs & %q' & Hlₛ)".
         { solve_ndisj. }
         rel_store_r.
         iMod ("Hclose" with "[Hlᵢ Hlₛ H● Hreqs]") as "_".
         { iFrame. }
-        rel_apply_l refines_resolveproph_l.
-        iModIntro.
-        iExists _. iSplitL "Hₚ"; first done.
+        rel_values. 
+      + (* Contrary to the prophecy, the CmpXchg fails *)
+        wp_cmpxchg_fail.
         iIntros "!> %vs' -> _".
-        rel_values.
+        simplify_eq.
     - (* We are destined to fail *)
       destruct (decide (n = m)) as [-> | Hne].
       + (* The value propecized to be read at the cmpxchg is the same
@@ -219,41 +201,34 @@ Section wf.
             with 
               (i := length reqs)
               (x := to_agree (id, γₜ, m)).
-          { rewrite lookup_map_seq_None. by right. }
+          { rewrite lookup_map_seq_None length_fmap. by right. }
           constructor. }
-        change (length reqs) with (O + length reqs) at 1.
+        replace (length reqs) with (O + length (to_agree <$> reqs)) at 1 
+          by (now rewrite length_fmap).
         rewrite -map_seq_snoc.
         iMod ("Hclose" with "[Hlᵢ Hlₛ H● Hreqs Hrht]") as "_".
-        { iExists _, (reqs ++ [to_agree (id, γₜ, m)]). iFrame.
+        { iExists _, (reqs ++ [(id, γₜ, m)]). iFrame.
           rewrite big_sepL_singleton.
-          iExists id, γₜ, m. iNext.
+          iNext.
           iSplitR; first done.
           iRight. iLeft. iSplitR; first done.
           iFrame. }
-        rel_cmpxchg_l_atomic.
-        iInv rwcasN as (n' reqs') "(Hlᵢ & Hlₛ & H● & Hreqs')" "Hclose".
+        rel_apply_l refines_resolveatomic_l.
+        { done. }
         iExists _. iFrame.
+        iInv rwcasN as (n' reqs') "(Hlᵢ & Hlₛ & H● & Hreqs')" "Hclose".
         iModIntro.
-        iSplit.
-        * destruct (decide (n' = m)) as [-> | Hneq].
-          -- (* The value actually read by the CmpXchg is the same as that prophecsized *)
-            iIntros (Hneq) "!> Hlᵢ".
-            assert (m ≠ n).
-            { intros Heq. simplify_eq. }
-            rewrite /registry_inv.
-            admit.
-          -- admit.
-        *
-
-
-          
-
-          
-
-      
-
-      Check auth_update_alloc.
-      
+        destruct (decide (n' = n)) as [-> | Hneq].
+        * wp_cmpxchg_suc.
+          iIntros "!> %vs' -> _". simplify_eq.
+        * wp_cmpxchg_fail.
+          iIntros "!> %vs' -> _".
+          inv Hres.
+          iCombine "H● H◯" gives %[H Hv]%auth_both_valid_discrete.
+          unfold "≼" in H.
+          rewrite dom_singleton_L in H.
+          assert ({[length reqs]} ⊆ dom (map_seq 0 reqs'))
+          admit.
 End wf.
 
 Section atomic_rwcas.
