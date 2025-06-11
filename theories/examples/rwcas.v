@@ -86,7 +86,7 @@ Section wf.
       ∃ id γₜ m,
         ⌜req = to_agree (id, γₜ, m)⌝ ∗
           (refines_right id #() ∨ (* The failing write has already been linearized and the spec of its right refinement has already been reduced to [()] *)
-          (⌜n ≠ m⌝ ∗ ∃ (p : Z), refines_right id (atomic_write #lₛ #p)) ∨
+          (⌜m ≠ n⌝ ∗ ∃ (p : Z), refines_right id (atomic_write #lₛ #p)) ∨
             (* Or the value currently stored in the cell is not what the failing cmpxchg will eventually read from the cell.
                 Thus, there exists some future sucessful write that will cause it to fail. 
                 The invariant contains the un-reduced left refinement for this writer to reduce *)
@@ -96,7 +96,7 @@ Section wf.
   Check map_seq.
 
   Definition rwcas_inv (γ : gname) lᵢ lₛ : iProp Σ :=
-    ∃ (n : Z) (requests : list (agreeR (prodO (prodO ref_idO gnameO) ZO))), 
+    ∃ (n : Z) (requests : list (agree (ref_id * gname * Z))), 
       lᵢ ↦ #n ∗ (* implementation location *)
       lₛ ↦ₛ #n ∗ (* spec location*)
       own γ (● map_seq O requests) ∗ (* Authoritative ownership over prophecy map *)
@@ -109,9 +109,9 @@ Section wf.
           registry_inv l p requests ∗ ∃ q : Z, l ↦ₛ #q.
   Proof.
     iIntros (HNE) "Hl Hreqs".
-    iInduction requests as [|p' desc reqs' Hp'] "IH" using map_ind forall (m).
-    - iFrame. rewrite /registry_inv. by iModIntro.
-    - rewrite /registry_inv. do 2 rewrite -> big_sepM_insert by done.
+    iInduction requests as [|desc reqs'] "IH" forall (m).
+    - by iFrame.
+    -  rewrite /registry_inv. do 2 rewrite -> big_sepL_cons by done.
       iDestruct "Hreqs" as "[(%id & %γₜ & %m' & -> & [Hlin | [(%Hne & %q' & Href) | Hresp]]) Hreqs']";
       iMod ("IH" with "Hl Hreqs'") as "(Hreqs' & %q & Hl)".
       + iSplitR "Hl".
@@ -156,9 +156,6 @@ Section wf.
       iFrame.
   Qed.
 
-  Check token_alloc.
-
-
   Lemma write_refinement γₘ lᵢ lₛ (q : Z) : 
     inv rwcasN (rwcas_inv γₘ lᵢ lₛ) -∗
     REL wf_write #lᵢ #q << atomic_write #lₛ #q : lrel_unit.
@@ -166,7 +163,6 @@ Section wf.
     iIntros "#Hinv".
     rewrite /wf_write /atomic_write.
     rel_pures_l.
-    rel_pures_r.
     rel_newproph_l vs p as "Hₚ".
     rel_pures_l.
     rel_load_l_atomic.
@@ -195,8 +191,7 @@ Section wf.
         iExists _. iSplitL "Hₚ"; first done.
         iIntros "!> %vs' ->".
         simplify_eq.
-      + 
-        (* Consistent with the prophecy, we suceed *)
+      + (* Consistent with the prophecy, we suceed *)
         iIntros "-> !> Hlᵢ".
         rel_pures_l.
         iMod (refines_right_write _ _ _ _ q with "Hlₛ Hreqs") as "(Hreqs & %q' & Hlₛ)".
@@ -210,12 +205,52 @@ Section wf.
         iIntros "!> %vs' -> _".
         rel_values.
     - (* We are destined to fail *)
-      iMod token_alloc as "[%γₜ Hγₜ]".
-      iIntros "!> !> Hlᵢ".
-      iApply refines_split.
-      iIntros (id) ("Hrht").
-      iMod (own_update with "H●") as "H".
-      { eapply auth_update_alloc. }
+      destruct (decide (n = m)) as [-> | Hne].
+      + (* The value propecized to be read at the cmpxchg is the same
+           as the load. This is impossible; the CmpXchg will suceed *)
+        admit.
+      + iMod token_alloc as "[%γₜ Hγₜ]".
+        iIntros "!> !> Hlᵢ".
+        iApply refines_split.
+        iIntros (id) ("Hrht").
+        iMod (own_update with "H●") as "[H● H◯]".
+        { eapply auth_update_alloc.
+          apply alloc_singleton_local_update 
+            with 
+              (i := length reqs)
+              (x := to_agree (id, γₜ, m)).
+          { rewrite lookup_map_seq_None. by right. }
+          constructor. }
+        change (length reqs) with (O + length reqs) at 1.
+        rewrite -map_seq_snoc.
+        iMod ("Hclose" with "[Hlᵢ Hlₛ H● Hreqs Hrht]") as "_".
+        { iExists _, (reqs ++ [to_agree (id, γₜ, m)]). iFrame.
+          rewrite big_sepL_singleton.
+          iExists id, γₜ, m. iNext.
+          iSplitR; first done.
+          iRight. iLeft. iSplitR; first done.
+          iFrame. }
+        rel_cmpxchg_l_atomic.
+        iInv rwcasN as (n' reqs') "(Hlᵢ & Hlₛ & H● & Hreqs')" "Hclose".
+        iExists _. iFrame.
+        iModIntro.
+        iSplit.
+        * destruct (decide (n' = m)) as [-> | Hneq].
+          -- (* The value actually read by the CmpXchg is the same as that prophecsized *)
+            iIntros (Hneq) "!> Hlᵢ".
+            assert (m ≠ n).
+            { intros Heq. simplify_eq. }
+            rewrite /registry_inv.
+            admit.
+          -- admit.
+        *
+
+
+          
+
+          
+
+      
 
       Check auth_update_alloc.
       
