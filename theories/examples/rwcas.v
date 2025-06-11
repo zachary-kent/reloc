@@ -207,12 +207,10 @@ Section wf.
           by (now rewrite length_fmap).
         rewrite -map_seq_snoc.
         iMod ("Hclose" with "[Hlᵢ Hlₛ H● Hreqs Hrht]") as "_".
-        { iExists _, (reqs ++ [(id, γₜ, m)]). iFrame.
+        { iExists _, (reqs ++ [(id, γₜ, m)]). 
+          rewrite fmap_snoc. iFrame.
           rewrite big_sepL_singleton.
-          iNext.
-          iSplitR; first done.
-          iRight. iLeft. iSplitR; first done.
-          iFrame. }
+          iRight. iLeft. iSplitR; by iFrame. }
         rel_apply_l refines_resolveatomic_l.
         { done. }
         iExists _. iFrame.
@@ -224,7 +222,30 @@ Section wf.
         * wp_cmpxchg_fail.
           iIntros "!> %vs' -> _".
           inv Hres.
-          iCombine "H● H◯" gives %[H Hv]%auth_both_valid_discrete.
+          iCombine "H● H◯" gives %[Hincl Hv]%auth_both_valid_discrete.
+          apply dom_included in Hincl as Hdom.
+          rewrite dom_singleton_L singleton_subseteq_l in Hdom.
+          rewrite lookup_included in Hincl.
+          specialize Hincl with (length reqs).
+          rewrite option_included in Hincl.
+          destruct Hincl as [Hnone | (a & b & H & H' & Heq)].
+          { by rewrite lookup_insert in Hnone. }
+          rewrite lookup_insert in H. simplify_eq.
+          destruct Heq as [Heq | Hle].
+          -- rewrite lookup_map_seq_0 in H'.
+             assert (∃ b' : (agree (ref_id * gname * Z)), b = b') as [b' ->].
+             { by exists b. }
+
+             pose proof (lookup_fmap_Some to_agree _ _ _ H').
+             rewrite list_lookup_fmap_Some in H'.
+             rewrite lookup_fmap_Some in H'.
+            Check lookup_fmap_Some.
+             rewrite /registry_inv.
+             iPoseProof (big_sepL_lookup _ _ _ _ H' with "[Hreqs']") as "Hl".
+             { }
+             apply big_sepL_lookup in H'.
+          rewrite -Heq in H'. rewrite -{1}Heq in H'. inv Heq.
+          rewrite
           unfold "≼" in H.
           rewrite dom_singleton_L in H.
           assert ({[length reqs]} ⊆ dom (map_seq 0 reqs'))
