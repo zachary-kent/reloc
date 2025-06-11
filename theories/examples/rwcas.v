@@ -100,14 +100,14 @@ Section wf.
       own γ (● requests) ∗ (* Authoritative ownership over prophecy map *)
       registry_inv lₛ n requests.
 
-  Lemma refines_right_write E l (n n' : Z) requests :
+  Lemma refines_right_write E l (m n p : Z) requests :
     nclose relocN ⊆ E →
-      l ↦ₛ #n' -∗ 
+      l ↦ₛ #m -∗ 
         registry_inv l n requests ={E}=∗ 
-          registry_inv l n' requests ∗ ∃ q : Z, l ↦ₛ #q.
+          registry_inv l p requests ∗ ∃ q : Z, l ↦ₛ #q.
   Proof.
     iIntros (HNE) "Hl Hreqs".
-    iInduction requests as [|p' desc reqs' Hp'] "IH" using map_ind forall (n').
+    iInduction requests as [|p' desc reqs' Hp'] "IH" using map_ind forall (m).
     - iFrame. rewrite /registry_inv. by iModIntro.
     - rewrite /registry_inv. do 2 rewrite -> big_sepM_insert by done.
       iDestruct "Hreqs" as "[(%id & %γₜ & %m' & -> & [Hlin | [(%Hne & %q' & Href) | Hresp]]) Hreqs']";
@@ -171,10 +171,10 @@ Section wf.
     iInv rwcasN as (n reqs) "(Hlᵢ & Hlₛ & H● & Hreqs)" "Hclose".
     iExists #n.
     iSplitL "Hlᵢ"; first done.
-    iIntros "!> !> Hlᵢ".
     destruct (extract_result vs) as [[[|] m] | ] eqn:Hres.
     (* iMod token_alloc as "[%γₜ Hγₜ]". *)
     - (* We are destined to succeed *)
+      iIntros "!> !> Hlᵢ".
       (* Close invariant with same request registry *)
       iMod ("Hclose" with "[Hlᵢ Hlₛ H● Hreqs]") as "_".
       { iFrame. }
@@ -194,83 +194,21 @@ Section wf.
         iExists _. iSplitL "Hₚ"; first done.
         iIntros "!> %vs' ->".
         simplify_eq.
-      + (* Consistent with the prophecy, we suceed *)
+      + 
+        (* Consistent with the prophecy, we suceed *)
         iIntros "-> !> Hlᵢ".
         rel_pures_l.
+        iMod (refines_right_write _ _ _ _ q with "Hlₛ Hreqs") as "(Hreqs & %q' & Hlₛ)".
+        { solve_ndisj. }
         rel_store_r.
         iMod ("Hclose" with "[Hlᵢ Hlₛ H● Hreqs]") as "_".
-        { iClear "Hinv".
-          iExists q, _. iFrame.
-          iNext. 
-          iInduction reqs as [|p' desc reqs' Hp'] "IH" using map_ind.
-          - done.
-          - do 2 rewrite -> big_sepM_insert by done.
-            iDestruct "Hreqs" as "[(%id & %γₜ & %m' & -> & [Hlin | [(%Hne & %q' & Href) | Hresp]]) Hreqs']".
-            + iSplitR "Hreqs'".
-              2: { by iApply "IH". }
-              iExists _, _, _. by iFrame.
-            + iSplitR "Hreqs'".
-              2: { by iApply "IH". }
-              iExists id, γₜ, m'.
-              iSplitR; first done.
-              destruct (decide (q = m')) as [-> | Hneq].
-              * iLeft. tp_store id.
-            
-
-             pose proof (to_agree_uninj desc) as [[[id γₜ] z] H].
-            { rewrite agree_valid. }     }
+        { iFrame. }
         rel_apply_l refines_resolveproph_l.
         iModIntro.
         iExists _. iSplitL "Hₚ"; first done.
-        iIntros "!> %vs' ->".
-
-      (* Resolve the prophecy *)
-      rel_apply_l refines_resolveatomic_l.
-      { done. }
-      iExists vs.
-      iSplitL "Hₚ"; first done.
-      clear req.
-      iModIntro.
-      iInv rwcasN as (n' reqs) "(Hlᵢ & Hlₛ & H● & Hreqs)" "Hclose".
-      destruct (decide (n' = n)) as [-> | Hne].
-      + (* As expected, the cmpxchg succeeds *)
-        wp_cmpxchg_suc.
-        iApply (fupd_mono _ _ (REL (#n, #true)%V;; #() << #lₛ <- #q : ())).
-        * by iIntros.
-        * iApply (fupd_mono _ _ (lₛ ↦ₛ #n ∗ (lₛ ↦ₛ #q -∗ REL (#n, #true)%V;; #() << #() : ()))).
-          -- iIntros "[Hlₛ Hrel]".
-             rel_store_r.
-             by iApply "Hrel".
-          --
-        rel_store_r. rewrite refines_eq /refines_def.
-          simpl.
-          iApply fud
-          -- iNtros.
-          -- 
-
-
-
-      
-      iModIntro. iApply fupd_mono with "[]".
-        * iIntros "_".
-          wp_cmpxchg_suc.
-        * 
-        wp_cmpxchg_suc.
-      admit.
-    - (* We are destined to fail *)
-
-    
-      admit.
-      (* iApply refines_split. (* This write will succeed *)
-      rel_apply_l refines_resolveatomic_l.
-      { done. } *)
-       
-    - iApply refines_split.
-      iIntros (id) "Hspec".
-
+        iIntros "!> %vs' -> _".
+        rel_values.
     - admit.
-    rel_pures
-
 End wf.
 
 Section atomic_rwcas.
