@@ -71,7 +71,7 @@ Section wf.
     nclose relocN ⊆ E →
       l ↦ₛ #m -∗ 
         registry_inv l n requests ={E}=∗ 
-          registry_inv l p requests ∗ ∃ q g: Z, l ↦ₛ #q.
+          registry_inv l p requests ∗ ∃ q : Z, l ↦ₛ #q.
   Proof.
     iIntros (HNE) "Hl Hreqs".
     iInduction requests as [|[[id γₜ] m'] reqs'] "IH" forall (m).
