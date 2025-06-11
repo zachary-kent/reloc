@@ -38,6 +38,11 @@ Definition lf_rwcas : val := λ: <>,
   let: "x" := ref #0 in
   ((λ: "v", lf_write "x" "v"), (λ: <>, read "x")).
 
+(* Fine-grained implementatiaon of a read-write cell *)
+Definition lf_rwcas : val := λ: <>,
+  let: "x" := ref #0 in
+  ((λ: "v", lf_write "x" "v"), (λ: <>, read "x")).
+
 (* LP stepping requests. *)
 (* Map the proph id of every failing write to a triple [(id, γₜ, v)]*)
 Definition requestReg := gmap nat (agree (ref_id * gname * Z)).
@@ -190,7 +195,19 @@ Section wf.
       destruct (decide (n = m)) as [-> | Hne].
       + (* The value propecized to be read at the cmpxchg is the same
            as the load. This is impossible; the CmpXchg will suceed *)
-        admit.
+        iIntros "!> !> Hlᵢ".
+        iMod ("Hclose" with "[$]") as "_".
+        rel_apply_l refines_resolveatomic_l.
+        { done. }
+        iInv rwcasN as (n' reqs') "(Hlᵢ & Hlₛ & H● & Hreqs')" "Hclose".
+        iExists _. iFrame.
+        iModIntro.
+        destruct (decide (n' = m)) as [-> | Hneq].
+        * wp_cmpxchg_suc.
+          iIntros "!> %vs' -> _ //".
+        * wp_cmpxchg_fail.
+          iIntros "!> %vs' -> Hp".
+          inv Hres.
       + iMod token_alloc as "[%γₜ Hγₜ]".
         iIntros "!> !> Hlᵢ".
         iApply refines_split.
@@ -233,23 +250,47 @@ Section wf.
           rewrite lookup_insert in H. simplify_eq.
           destruct Heq as [Heq | Hle].
           -- rewrite lookup_map_seq_0 in H'.
-             assert (∃ b' : (agree (ref_id * gname * Z)), b = b') as [b' ->].
-             { by exists b. }
-
-             pose proof (lookup_fmap_Some to_agree _ _ _ H').
              rewrite list_lookup_fmap_Some in H'.
-             rewrite lookup_fmap_Some in H'.
-            Check lookup_fmap_Some.
-             rewrite /registry_inv.
-             iPoseProof (big_sepL_lookup _ _ _ _ H' with "[Hreqs']") as "Hl".
-             { }
-             apply big_sepL_lookup in H'.
-          rewrite -Heq in H'. rewrite -{1}Heq in H'. inv Heq.
-          rewrite
-          unfold "≼" in H.
-          rewrite dom_singleton_L in H.
-          assert ({[length reqs]} ⊆ dom (map_seq 0 reqs'))
-          admit.
+             destruct H' as ([[id' γₜ'] m'] & Hlookup & ->).
+             apply (inj to_agree) in Heq.
+             simplify_eq.
+             iPoseProof (big_sepL_lookup_acc _ _ _ _ Hlookup with "Hreqs'") as "[[Hlin | [[%Hne' _] | Hγₜ']] Hrest]".
+             { iApply (refines_combine with "[-Hlin] Hlin").
+             iMod ("Hclose" with "[-]") as "_".
+             { iFrame. iApply "Hrest". iFrame. }
+             rel_pures_l.
+             rel_values. }
+             { simplify_eq. }
+             { iExFalso. iApply (token_exclusive with "Hγₜ Hγₜ'"). }
+          -- rewrite lookup_map_seq_0 in H'.
+             rewrite list_lookup_fmap_Some in H'.
+             destruct H' as ([[id' γₜ'] m'] & Hlookup & ->).
+             rewrite to_agree_included in Hle.
+             simplify_eq.
+             iPoseProof (big_sepL_lookup_acc _ _ _ _ Hlookup with "Hreqs'") as "[[Hlin | [[%Hne' _] | Hγₜ']] Hrest]".
+             { iApply (refines_combine with "[-Hlin] Hlin").
+             iMod ("Hclose" with "[-]") as "_".
+             { iFrame. iApply "Hrest". iFrame. }
+             rel_pures_l.
+             rel_values. }
+             { simplify_eq. }
+             { iExFalso. iApply (token_exclusive with "Hγₜ Hγₜ'"). }
+    - iIntros "!> !> Hlᵢ".
+      iMod ("Hclose" with "[$]") as "_".
+      rel_apply_l refines_resolveatomic_l.
+      { done. }
+      iInv rwcasN as (n' reqs') "(Hlᵢ & Hlₛ & H● & Hreqs')" "Hclose".
+      iExists _. iFrame.
+      iModIntro.
+      destruct (decide (n' = n)) as [-> | Hne].
+      + wp_cmpxchg_suc.
+        iIntros "!> %vs' -> _ //".
+      + wp_cmpxchg_fail.
+        iIntros "!> %vs' -> _ //".
+  Qed.
+
+  Lemma lf_atomic_rwcas_refinement : REL wf_rwcas << atomic_rwcas : () → (lrel_int → ()) * (() → lrel_int).
+          
 End wf.
 
 Section atomic_rwcas.
