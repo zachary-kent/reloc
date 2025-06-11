@@ -50,26 +50,6 @@ Section wf.
     | _ => None (* (true, LitV LitUnit) *)
     end.
 
-  Definition ids_at γₘ p id := own γₘ (◯ {[ p := to_agree id ]}).
-
-  Check ids_at.
-
-  (* Definition rwcas_inv γₘ lᵢ lₛ : iProp Σ :=
-    ∃ (n : Z) pvs ps, 
-      lᵢ ↦ #n ∗ (* implementation location *)
-      lₛ ↦ₛ #n ∗ (* spec location*)
-
-      proph_map_interp pvs ps ∗ (* Authoritative ownership over prophecy map *)
-      [∗ set] p ∈ ps, (* For every thread/proph id *)
-        ∀ m, ⌜extract_result (proph_list_resolves pvs p) = Some (false, m)⌝ → (* If the cmpxchg fails *)
-          ∃ id, 
-            ids_at γₘ p id ∗ (* The thread/proph id [p] is bound to refinement id [id]*)
-              (refines_right id #()) ∨ (* The failing write has already been linearized and the spec of its right refinement has already been reduced to [()] *)
-              (⌜n ≠ m⌝ ∗ ∃ (p : Z), refines_right id (atomic_write #lₛ #p)) ∨
-              (* Or the value currently stored in the cell is not what the failing cmpxchg will eventually read from the cell.
-                 Thus, there exists some future sucessful write that will cause it to fail. 
-                 The invariant contains the un-reduced left refinement for this writer to reduce *) *)
-
   Definition registry_inv lₛ n (requests : list (ref_id * gname * Z)) : iProp Σ :=
     [∗ list] '(id, γₜ, m) ∈ requests, (* For every thread/proph id *)
         (refines_right id #() ∨ (* The failing write has already been linearized and the spec of its right refinement has already been reduced to [()] *)
@@ -91,7 +71,7 @@ Section wf.
     nclose relocN ⊆ E →
       l ↦ₛ #m -∗ 
         registry_inv l n requests ={E}=∗ 
-          registry_inv l p requests ∗ ∃ q : Z, l ↦ₛ #q.
+          registry_inv l p requests ∗ ∃ q g: Z, l ↦ₛ #q.
   Proof.
     iIntros (HNE) "Hl Hreqs".
     iInduction requests as [|[[id γₜ] m'] reqs'] "IH" forall (m).
