@@ -40,8 +40,8 @@ Definition lf_rwcas : val := λ: <>,
 
 (* LP stepping requests. *)
 (* Map the proph id of every failing write to a triple [(id, γₜ, v)]*)
-Definition requestReg := gmap proph_id (agree (ref_id * gname * Z)).
-Definition requestRegUR := authUR $ gmapUR proph_id (agreeR (prodO (prodO ref_idO gnameO) ZO)).
+Definition requestReg := gmap nat (agree (ref_id * gname * Z)).
+Definition requestRegUR := authUR $ gmapUR nat (agreeR (prodO (prodO ref_idO gnameO) ZO)).
 
 Check to_agree_op_inv_L.
 
@@ -81,8 +81,8 @@ Section wf.
                  Thus, there exists some future sucessful write that will cause it to fail. 
                  The invariant contains the un-reduced left refinement for this writer to reduce *) *)
 
-  Definition registry_inv lₛ n (requests : requestReg) : iProp Σ :=
-    [∗ map] p ↦ req ∈ requests, (* For every thread/proph id *)
+  Definition registry_inv lₛ n (requests : list (agree (ref_id * gname * Z))) : iProp Σ :=
+    [∗ list] req ∈ requests, (* For every thread/proph id *)
       ∃ id γₜ m,
         ⌜req = to_agree (id, γₜ, m)⌝ ∗
           (refines_right id #() ∨ (* The failing write has already been linearized and the spec of its right refinement has already been reduced to [()] *)
@@ -93,11 +93,13 @@ Section wf.
           token γₜ).
           (* The failing write has linearized and returned *)
 
-  Definition rwcas_inv γ lᵢ lₛ : iProp Σ :=
-    ∃ (n : Z) (requests : requestReg), 
+  Check map_seq.
+
+  Definition rwcas_inv (γ : gname) lᵢ lₛ : iProp Σ :=
+    ∃ (n : Z) (requests : list (agreeR (prodO (prodO ref_idO gnameO) ZO))), 
       lᵢ ↦ #n ∗ (* implementation location *)
       lₛ ↦ₛ #n ∗ (* spec location*)
-      own γ (● requests) ∗ (* Authoritative ownership over prophecy map *)
+      own γ (● map_seq O requests) ∗ (* Authoritative ownership over prophecy map *)
       registry_inv lₛ n requests.
 
   Lemma refines_right_write E l (m n p : Z) requests :
@@ -172,7 +174,6 @@ Section wf.
     iExists #n.
     iSplitL "Hlᵢ"; first done.
     destruct (extract_result vs) as [[[|] m] | ] eqn:Hres.
-    (* iMod token_alloc as "[%γₜ Hγₜ]". *)
     - (* We are destined to succeed *)
       iIntros "!> !> Hlᵢ".
       (* Close invariant with same request registry *)
@@ -208,7 +209,16 @@ Section wf.
         iExists _. iSplitL "Hₚ"; first done.
         iIntros "!> %vs' -> _".
         rel_values.
-    - admit.
+    - (* We are destined to fail *)
+      iMod token_alloc as "[%γₜ Hγₜ]".
+      iIntros "!> !> Hlᵢ".
+      iApply refines_split.
+      iIntros (id) ("Hrht").
+      iMod (own_update with "H●") as "H".
+      { eapply auth_update_alloc. }
+
+      Check auth_update_alloc.
+      
 End wf.
 
 Section atomic_rwcas.
