@@ -32,7 +32,7 @@ Class rwcasG Σ := {
   rwcas_requestUR :: inG Σ requestRegUR;
 }.
 
-Section wf.
+Section rwcas.
 
   Context `{!relocG Σ, !rwcasG Σ, !tokenG Σ}.
 
@@ -306,4 +306,4 @@ Section wf.
       iApply (read_refinement with "Hinv").
   Qed.
 
-End wf.
+End rwcas.
