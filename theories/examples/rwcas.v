@@ -302,9 +302,6 @@ Section wf.
     iMod (inv_alloc rwcasN with "[Hinv]") as "#Hinv".
     { done. }
 
-    (* TODO: here we have to do /exactly/ 4 steps.
-       The next step will reduce `(Val v1, Val v2)` to `Val (v1, v2)`,
-       and the compatibility rule wouldn't be applicable *)
     do 4 rel_pure_r. do 4 rel_pure_l.
     iApply refines_pair.
     - iApply refines_arrow_val.
