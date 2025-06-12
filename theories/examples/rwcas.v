@@ -1,12 +1,6 @@
-From reloc Require Export reloc.
-From reloc.lib Require Import lock.
-Set Default Proof Using "Type".
-
-From reloc Require Import reloc lib.lock.
-From iris.algebra Require Import numbers csum excl auth list gmap gset.
+From reloc Require Import reloc.
+From iris.algebra Require Import auth gmap.
 From iris.base_logic.lib Require Import token.
-From iris.bi.lib Require Export fixpoint.
-
 
 Definition atomic_write : val := λ: "x" "v", "x" <- "v".
 
@@ -286,9 +280,9 @@ Section wf.
         iIntros "!> %vs' -> _ //".
   Qed.
 
-  Lemma wf_atomic_rwcas_refinement : 
+  Lemma rwcas_refinement : 
     ⊢ REL wf_rwcas << atomic_rwcas : () → (lrel_int → ()) * (() → lrel_int).
-  Proof using relocG0 rwcasG0 tokenG0 Σ.
+  Proof.
     iApply refines_arrow_val.
     iModIntro. iIntros (? ?) "_"; simplify_eq/=.
     rel_rec_l. rel_rec_r.
