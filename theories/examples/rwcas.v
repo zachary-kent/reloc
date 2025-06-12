@@ -30,7 +30,7 @@ Definition wf_rwcas : val := λ: <>,
   ((λ: "v", wf_write "x" "v"), (λ: <>, read "x")).
 
 (* LP stepping requests. *)
-(* Map the proph id of every failing write to a triple [(id, γₜ, v)]*)
+(* Map the process id of every failing write to a triple [(id, γₜ, v)]*)
 Definition requestReg := gmap nat (agree (ref_id * gname * Z)).
 Definition requestRegUR := authUR $ gmapUR nat (agreeR (prodO (prodO ref_idO gnameO) ZO)).
 
@@ -47,7 +47,7 @@ Section wf.
   Definition extract_result (vs : list (val * val)) : option (bool * Z) :=
     match vs with
     | (PairV (LitV (LitInt n)) (LitV (LitBool b)), _) :: _ => Some (b, n)
-    | _ => None (* (true, LitV LitUnit) *)
+    | _ => None
     end.
 
   Definition registry_inv lₛ n (requests : list (ref_id * gname * Z)) : iProp Σ :=
@@ -60,13 +60,65 @@ Section wf.
         token γₜ).
         (* The failing write has linearized and returned *)
 
+  (* Authoritative ownership over request registry *)
+  Definition registry γ (requests : list (ref_id * gname * Z)) :=
+    own γ (● map_seq O (to_agree <$> requests)).
+
+  (* Fragmental ownership over a single request *)
+  Definition registered γ i (id : ref_id) (γₜ : gname) (m : Z) :=
+   own γ (◯ ({[i := to_agree (id, γₜ, m)]})).
+
   Definition rwcas_inv (γ : gname) lᵢ lₛ : iProp Σ :=
     ∃ (n : Z) (requests : list (ref_id * gname * Z)), 
       lᵢ ↦ #n ∗ (* implementation location *)
       lₛ ↦ₛ #n ∗ (* spec location*)
-      own γ (● map_seq O (to_agree <$> requests)) ∗ (* Authoritative ownership over prophecy map *)
+      registry γ requests ∗ (* Authoritative ownership over request registry *)
       registry_inv lₛ n requests.
 
+  (* Frame-preserving updates permit allocation of a new request *)
+  Lemma registry_update id γₜ m γ requests : 
+    registry γ requests ==∗ 
+      registry γ (requests ++ [(id, γₜ, m)]) ∗ registered γ (length requests) id γₜ m.
+  Proof.
+    iIntros "H●".
+    rewrite /registry /registered.
+    iMod (own_update with "H●") as "[H● H◯]".
+    { eapply auth_update_alloc.
+      apply alloc_singleton_local_update 
+        with 
+          (i := length requests)
+          (x := to_agree (id, γₜ, m)).
+      { rewrite lookup_map_seq_None length_fmap. by right. }
+      constructor. }
+    replace (length requests) with (O + length (to_agree <$> requests)) at 1 
+          by (now rewrite length_fmap).
+    rewrite -map_seq_snoc fmap_snoc. by iFrame.
+  Qed.
+
+  (* The authoritative view of the request registry must agree with its fragment *)
+  Lemma registry_agree (requests : list (ref_id * gname * Z)) i id γₜ m : 
+    ✓ (● map_seq O (to_agree <$> requests) ⋅ ◯ ({[i := to_agree (id, γₜ, m)]})) →
+        requests !! i = Some (id, γₜ, m).
+  Proof.
+    intros [Hincl _]%auth_both_valid_discrete.
+    apply dom_included in Hincl as Hdom.
+    rewrite dom_singleton_L singleton_subseteq_l in Hdom.
+    rewrite lookup_included in Hincl.
+    specialize Hincl with i.
+    rewrite option_included in Hincl.
+    destruct Hincl as [Hnone | (a & b & H & H' & Heq)].
+    { by rewrite lookup_insert in Hnone. }
+    rewrite lookup_insert in H. simplify_eq.
+    rewrite lookup_map_seq_0 list_lookup_fmap_Some in H'.
+    destruct H' as ([[id' γₜ'] m'] & Hlookup & ->).
+    destruct Heq as [Heq | Hle].
+    - apply (inj to_agree) in Heq.
+      by simplify_eq.
+    - rewrite to_agree_included in Hle.
+      by simplify_eq.
+  Qed.
+
+  (* It is possible to linearize pending writers while maintaing the registry invariant *)
   Lemma refines_right_write E l (m n p : Z) requests :
     nclose relocN ⊆ E →
       l ↦ₛ #m -∗ 
@@ -92,7 +144,9 @@ Section wf.
         * iSplitR "Hreqs'"; by iFrame.
         * by iFrame.
   Qed.
-              
+  
+  (* Implementation read refines the specification read. 
+    This is trivial, as both reads are implemented identically *)
   Lemma read_refinement γₘ lᵢ lₛ :
     inv rwcasN (rwcas_inv γₘ lᵢ lₛ) -∗
     REL read #lᵢ << read #lₛ : lrel_int.
@@ -115,6 +169,7 @@ Section wf.
       iFrame.
   Qed.
 
+  (* Implementation write refines the specification write. *)
   Lemma write_refinement γₘ lᵢ lₛ (q : Z) : 
     inv rwcasN (rwcas_inv γₘ lᵢ lₛ) -∗
     REL wf_write #lᵢ #q << atomic_write #lₛ #q : lrel_unit.
@@ -172,24 +227,18 @@ Section wf.
         * wp_cmpxchg_fail.
           iIntros "!> %vs' -> Hp".
           inv Hres.
-      + iMod token_alloc as "[%γₜ Hγₜ]".
+      + (* Allocate a token. We will hold onto this until we return *)
+        iMod token_alloc as "[%γₜ Hγₜ]".
         iIntros "!> !> Hlᵢ".
+        (* Split the refinement, as the linearization point is external *)
         iApply refines_split.
-        iIntros (id) ("Hrht").
-        iMod (own_update with "H●") as "[H● H◯]".
-        { eapply auth_update_alloc.
-          apply alloc_singleton_local_update 
-            with 
-              (i := length reqs)
-              (x := to_agree (id, γₜ, m)).
-          { rewrite lookup_map_seq_None length_fmap. by right. }
-          constructor. }
-        replace (length reqs) with (O + length (to_agree <$> reqs)) at 1 
-          by (now rewrite length_fmap).
-        rewrite -map_seq_snoc.
+        iIntros (id) "Hrht".
+        (* Allocate a new linearization request in the registry for this failing writer *)
+        iMod (registry_update id γₜ m with "H●") as "[H● H◯]".
+        (* Close the invariant with the updated registry *)
         iMod ("Hclose" with "[Hlᵢ Hlₛ H● Hreqs Hrht]") as "_".
         { iExists _, (reqs ++ [(id, γₜ, m)]). 
-          rewrite fmap_snoc. iFrame.
+          iFrame.
           rewrite big_sepL_singleton.
           iRight. iLeft. iSplitR; by iFrame. }
         rel_apply_l refines_resolveatomic_l.
@@ -198,48 +247,32 @@ Section wf.
         iInv rwcasN as (n' reqs') "(Hlᵢ & Hlₛ & H● & Hreqs')" "Hclose".
         iModIntro.
         destruct (decide (n' = n)) as [-> | Hneq].
-        * wp_cmpxchg_suc.
+        * (* Contrary to the prophecy, the CmpXchg succeeds *)
+          wp_cmpxchg_suc.
           iIntros "!> %vs' -> _". simplify_eq.
         * wp_cmpxchg_fail.
           iIntros "!> %vs' -> _".
           inv Hres.
-          iCombine "H● H◯" gives %[Hincl Hv]%auth_both_valid_discrete.
-          apply dom_included in Hincl as Hdom.
-          rewrite dom_singleton_L singleton_subseteq_l in Hdom.
-          rewrite lookup_included in Hincl.
-          specialize Hincl with (length reqs).
-          rewrite option_included in Hincl.
-          destruct Hincl as [Hnone | (a & b & H & H' & Heq)].
-          { by rewrite lookup_insert in Hnone. }
-          rewrite lookup_insert in H. simplify_eq.
-          destruct Heq as [Heq | Hle].
-          -- rewrite lookup_map_seq_0 in H'.
-             rewrite list_lookup_fmap_Some in H'.
-             destruct H' as ([[id' γₜ'] m'] & Hlookup & ->).
-             apply (inj to_agree) in Heq.
-             simplify_eq.
-             iPoseProof (big_sepL_lookup_acc _ _ _ _ Hlookup with "Hreqs'") as "[[Hlin | [[%Hne' _] | Hγₜ']] Hrest]".
-             { iApply (refines_combine with "[-Hlin] Hlin").
-             iMod ("Hclose" with "[-]") as "_".
-             { iFrame. iApply "Hrest". iFrame. }
-             rel_pures_l.
-             rel_values. }
-             { simplify_eq. }
-             { iExFalso. iApply (token_exclusive with "Hγₜ Hγₜ'"). }
-          -- rewrite lookup_map_seq_0 in H'.
-             rewrite list_lookup_fmap_Some in H'.
-             destruct H' as ([[id' γₜ'] m'] & Hlookup & ->).
-             rewrite to_agree_included in Hle.
-             simplify_eq.
-             iPoseProof (big_sepL_lookup_acc _ _ _ _ Hlookup with "Hreqs'") as "[[Hlin | [[%Hne' _] | Hγₜ']] Hrest]".
-             { iApply (refines_combine with "[-Hlin] Hlin").
-             iMod ("Hclose" with "[-]") as "_".
-             { iFrame. iApply "Hrest". iFrame. }
-             rel_pures_l.
-             rel_values. }
-             { simplify_eq. }
-             { iExFalso. iApply (token_exclusive with "Hγₜ Hγₜ'"). }
-    - iIntros "!> !> Hlᵢ".
+          (* The registry must still contain out linearization request *)
+          iCombine "H● H◯" gives %Hagree%registry_agree.
+          (* Consider which state our helping request is in*)
+          iPoseProof (big_sepL_lookup_acc _ _ _ _ Hagree with "Hreqs'") as "[[Hlin | [[%Hne' _] | Hγₜ']] Hrest]".
+          { (* It has been fulfilled by a writer as expected *)
+            (* We recombine the reduced right refinement with our left refinement *)
+            iApply (refines_combine with "[-Hlin] Hlin").
+            iMod ("Hclose" with "[-]") as "_".
+            { iFrame. iApply "Hrest". iFrame. }
+            rel_pures_l.
+            rel_values. }
+          { (* Our request is still pending *)
+            (* This is impossible, as the value stored in the cell is what was prophecized *)
+            simplify_eq. }
+          { (* We have returned *)
+            (* This is impossible, as we still own the token. There cannot be another copy in the invariant *)
+            iExFalso. iApply (token_exclusive with "Hγₜ Hγₜ'"). }
+    - (* The prophecy predicts an ill-typed return value from the CmpXchg *)
+      (* This is impossible, so we just reduce the implementation to arrive at a contradiction *)
+      iIntros "!> !> Hlᵢ".
       iMod ("Hclose" with "[$]") as "_".
       rel_apply_l refines_resolveatomic_l.
       { done. }
@@ -261,6 +294,7 @@ Section wf.
     rel_rec_l. rel_rec_r.
     rel_alloc_l lᵢ as "Hlᵢ".
     rel_alloc_r lₛ as "Hlₛ".
+    (* Establish the invariant with an empty registry *)
     iMod (own_alloc (● map_seq O (to_agree <$> []))) as "[%γ H●]".
     { by apply auth_auth_valid. }
     iAssert (rwcas_inv γ lᵢ lₛ) with ("[Hlᵢ Hlₛ H●]") as "Hinv".
