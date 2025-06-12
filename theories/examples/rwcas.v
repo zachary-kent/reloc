@@ -305,5 +305,5 @@ Section wf.
       iModIntro. iIntros (? ?) "_". rel_seq_l; rel_seq_r.
       iApply (read_refinement with "Hinv").
   Qed.
-          
+
 End wf.
