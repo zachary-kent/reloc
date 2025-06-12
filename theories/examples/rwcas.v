@@ -200,6 +200,7 @@ Section wf.
         wp_cmpxchg_suc.
         iIntros "!> %vs' -> _".
         rel_pures_l.
+        (* We linearize any pending failing writers registered in the registry *)
         iMod (refines_right_write _ _ _ _ q with "Hlₛ Hreqs") as "(Hreqs & %q' & Hlₛ)".
         { solve_ndisj. }
         rel_store_r.
