@@ -209,8 +209,7 @@ Section wf.
         rel_values. 
       + (* Contrary to the prophecy, the CmpXchg fails *)
         wp_cmpxchg_fail.
-        iIntros "!> %vs' -> _".
-        simplify_eq.
+        iIntros "!> %vs' -> _ //".
     - (* We are destined to fail *)
       destruct (decide (n = m)) as [-> | Hne].
       + (* The value propecized to be read at the cmpxchg is the same
@@ -250,7 +249,7 @@ Section wf.
         destruct (decide (n' = n)) as [-> | Hneq].
         * (* Contrary to the prophecy, the CmpXchg succeeds *)
           wp_cmpxchg_suc.
-          iIntros "!> %vs' -> _". simplify_eq.
+          iIntros "!> %vs' -> _ //".
         * wp_cmpxchg_fail.
           iIntros "!> %vs' -> _".
           inv Hres.
