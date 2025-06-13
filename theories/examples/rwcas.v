@@ -33,13 +33,14 @@ Definition atomic_rwcas : val := λ: <>,
   let: "x" := ref #0 in
   ((λ: "v", atomic_write "x" "v"), (λ: <>, read "x")).
 
+(* A fine-grained wait-free implementation of [write] *)
 Definition wf_write : val :=
   λ: "l" "v",
     let: "p" := NewProph in
     Resolve (CmpXchg "l" !"l" "v") "p" #();;
     #().
 
-(* Fine-grained implementatiaon of a read-write cell *)
+(* Fine-grained wait-free implementatiaon of a read-write cell *)
 Definition wf_rwcas : val := λ: <>,
   let: "x" := ref #0 in
   ((λ: "v", wf_write "x" "v"), (λ: <>, read "x")).
