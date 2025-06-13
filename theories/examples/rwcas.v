@@ -2,6 +2,27 @@ From reloc Require Import reloc.
 From iris.algebra Require Import auth gmap.
 From iris.base_logic.lib Require Import token.
 
+(**
+  * This example proves the correctness of a linearizable [read]/[write] cell
+  * implemented using just [read] and [CmpXchg]. For a location [l] and value [v],
+  * [write(l, v)] is implemented as [CmpXchg l !l v]. Obviously, if another thread
+  * changes the value stored in [l] between the load and [CmpXchg], then the 
+  * [CmpXchg] fails and the write has no physical effect. However, this means that
+  * the failing write can linearize immediately before the succeeding conflicting write 
+  * that caused the [CmpXchg] to fail. We prove that this implementation refines an
+  * atomic implementation, where write is implemented using an (atomic) store. 
+  *
+  * In the refinement proof, a prophecy is used by every writer to predict whether its
+  * [CmpXchg] will succeed. If the prophecy predicts that the operation will fail, 
+  * then its linearization point (LP) is external, as the conflicting successful write 
+  * will have to carry out its LP on its behalf. Thus, the failing write will have to
+  * split its refinement, and store its right refinement in an invariant so that the
+  * successful write can carry out its LP and reduce the right refinement. A successful
+  * writer is obligated to reduce every right refinement stored in the invariant,
+  * linearizing all writers prophecized to fail.
+  *)
+
+
 Definition atomic_write : val := λ: "x" "v", "x" <- "v".
 
 (** Can read the cell simply by derefencing it *)
